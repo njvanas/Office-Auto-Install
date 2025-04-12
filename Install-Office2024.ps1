@@ -91,23 +91,36 @@ function Show-Menu {
     $arch = Read-Host "Enter choice (1 or 2)"
     $bit = if ($arch -eq "2") { "32" } else { "64" }
 
-    Write-Host "`nInclude Visio?"
+    Write-Host "
+Select Office Edition:"
+    Write-Host "1: Office 2024 Pro Plus"
+    Write-Host "2: Office LTSC 2021"
+    Write-Host "3: Office 365 (Microsoft 365 Apps)"
+    $editionChoice = Read-Host "Enter choice (1, 2 or 3)"
+    $editionMap = @{ "1" = "ProPlus2024Retail"; "2" = "ProPlus2021Volume"; "3" = "O365ProPlusRetail" }
+    $editionID = $editionMap[$editionChoice]
+    if (-not $editionID) {
+        Write-Host "Invalid selection. Defaulting to Office 2024 Pro Plus"
+        $editionID = "ProPlus2024Retail"
+    }
+
+    Write-Host "\nInclude Visio?"
     Write-Host "1: Yes"
     Write-Host "2: No"
     $visio = Read-Host "Enter choice (1 or 2)"
 
-    Write-Host "`nInclude Project?"
+    Write-Host "\nInclude Project?"
     Write-Host "1: Yes"
     Write-Host "2: No"
     $project = Read-Host "Enter choice (1 or 2)"
 
-    Write-Host "`nSelect Update Channel:"
+    Write-Host "\nSelect Update Channel:"
     Write-Host "1: Monthly"
     Write-Host "2: Semi-Annual"
     $channelChoice = Read-Host "Enter choice (1 or 2)"
     $channel = if ($channelChoice -eq "2") { "Broad" } else { "Current" }
 
-    Write-Host "`nSelect Language:"
+    Write-Host "\nSelect Language:"
     Write-Host "1: English (United States) [en-us]"
     Write-Host "2: English (United Kingdom) [en-gb]"
     Write-Host "3: French (France) [fr-fr]"
@@ -133,13 +146,13 @@ function Show-Menu {
         $language = "en-us"
     }
 
-    Write-Host "`nDisplay installation UI?"
+    Write-Host "\nDisplay installation UI?"
     Write-Host "1: Yes (Show Office setup window)"
     Write-Host "2: No (Silent install)"
     $uiChoice = Read-Host "Enter choice (1 or 2)"
     $uiLevel = if ($uiChoice -eq "1") { "Full" } else { "None" }
 
-    return @{ bit=$bit; visio=$visio; project=$project; channel=$channel; language=$language; ui=$uiLevel }
+    return @{ bit=$bit; visio=$visio; project=$project; channel=$channel; language=$language; ui=$uiLevel; edition=$editionID }
 }
 
 function Download-ODT {
@@ -151,7 +164,7 @@ function Download-ODT {
 
     if (-Not (Test-Path $output) -or ((Get-Item $output).Length -lt 100000)) {
         Log "Downloaded file appears to be corrupted or incomplete."
-        Write-Host "`n❌ The downloaded file is too small or unreadable. Please check your connection and try again."
+        Write-Host "\n❌ The downloaded file is too small or unreadable. Please check your connection and try again."
         Exit 1
     }
 
@@ -162,13 +175,13 @@ function Generate-Config($options) {
     Log "Generating config.xml with selected options..."
 
     $products = @()
-    $products += "<Product ID='ProPlus2024Retail'>`n  <Language ID='" + $options.language + "' />`n</Product>"
+    $products += "<Product ID='" + $options.edition + "'>`n  <Language ID='" + $options.language + "' />`n</Product>"
 
     if ($options.visio -eq "1") {
-        $products += "<Product ID='VisioPro2024Retail'>`n  <Language ID='" + $options.language + "' />`n</Product>"
+        $products += "<Product ID='VisioPro2021Volume'>`n  <Language ID='" + $options.language + "' />`n</Product>"
     }
     if ($options.project -eq "1") {
-        $products += "<Product ID='ProjectPro2024Retail'>`n  <Language ID='" + $options.language + "' />`n</Product>"
+        $products += "<Product ID='ProjectPro2021Volume'>`n  <Language ID='" + $options.language + "' />`n</Product>"
     }
 
     $xmlContent = @"
@@ -191,7 +204,7 @@ function Install-Office {
 
     if (-Not (Test-Path $setupExe)) {
         Log "ERROR: setup.exe not found."
-        Write-Host "`n❌ Error: setup.exe not found in $installerFolder."
+        Write-Host "\n❌ Error: setup.exe not found in $installerFolder."
         Exit 1
     }
 
@@ -210,8 +223,9 @@ Generate-Config -options $options
 Install-Office
 Log "=== Script Completed ==="
 
-Write-Host "`nInstallation Complete!"
+Write-Host "\nInstallation Complete!"
 Write-Host "Office has been installed using the following configuration:"
+Write-Host " - Edition: $($options.edition)"
 Write-Host " - Architecture: $($options.bit)-bit"
 Write-Host " - Language: $($options.language)"
 Write-Host " - Channel: $($options.channel)"
@@ -219,4 +233,4 @@ Write-Host " - Visio: $([string]::Join('', @('No', 'Yes')[$options.visio -eq '1'
 Write-Host " - Project: $([string]::Join('', @('No', 'Yes')[$options.project -eq '1']))"
 Write-Host " - UI Level: $($options.ui)"
 Write-Host " - Installer folder: $installerFolder"
-Write-Host "`nInstallation log saved at: $logFile"
+Write-Host "\nInstallation log saved at: $logFile"
