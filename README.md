@@ -14,7 +14,7 @@ This PowerShell script automates the download, configuration, and installation o
 
 ## 🚀 Getting Started
 1. Clone or download the repo
-2. Right-click the `.ps1` script and **Run with PowerShell as Administrator**
+2. Right-click the `.ps1` script and **Run with PowerShell** (it will prompt for elevation if needed)
 3. Follow the interactive prompts
 
 ## ⚠️ Disclaimer
