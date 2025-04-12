@@ -15,7 +15,8 @@ This PowerShell script automates the download, configuration, and installation o
 ## 🚀 Getting Started
 1. Clone or download the repo
 2. Right-click the `.ps1` script and **Run with PowerShell** (it will prompt for elevation if needed)
-3. Follow the interactive prompts
+3. If it abruptly closes in the beginning I am most certain it is related to Policy Execution. This you can have set for this script specifically by running the batch file to execute it with a bypass.
+4. Follow the interactive prompts
 
 ## ⚠️ Disclaimer
 This script downloads and installs Microsoft software. You are solely responsible for ensuring your use complies with Microsoft licensing. **Use at your own risk.** The author assumes no responsibility for any misuse or damage.
