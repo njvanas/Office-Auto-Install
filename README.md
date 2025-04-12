@@ -1,6 +1,6 @@
-# Office 2024 Pro Auto Installer (PowerShell)
+# Office Auto Installer (via PowerShell)
 
-This PowerShell script automates the download, configuration, and installation of Microsoft Office 2024 Professional, with optional components like Visio and Project.
+This PowerShell script automates the download, configuration, and installation of Microsoft Office 2024/2021/365, with optional components like Visio and Project.
 
 ## ✨ Features
 - Choose 32-bit or 64-bit architecture
