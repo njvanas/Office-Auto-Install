@@ -1,6 +1,6 @@
 # Office Auto Installer
 
-screenshot.png
+![Screenshot](./screenshot.png)
 
 This PowerShell script automates the download, configuration, and installation of Microsoft Office 2024/2021/365, with optional components like Visio and Project.
 
