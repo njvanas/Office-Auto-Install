@@ -2,6 +2,26 @@
 # Downloads and installs Microsoft Office through official channels
 # No licensing modifications - uses Microsoft's official deployment tools
 
+# ==== EXECUTION POLICY FIX ====
+# This section ensures the script can run regardless of PowerShell execution policy
+param()
+
+# Check if we need to bypass execution policy
+$currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
+if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'AllSigned') {
+    Write-Host "🔧 Fixing PowerShell execution policy..." -ForegroundColor Yellow
+    try {
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+        Write-Host "✅ Execution policy updated successfully!" -ForegroundColor Green
+    } catch {
+        Write-Host "⚠️  Could not update execution policy automatically." -ForegroundColor Yellow
+        Write-Host "   This script will still work, but you may see warnings." -ForegroundColor Gray
+    }
+}
+
+# Prevent the window from closing immediately if run via right-click
+$Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer"
+
 # Welcome message and admin check
 function Show-WelcomeScreen {
     Clear-Host
@@ -9,7 +29,7 @@ function Show-WelcomeScreen {
     $border = "═" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Easy Office Installation for Everyone"
-    $version = "v3.0 - Windows Enhanced"
+    $version = "v3.1 - Execution Policy Fixed"
     
     Write-Host "╔$border╗" -ForegroundColor Cyan
     Write-Host "║" -ForegroundColor Cyan -NoNewline
@@ -26,6 +46,11 @@ function Show-WelcomeScreen {
     
     Write-Host "👋 Welcome! This tool will help you install Microsoft Office easily." -ForegroundColor Green
     Write-Host "   No technical knowledge required - just follow the simple prompts!" -ForegroundColor Gray
+    Write-Host ""
+    
+    # Show how the script was launched
+    $launchMethod = if ($MyInvocation.Line) { "Command Line" } else { "Right-Click Menu" }
+    Write-Host "📋 Launch Method: $launchMethod" -ForegroundColor Blue
     Write-Host ""
     
     # Check if running as admin
@@ -53,17 +78,48 @@ function Show-WelcomeScreen {
         
         try {
             Write-Host "🔄 Requesting administrator privileges..." -ForegroundColor Blue
-            Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+            
+            # Multiple methods to ensure elevation works
+            $scriptPath = $MyInvocation.MyCommand.Path
+            if (-not $scriptPath) {
+                $scriptPath = $PSCommandPath
+            }
+            
+            if ($scriptPath) {
+                # Method 1: Try with the script file path
+                Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs
+            } else {
+                # Method 2: Try with the current command
+                $command = $MyInvocation.MyCommand.Definition
+                Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -Command `"$command`"" -Verb RunAs
+            }
+            
             Write-Host "✅ New window should open with admin rights. You can close this one." -ForegroundColor Green
+            Write-Host ""
+            Write-Host "⏳ Waiting 5 seconds before closing this window..." -ForegroundColor Gray
+            Start-Sleep -Seconds 5
+            
         } catch {
             Write-Host ""
             Write-Host "❌ Failed to request admin privileges!" -ForegroundColor Red
             Write-Host "   Error: $_" -ForegroundColor Yellow
             Write-Host ""
-            Write-Host "🔧 Manual solution:" -ForegroundColor Cyan
+            Write-Host "🔧 Manual solutions (try these in order):" -ForegroundColor Cyan
+            Write-Host ""
+            Write-Host "   METHOD 1 - Copy & Paste Method:" -ForegroundColor Yellow
+            Write-Host "   1. Press Win+X and select 'Windows PowerShell (Admin)'" -ForegroundColor White
+            Write-Host "   2. Copy this entire script content" -ForegroundColor White
+            Write-Host "   3. Paste it into the admin PowerShell window" -ForegroundColor White
+            Write-Host "   4. Press Enter to run" -ForegroundColor White
+            Write-Host ""
+            Write-Host "   METHOD 2 - File Method:" -ForegroundColor Yellow
             Write-Host "   1. Right-click on this script file" -ForegroundColor White
             Write-Host "   2. Select 'Run as administrator'" -ForegroundColor White
             Write-Host "   3. Click 'Yes' when Windows asks for permission" -ForegroundColor White
+            Write-Host ""
+            Write-Host "   METHOD 3 - Command Line:" -ForegroundColor Yellow
+            Write-Host "   1. Open Command Prompt as Administrator" -ForegroundColor White
+            Write-Host "   2. Type: powershell -ExecutionPolicy Bypass -File `"[path to this script]`"" -ForegroundColor White
             Write-Host ""
             Write-Host "Press any key to exit..." -ForegroundColor Gray
             $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -78,7 +134,7 @@ function Show-WelcomeScreen {
 }
 
 # Setup Paths
-$installerFolder = "$PSScriptRoot\OfficeInstaller"
+$installerFolder = if ($PSScriptRoot) { "$PSScriptRoot\OfficeInstaller" } else { "$env:TEMP\OfficeInstaller" }
 
 # Clean the folder at the start to avoid old/corrupt files
 if (Test-Path $installerFolder) {
@@ -103,7 +159,7 @@ function Show-Header {
     $border = "═" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Official Microsoft Office Deployment Tool Interface"
-    $version = "v3.0 - Windows Enhanced"
+    $version = "v3.1 - Execution Policy Fixed"
     
     Write-Host "╔$border╗" -ForegroundColor Cyan
     Write-Host "║" -ForegroundColor Cyan -NoNewline
@@ -211,7 +267,7 @@ function Test-SystemRequirements {
     if ($freeSpaceGB -lt 4) {
         Write-Host "❌ Error: At least 4GB of free space is required" -ForegroundColor Red
         Write-Host "   Please free up some disk space and try again" -ForegroundColor Yellow
-        Pause
+        Read-Host "Press Enter to exit"
         Exit 1
     } else {
         Write-Host "✅ Sufficient disk space available" -ForegroundColor Green
@@ -242,7 +298,7 @@ function Test-SystemRequirements {
         Write-Host "❌ No internet connection detected!" -ForegroundColor Red
         Write-Host "   Please check your internet connection and try again" -ForegroundColor Yellow
         Log "Internet connection failed. Exiting script."
-        Pause
+        Read-Host "Press Enter to exit"
         Exit 1
     }
     
@@ -433,14 +489,14 @@ function Download-ODT {
         Write-Host "❌ Download failed!" -ForegroundColor Red
         Write-Host "   Error: $_" -ForegroundColor Yellow
         Write-Host "   Please check your internet connection and try again." -ForegroundColor Gray
-        Pause
+        Read-Host "Press Enter to exit"
         Exit 1
     }
 
     if (-Not (Test-Path $output) -or ((Get-Item $output).Length -lt 100000)) {
         Log "Downloaded file appears to be corrupted or incomplete."
         Write-Host "❌ Download seems incomplete. Please try again." -ForegroundColor Red
-        Pause
+        Read-Host "Press Enter to exit"
         Exit 1
     }
 
@@ -504,7 +560,7 @@ function Install-Office {
         Log "ERROR: setup.exe not found."
         Write-Host "❌ Installation file missing!" -ForegroundColor Red
         Write-Host "   Something went wrong with the download. Please restart the script." -ForegroundColor Yellow
-        Pause
+        Read-Host "Press Enter to exit"
         Exit 1
     }
 
@@ -556,7 +612,7 @@ function Install-Office {
         Write-Host "❌ Installation encountered an error!" -ForegroundColor Red
         Write-Host "   Error: $_" -ForegroundColor Yellow
         Write-Host "   You can try running the script again, or contact support." -ForegroundColor Gray
-        Pause
+        Read-Host "Press Enter to exit"
         Exit 1
     }
 }
@@ -632,7 +688,7 @@ function Show-FriendlyCompletionSummary($options) {
 # ==== Main Execution Flow ====
 
 try {
-    Log "=== Enhanced Office Installer Started (Windows Enhanced Version) ==="
+    Log "=== Enhanced Office Installer Started (Execution Policy Fixed Version) ==="
     
     # Show welcome screen and handle admin elevation
     Show-WelcomeScreen
@@ -676,7 +732,18 @@ try {
     Write-Host "📁 Check the log file for more details:" -ForegroundColor Cyan
     Write-Host "   $logFile" -ForegroundColor Yellow
     Write-Host ""
+    Write-Host "🔧 Copy & Paste Method:" -ForegroundColor Yellow
+    Write-Host "   If this keeps failing, try copying this entire script" -ForegroundColor White
+    Write-Host "   and pasting it into an Administrator PowerShell window" -ForegroundColor White
+    Write-Host ""
     Write-Host "Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     Exit 1
+}
+
+# Prevent window from closing immediately when run via right-click
+if (-not $MyInvocation.Line) {
+    Write-Host ""
+    Write-Host "Script completed. Press any key to close this window..." -ForegroundColor Gray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

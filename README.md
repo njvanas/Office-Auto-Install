@@ -2,7 +2,7 @@
 
 ![Screenshot](./screenshot.png)
 
-This enhanced PowerShell script provides a beautiful, beginner-friendly interface for downloading, configuring, and installing Microsoft Office 2024/2021/365 through official Microsoft channels. Designed for any Windows user - no technical knowledge required!
+This enhanced PowerShell script provides a beautiful, beginner-friendly interface for downloading, configuring, and installing Microsoft Office 2024/2021/365 through official Microsoft channels. **Now with PowerShell execution policy fixes** - designed for any Windows user with no technical knowledge required!
 
 ## ✨ Features
 ### 🎯 **Beginner-Friendly Design**
@@ -13,10 +13,12 @@ This enhanced PowerShell script provides a beautiful, beginner-friendly interfac
 - **Helpful Hints** - Guidance for every decision you need to make
 
 ### 🖥️ **Windows Integration**
+- **Execution Policy Fix** - Automatically handles PowerShell execution policy restrictions
+- **Copy & Paste Ready** - Works when copied and pasted into PowerShell
+- **Right-Click Protection** - Prevents window from closing immediately
 - **Automatic Admin Rights** - Requests elevation when needed with clear explanation
 - **System Requirements Check** - Validates disk space, RAM, Windows version, and internet
 - **UAC Handling** - Smooth integration with Windows security prompts
-- **Execution Policy Bypass** - Includes batch file for restricted systems
 - **Professional Error Messages** - Clear explanations when something goes wrong
 
 ### 🎨 **Beautiful Interface**
@@ -37,14 +39,13 @@ This enhanced PowerShell script provides a beautiful, beginner-friendly interfac
 ## 🚀 Getting Started
 
 ### 📥 **Download & Run**
-1. **Download** both files to the same folder:
-   - `Install-Office.ps1` (main script)
-   - `Install-Office(RunMeIfPowershellFails).bat` (backup launcher)
+1. **Download** the PowerShell script:
+   - `Install-Office.ps1`
 
-2. **Run the installer** (choose one method):
+2. **Run the installer** (choose the method that works for you):
    - **Method 1:** Right-click `Install-Office.ps1` → "Run with PowerShell"
-   - **Method 2:** Double-click `Install-Office(RunMeIfPowershellFails).bat`
-   - **Method 3:** Open PowerShell as admin and run the script
+   - **Method 2:** Copy the entire script content and paste into Administrator PowerShell
+   - **Method 3:** Open PowerShell as admin and run: `powershell -ExecutionPolicy Bypass -File "Install-Office.ps1"`
 
 3. **Follow the prompts:**
    - Click "Yes" when Windows asks for administrator permission
@@ -57,7 +58,8 @@ This enhanced PowerShell script provides a beautiful, beginner-friendly interfac
    - Perfect time for a coffee break! ☕
 
 ### 🆘 **If You Have Problems**
-- **Script won't run?** Use the `.bat` file instead
+- **Script won't run?** Try the copy & paste method (see instructions in the script)
+- **Execution policy error?** The script now fixes this automatically
 - **Need admin rights?** The script will request them automatically
 - **Antivirus blocking?** Temporarily disable it during installation
 - **Still stuck?** Check the generated log file for details
@@ -81,6 +83,7 @@ This script downloads and installs Microsoft software through official Microsoft
 
 ## 🛠️ **Technical Details**
 - **Official Tools Only** - Uses Microsoft's Office Deployment Tool (ODT)
+- **Execution Policy Safe** - Automatically handles PowerShell restrictions
 - **Direct Downloads** - Gets files straight from Microsoft's servers
 - **Standard Configuration** - Creates proper XML config files
 - **Full Logging** - Detailed logs for troubleshooting
