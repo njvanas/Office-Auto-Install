@@ -2,25 +2,83 @@
 # Downloads and installs Microsoft Office through official channels
 # No licensing modifications - uses Microsoft's official deployment tools
 
-# Pause at start for user readiness
-Pause
+# Welcome message and admin check
+function Show-WelcomeScreen {
+    Clear-Host
+    $width = 80
+    $border = "═" * $width
+    $title = "MICROSOFT OFFICE AUTO INSTALLER"
+    $subtitle = "Easy Office Installation for Everyone"
+    $version = "v3.0 - Windows Enhanced"
+    
+    Write-Host "╔$border╗" -ForegroundColor Cyan
+    Write-Host "║" -ForegroundColor Cyan -NoNewline
+    Write-Host $title.PadLeft(($width + $title.Length) / 2).PadRight($width) -ForegroundColor White -NoNewline
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host "║" -ForegroundColor Cyan -NoNewline
+    Write-Host $subtitle.PadLeft(($width + $subtitle.Length) / 2).PadRight($width) -ForegroundColor Gray -NoNewline
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host "║" -ForegroundColor Cyan -NoNewline
+    Write-Host $version.PadLeft(($width + $version.Length) / 2).PadRight($width) -ForegroundColor DarkGray -NoNewline
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host "╚$border╝" -ForegroundColor Cyan
+    Write-Host ""
+    
+    Write-Host "👋 Welcome! This tool will help you install Microsoft Office easily." -ForegroundColor Green
+    Write-Host "   No technical knowledge required - just follow the simple prompts!" -ForegroundColor Gray
+    Write-Host ""
+    
+    # Check if running as admin
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+    
+    if (-not $isAdmin) {
+        Write-Host "⚠️  ADMINISTRATOR PRIVILEGES REQUIRED" -ForegroundColor Yellow
+        Write-Host "═" * 50 -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "📋 Why do we need admin rights?" -ForegroundColor Cyan
+        Write-Host "   • Office installation requires system-level access" -ForegroundColor White
+        Write-Host "   • Ensures proper integration with Windows" -ForegroundColor White
+        Write-Host "   • Prevents installation errors and conflicts" -ForegroundColor White
+        Write-Host ""
+        Write-Host "🔒 What happens next?" -ForegroundColor Cyan
+        Write-Host "   • Windows will ask for permission (UAC prompt)" -ForegroundColor White
+        Write-Host "   • Click 'Yes' to continue with installation" -ForegroundColor White
+        Write-Host "   • The script will restart with proper privileges" -ForegroundColor White
+        Write-Host ""
+        Write-Host "✅ This is completely safe and standard for software installation!" -ForegroundColor Green
+        Write-Host ""
+        
+        Write-Host "Press any key to request administrator privileges..." -ForegroundColor Yellow
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        
+        try {
+            Write-Host "🔄 Requesting administrator privileges..." -ForegroundColor Blue
+            Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+            Write-Host "✅ New window should open with admin rights. You can close this one." -ForegroundColor Green
+        } catch {
+            Write-Host ""
+            Write-Host "❌ Failed to request admin privileges!" -ForegroundColor Red
+            Write-Host "   Error: $_" -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "🔧 Manual solution:" -ForegroundColor Cyan
+            Write-Host "   1. Right-click on this script file" -ForegroundColor White
+            Write-Host "   2. Select 'Run as administrator'" -ForegroundColor White
+            Write-Host "   3. Click 'Yes' when Windows asks for permission" -ForegroundColor White
+            Write-Host ""
+            Write-Host "Press any key to exit..." -ForegroundColor Gray
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        }
+        Exit
+    } else {
+        Write-Host "✅ Running with administrator privileges - Ready to install!" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Press any key to continue..." -ForegroundColor Yellow
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    }
+}
 
 # Setup Paths
 $installerFolder = "$PSScriptRoot\OfficeInstaller"
-
-# Auto-elevate if not running as admin
-If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
-    [Security.Principal.WindowsBuiltInRole] "Administrator"))
-{
-    Write-Host "⚠️  Script is not running as Administrator. Attempting to relaunch..." -ForegroundColor Yellow
-    try {
-        Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-    } catch {
-        Write-Host "❌ Failed to relaunch script with admin rights. Error: $_" -ForegroundColor Red
-        Pause
-    }
-    Exit
-}
 
 # Clean the folder at the start to avoid old/corrupt files
 if (Test-Path $installerFolder) {
@@ -45,7 +103,7 @@ function Show-Header {
     $border = "═" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Official Microsoft Office Deployment Tool Interface"
-    $version = "v2.0 - Enhanced UI"
+    $version = "v3.0 - Windows Enhanced"
     
     Write-Host "╔$border╗" -ForegroundColor Cyan
     Write-Host "║" -ForegroundColor Cyan -NoNewline
@@ -76,7 +134,8 @@ function Show-MenuOption {
         [string]$Number,
         [string]$Title,
         [string]$Description = "",
-        [string]$Color = "White"
+        [string]$Color = "White",
+        [string]$Recommendation = ""
     )
     
     Write-Host "  " -NoNewline
@@ -85,17 +144,25 @@ function Show-MenuOption {
     if ($Description) {
         Write-Host "      $Description" -ForegroundColor DarkGray
     }
+    if ($Recommendation) {
+        Write-Host "      " -NoNewline
+        Write-Host $Recommendation -ForegroundColor Green
+    }
 }
 
 function Get-UserChoice {
     param(
         [string]$Prompt,
         [string[]]$ValidChoices,
-        [string]$DefaultChoice = $ValidChoices[0]
+        [string]$DefaultChoice = $ValidChoices[0],
+        [string]$HelpText = ""
     )
     
     do {
         Write-Host ""
+        if ($HelpText) {
+            Write-Host "💡 $HelpText" -ForegroundColor Blue
+        }
         Write-Host "➤ " -ForegroundColor Green -NoNewline
         Write-Host $Prompt -ForegroundColor Yellow -NoNewline
         Write-Host " [Default: $DefaultChoice]: " -ForegroundColor DarkGray -NoNewline
@@ -109,84 +176,112 @@ function Get-UserChoice {
             return $choice
         } else {
             Write-Host "❌ Invalid choice. Please select from: $($ValidChoices -join ', ')" -ForegroundColor Red
+            Write-Host "   Just type the number and press Enter!" -ForegroundColor Gray
         }
     } while ($true)
 }
 
-function Fix-SystemPath {
-    Log "Checking and fixing essential system PATH entries..."
-    Show-Progress -Activity "System Check" -PercentComplete 25 -Status "Validating system PATH..."
-
-    $requiredPaths = @(
-        "C:\Windows\System32",
-        "C:\Windows",
-        "C:\Windows\System32\Wbem",
-        "C:\Windows\System32\WindowsPowerShell\v1.0\"
-    )
-
-    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
-    $currentPath = (Get-ItemProperty -Path $regPath -Name Path).Path
-    $pathArray = $currentPath -split ";"
-
-    $added = 0
-    foreach ($p in $requiredPaths) {
-        if (-not ($pathArray -contains $p)) {
-            $pathArray += $p
-            Log "Added missing path: $p"
-            $added++
-        } else {
-            Log "Path already present: $p"
-        }
-    }
-
-    if ($added -gt 0) {
-        $newPath = ($pathArray | Where-Object { $_ -ne "" }) -join ";"
-        Set-ItemProperty -Path $regPath -Name Path -Value $newPath
-        Log "System PATH updated successfully."
-        Write-Host "✅ System PATH updated with $added missing entries." -ForegroundColor Green
-    } else {
-        Log "No changes made to PATH."
-        Write-Host "✅ System PATH is properly configured." -ForegroundColor Green
-    }
-}
-
-function Check-Internet {
-    Show-Progress -Activity "System Check" -PercentComplete 50 -Status "Testing internet connectivity..."
-    Write-Host "🌐 Checking internet connection..." -ForegroundColor Blue
-    
-    Try {
-        $null = Invoke-WebRequest -Uri "https://www.microsoft.com" -UseBasicParsing -TimeoutSec 10
-        Log "Internet connection verified."
-        Write-Host "✅ Internet connection verified." -ForegroundColor Green
-    } Catch {
-        Log "Internet connection failed. Exiting script."
-        Write-Host "❌ No internet connection detected. Please connect and try again." -ForegroundColor Red
-        Pause
-        Exit 1
-    }
-}
-
-function Show-ConfigurationMenu {
+function Test-SystemRequirements {
     Show-Header
-    Write-Host "📋 OFFICE CONFIGURATION SETUP" -ForegroundColor Yellow
+    Write-Host "🔍 CHECKING SYSTEM REQUIREMENTS" -ForegroundColor Yellow
     Write-Host "═" * 50 -ForegroundColor DarkGray
     Write-Host ""
     
-    Log "Prompting user for configuration selections."
+    Log "Starting system requirements check..."
+    
+    # Check Windows version
+    Show-Progress -Activity "System Check" -PercentComplete 20 -Status "Checking Windows version..."
+    $osVersion = [System.Environment]::OSVersion.Version
+    Write-Host "🖥️  Windows Version: " -ForegroundColor Cyan -NoNewline
+    Write-Host "$($osVersion.Major).$($osVersion.Minor)" -ForegroundColor White
+    
+    if ($osVersion.Major -lt 10) {
+        Write-Host "⚠️  Warning: Windows 10 or later is recommended for best compatibility" -ForegroundColor Yellow
+    } else {
+        Write-Host "✅ Windows version is compatible" -ForegroundColor Green
+    }
+    
+    # Check available disk space
+    Show-Progress -Activity "System Check" -PercentComplete 40 -Status "Checking disk space..."
+    $systemDrive = Get-WmiObject -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq $env:SystemDrive }
+    $freeSpaceGB = [math]::Round($systemDrive.FreeSpace / 1GB, 2)
+    Write-Host "💾 Available Space: " -ForegroundColor Cyan -NoNewline
+    Write-Host "$freeSpaceGB GB" -ForegroundColor White
+    
+    if ($freeSpaceGB -lt 4) {
+        Write-Host "❌ Error: At least 4GB of free space is required" -ForegroundColor Red
+        Write-Host "   Please free up some disk space and try again" -ForegroundColor Yellow
+        Pause
+        Exit 1
+    } else {
+        Write-Host "✅ Sufficient disk space available" -ForegroundColor Green
+    }
+    
+    # Check RAM
+    Show-Progress -Activity "System Check" -PercentComplete 60 -Status "Checking system memory..."
+    $totalRAM = [math]::Round((Get-WmiObject -Class Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 2)
+    Write-Host "🧠 System RAM: " -ForegroundColor Cyan -NoNewline
+    Write-Host "$totalRAM GB" -ForegroundColor White
+    
+    if ($totalRAM -lt 2) {
+        Write-Host "⚠️  Warning: 4GB RAM or more is recommended for optimal performance" -ForegroundColor Yellow
+    } else {
+        Write-Host "✅ RAM meets requirements" -ForegroundColor Green
+    }
+    
+    # Check internet connection
+    Show-Progress -Activity "System Check" -PercentComplete 80 -Status "Testing internet connectivity..."
+    Write-Host "🌐 Internet Connection: " -ForegroundColor Cyan -NoNewline
+    
+    Try {
+        $null = Invoke-WebRequest -Uri "https://www.microsoft.com" -UseBasicParsing -TimeoutSec 10
+        Write-Host "Connected" -ForegroundColor Green
+        Log "Internet connection verified."
+    } Catch {
+        Write-Host "Failed" -ForegroundColor Red
+        Write-Host "❌ No internet connection detected!" -ForegroundColor Red
+        Write-Host "   Please check your internet connection and try again" -ForegroundColor Yellow
+        Log "Internet connection failed. Exiting script."
+        Pause
+        Exit 1
+    }
+    
+    Show-Progress -Activity "System Check" -PercentComplete 100 -Status "System check complete"
+    Write-Host ""
+    Write-Host "✅ All system requirements met!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Press any key to continue..." -ForegroundColor Yellow
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
 
-    # Architecture Selection
-    Write-Host "🏗️  SELECT ARCHITECTURE:" -ForegroundColor Magenta
-    Show-MenuOption "1" "64-bit (Recommended)" "Best performance for modern systems"
-    Show-MenuOption "2" "32-bit" "For older systems or specific compatibility needs"
-    $arch = Get-UserChoice "Choose architecture" @("1", "2") "1"
+function Show-BeginnerFriendlyMenu {
+    Show-Header
+    Write-Host "📋 OFFICE SETUP - MADE SIMPLE!" -ForegroundColor Yellow
+    Write-Host "═" * 50 -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "🎯 Don't worry - we'll guide you through each step!" -ForegroundColor Green
+    Write-Host "   Just pick the options that sound right for you." -ForegroundColor Gray
+    Write-Host ""
+    
+    Log "Starting user-friendly configuration setup."
+
+    # Simple architecture selection
+    Write-Host "🏗️  STEP 1: CHOOSE YOUR SYSTEM TYPE" -ForegroundColor Magenta
+    Write-Host "   (Don't know? Choose option 1 - it works for most computers)" -ForegroundColor Gray
+    Write-Host ""
+    Show-MenuOption "1" "64-bit (Recommended)" "For most modern computers (2010 and newer)" "White" "✨ Best choice for most users"
+    Show-MenuOption "2" "32-bit" "For older computers or specific compatibility needs"
+    $arch = Get-UserChoice "What type of computer do you have?" @("1", "2") "1" "If unsure, choose 1 - it works on most computers!"
     $bit = if ($arch -eq "2") { "32" } else { "64" }
 
     Write-Host ""
-    Write-Host "📦 SELECT OFFICE EDITION:" -ForegroundColor Magenta
-    Show-MenuOption "1" "Office 2024 Pro Plus" "Latest version with all features"
-    Show-MenuOption "2" "Office LTSC 2021" "Long-term support channel"
-    Show-MenuOption "3" "Microsoft 365 Apps" "Cloud-connected productivity suite"
-    $editionChoice = Get-UserChoice "Choose edition" @("1", "2", "3") "1"
+    Write-Host "📦 STEP 2: CHOOSE YOUR OFFICE VERSION" -ForegroundColor Magenta
+    Write-Host "   (Each version has the same core apps: Word, Excel, PowerPoint, Outlook)" -ForegroundColor Gray
+    Write-Host ""
+    Show-MenuOption "1" "Office 2024 Pro Plus" "Latest version with newest features" "White" "✨ Most popular choice"
+    Show-MenuOption "2" "Office LTSC 2021" "Stable version, less frequent updates"
+    Show-MenuOption "3" "Microsoft 365 Apps" "Cloud-connected with online features"
+    $editionChoice = Get-UserChoice "Which Office version would you like?" @("1", "2", "3") "1" "Option 1 gives you the latest features and is most commonly used"
     
     $editionMap = @{ 
         "1" = @{ID = "ProPlus2024Retail"; Name = "Office 2024 Pro Plus"}
@@ -196,32 +291,40 @@ function Show-ConfigurationMenu {
     $edition = $editionMap[$editionChoice]
 
     Write-Host ""
-    Write-Host "🎨 ADDITIONAL COMPONENTS:" -ForegroundColor Magenta
-    Show-MenuOption "1" "Include Visio" "Diagramming and vector graphics"
-    Show-MenuOption "2" "Skip Visio"
-    $visio = Get-UserChoice "Include Visio?" @("1", "2") "2"
-
-    Show-MenuOption "1" "Include Project" "Project management tools"
-    Show-MenuOption "2" "Skip Project"
-    $project = Get-UserChoice "Include Project?" @("1", "2") "2"
+    Write-Host "🎨 STEP 3: EXTRA PROGRAMS (OPTIONAL)" -ForegroundColor Magenta
+    Write-Host "   (These are bonus programs - you can skip them if you don't need them)" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "📊 Visio (for creating diagrams and flowcharts):" -ForegroundColor Cyan
+    Show-MenuOption "1" "Yes, include Visio" "Adds diagram and flowchart creation tools"
+    Show-MenuOption "2" "No, skip Visio" "Just install the main Office programs" "White" "✨ Most users choose this"
+    $visio = Get-UserChoice "Do you want Visio?" @("1", "2") "2" "Most people don't need Visio - it's for making diagrams"
 
     Write-Host ""
-    Write-Host "🔄 UPDATE CHANNEL:" -ForegroundColor Magenta
-    Show-MenuOption "1" "Monthly Channel" "Latest features and updates"
-    Show-MenuOption "2" "Semi-Annual Channel" "Stable, tested updates"
-    $channelChoice = Get-UserChoice "Choose update channel" @("1", "2") "1"
+    Write-Host "📋 Project (for project management):" -ForegroundColor Cyan
+    Show-MenuOption "1" "Yes, include Project" "Adds project management tools"
+    Show-MenuOption "2" "No, skip Project" "Just install the main Office programs" "White" "✨ Most users choose this"
+    $project = Get-UserChoice "Do you want Project?" @("1", "2") "2" "Most people don't need Project - it's for managing big projects"
+
+    Write-Host ""
+    Write-Host "🔄 STEP 4: HOW OFTEN TO UPDATE" -ForegroundColor Magenta
+    Write-Host "   (This controls how often Office gets new features)" -ForegroundColor Gray
+    Write-Host ""
+    Show-MenuOption "1" "Monthly updates" "Get new features as soon as they're ready" "White" "✨ Recommended for most users"
+    Show-MenuOption "2" "Less frequent updates" "Get updates after they've been tested more"
+    $channelChoice = Get-UserChoice "How often do you want updates?" @("1", "2") "1" "Monthly updates give you the latest features and security fixes"
     $channel = if ($channelChoice -eq "2") { "Broad" } else { "Current" }
 
     Write-Host ""
-    Write-Host "🌍 LANGUAGE SELECTION:" -ForegroundColor Magenta
-    Show-MenuOption "1" "English (United States)" "en-us"
+    Write-Host "🌍 STEP 5: CHOOSE YOUR LANGUAGE" -ForegroundColor Magenta
+    Write-Host ""
+    Show-MenuOption "1" "English (United States)" "en-us" "White" "✨ Most common choice"
     Show-MenuOption "2" "English (United Kingdom)" "en-gb"
     Show-MenuOption "3" "French (France)" "fr-fr"
     Show-MenuOption "4" "German (Germany)" "de-de"
     Show-MenuOption "5" "Dutch (Netherlands)" "nl-nl"
     Show-MenuOption "6" "Spanish (Spain)" "es-es"
     Show-MenuOption "7" "Portuguese (Brazil)" "pt-br"
-    $langChoice = Get-UserChoice "Choose language" @("1", "2", "3", "4", "5", "6", "7") "1"
+    $langChoice = Get-UserChoice "What language do you want?" @("1", "2", "3", "4", "5", "6", "7") "1" "Choose the language you're most comfortable with"
 
     $languageMap = @{
         "1" = @{Code = "en-us"; Name = "English (United States)"}
@@ -235,10 +338,12 @@ function Show-ConfigurationMenu {
     $language = $languageMap[$langChoice]
 
     Write-Host ""
-    Write-Host "🖥️  INSTALLATION INTERFACE:" -ForegroundColor Magenta
-    Show-MenuOption "1" "Show installation progress" "Display Office setup window"
-    Show-MenuOption "2" "Silent installation" "Install in background"
-    $uiChoice = Get-UserChoice "Display installation UI?" @("1", "2") "1"
+    Write-Host "🖥️  STEP 6: INSTALLATION STYLE" -ForegroundColor Magenta
+    Write-Host "   (This is just about what you see during installation)" -ForegroundColor Gray
+    Write-Host ""
+    Show-MenuOption "1" "Show me the installation progress" "You'll see what's happening during install" "White" "✨ Recommended - lets you see progress"
+    Show-MenuOption "2" "Install quietly in background" "Install without showing progress windows"
+    $uiChoice = Get-UserChoice "How do you want to install?" @("1", "2") "1" "Option 1 lets you see what's happening - it's more reassuring!"
     $uiLevel = if ($uiChoice -eq "1") { "Full" } else { "None" }
 
     return @{ 
@@ -254,35 +359,40 @@ function Show-ConfigurationMenu {
     }
 }
 
-function Show-ConfigurationSummary($options) {
+function Show-FriendlyConfigurationSummary($options) {
     Show-Header
-    Write-Host "📋 INSTALLATION SUMMARY" -ForegroundColor Yellow
+    Write-Host "📋 READY TO INSTALL!" -ForegroundColor Yellow
     Write-Host "═" * 50 -ForegroundColor DarkGray
     Write-Host ""
+    Write-Host "🎉 Great! Here's what we're going to install for you:" -ForegroundColor Green
+    Write-Host ""
     
-    Write-Host "Edition:      " -ForegroundColor Cyan -NoNewline
+    Write-Host "📦 Office Version:  " -ForegroundColor Cyan -NoNewline
     Write-Host $options.editionName -ForegroundColor White
     
-    Write-Host "Architecture: " -ForegroundColor Cyan -NoNewline
+    Write-Host "🏗️  System Type:     " -ForegroundColor Cyan -NoNewline
     Write-Host "$($options.bit)-bit" -ForegroundColor White
     
-    Write-Host "Language:     " -ForegroundColor Cyan -NoNewline
+    Write-Host "🌍 Language:        " -ForegroundColor Cyan -NoNewline
     Write-Host $options.languageName -ForegroundColor White
     
-    Write-Host "Channel:      " -ForegroundColor Cyan -NoNewline
-    Write-Host $options.channel -ForegroundColor White
+    Write-Host "🔄 Updates:         " -ForegroundColor Cyan -NoNewline
+    Write-Host $(if ($options.channel -eq "Current") { "Monthly (recommended)" } else { "Less frequent" }) -ForegroundColor White
     
-    Write-Host "Visio:        " -ForegroundColor Cyan -NoNewline
-    Write-Host $(if ($options.visio -eq "1") { "Yes" } else { "No" }) -ForegroundColor White
+    Write-Host "📊 Visio:           " -ForegroundColor Cyan -NoNewline
+    Write-Host $(if ($options.visio -eq "1") { "Yes, included" } else { "No, not included" }) -ForegroundColor White
     
-    Write-Host "Project:      " -ForegroundColor Cyan -NoNewline
-    Write-Host $(if ($options.project -eq "1") { "Yes" } else { "No" }) -ForegroundColor White
+    Write-Host "📋 Project:         " -ForegroundColor Cyan -NoNewline
+    Write-Host $(if ($options.project -eq "1") { "Yes, included" } else { "No, not included" }) -ForegroundColor White
     
-    Write-Host "UI Mode:      " -ForegroundColor Cyan -NoNewline
-    Write-Host $options.ui -ForegroundColor White
+    Write-Host "🖥️  Installation:    " -ForegroundColor Cyan -NoNewline
+    Write-Host $(if ($options.ui -eq "Full") { "Show progress" } else { "Quiet background" }) -ForegroundColor White
     
     Write-Host ""
-    Write-Host "Press any key to continue with installation..." -ForegroundColor Yellow
+    Write-Host "⏱️  Installation will take about 10-30 minutes depending on your internet speed." -ForegroundColor Blue
+    Write-Host "☕ Perfect time to grab a coffee!" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "✅ Everything look good? Press any key to start installing..." -ForegroundColor Green
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
@@ -291,60 +401,75 @@ function Download-ODT {
     $output = "$installerFolder\setup.exe"
 
     Show-Header
-    Write-Host "📥 DOWNLOADING OFFICE DEPLOYMENT TOOL" -ForegroundColor Yellow
+    Write-Host "📥 DOWNLOADING OFFICE INSTALLER" -ForegroundColor Yellow
     Write-Host "═" * 50 -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "🔗 Getting the official Microsoft Office installer..." -ForegroundColor Blue
+    Write-Host "   This is completely safe - we're downloading directly from Microsoft!" -ForegroundColor Gray
     Write-Host ""
     
     Log "Downloading Office Deployment Tool from $url..."
-    Write-Host "🔗 Source: " -ForegroundColor Cyan -NoNewline
-    Write-Host $url -ForegroundColor White
-    Write-Host "📁 Destination: " -ForegroundColor Cyan -NoNewline
-    Write-Host $output -ForegroundColor White
-    Write-Host ""
     
-    Show-Progress -Activity "Download" -PercentComplete 0 -Status "Starting download..."
+    Show-Progress -Activity "Download" -PercentComplete 0 -Status "Connecting to Microsoft servers..."
     
     try {
-        Invoke-WebRequest -Uri $url -OutFile $output -UseBasicParsing
-        Show-Progress -Activity "Download" -PercentComplete 100 -Status "Download complete"
+        # Create a WebClient for progress tracking
+        $webClient = New-Object System.Net.WebClient
+        
+        # Register progress event
+        Register-ObjectEvent -InputObject $webClient -EventName DownloadProgressChanged -Action {
+            $percent = $Event.SourceEventArgs.ProgressPercentage
+            Show-Progress -Activity "Download" -PercentComplete $percent -Status "Downloading Office installer... $percent%"
+        } | Out-Null
+        
+        # Download the file
+        $webClient.DownloadFile($url, $output)
+        $webClient.Dispose()
+        
+        Show-Progress -Activity "Download" -PercentComplete 100 -Status "Download complete!"
+        
     } catch {
         Log "Download failed: $_"
-        Write-Host "❌ Download failed: $_" -ForegroundColor Red
+        Write-Host "❌ Download failed!" -ForegroundColor Red
+        Write-Host "   Error: $_" -ForegroundColor Yellow
+        Write-Host "   Please check your internet connection and try again." -ForegroundColor Gray
         Pause
         Exit 1
     }
 
     if (-Not (Test-Path $output) -or ((Get-Item $output).Length -lt 100000)) {
         Log "Downloaded file appears to be corrupted or incomplete."
-        Write-Host "❌ Downloaded file is corrupted or incomplete. Please try again." -ForegroundColor Red
+        Write-Host "❌ Download seems incomplete. Please try again." -ForegroundColor Red
         Pause
         Exit 1
     }
 
     Log "Office Deployment Tool downloaded successfully."
-    Write-Host "✅ Office Deployment Tool downloaded successfully!" -ForegroundColor Green
+    Write-Host "✅ Download completed successfully!" -ForegroundColor Green
     Start-Sleep -Seconds 2
 }
 
 function Generate-Config($options) {
     Show-Header
-    Write-Host "⚙️  GENERATING CONFIGURATION" -ForegroundColor Yellow
+    Write-Host "⚙️  PREPARING INSTALLATION" -ForegroundColor Yellow
     Write-Host "═" * 50 -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "📝 Creating your personalized Office configuration..." -ForegroundColor Blue
     Write-Host ""
     
     Log "Generating config.xml with selected options..."
-    Show-Progress -Activity "Configuration" -PercentComplete 50 -Status "Creating XML configuration..."
+    Show-Progress -Activity "Configuration" -PercentComplete 50 -Status "Creating installation configuration..."
 
     $products = @()
     $products += "<Product ID='" + $options.edition + "'>`n  <Language ID='" + $options.language + "' />`n</Product>"
 
     if ($options.visio -eq "1") {
         $products += "<Product ID='VisioPro2021Volume'>`n  <Language ID='" + $options.language + "' />`n</Product>"
-        Write-Host "📊 Adding Visio Professional..." -ForegroundColor Green
+        Write-Host "📊 Adding Visio Professional to your installation..." -ForegroundColor Green
     }
     if ($options.project -eq "1") {
         $products += "<Product ID='ProjectPro2021Volume'>`n  <Language ID='" + $options.language + "' />`n</Product>"
-        Write-Host "📋 Adding Project Professional..." -ForegroundColor Green
+        Write-Host "📋 Adding Project Professional to your installation..." -ForegroundColor Green
     }
 
     $xmlContent = @"
@@ -353,6 +478,7 @@ function Generate-Config($options) {
     $($products -join "`n    ")
   </Add>
   <Display Level="${($options.ui)}" AcceptEULA="TRUE" />
+  <Property Name="AUTOACTIVATE" Value="1" />
 </Configuration>
 "@
 
@@ -360,8 +486,8 @@ function Generate-Config($options) {
     $xmlContent | Out-File -FilePath $configPath -Encoding UTF8
     Log "config.xml generated at $configPath"
     
-    Show-Progress -Activity "Configuration" -PercentComplete 100 -Status "Configuration complete"
-    Write-Host "✅ Configuration file created successfully!" -ForegroundColor Green
+    Show-Progress -Activity "Configuration" -PercentComplete 100 -Status "Configuration ready!"
+    Write-Host "✅ Configuration created successfully!" -ForegroundColor Green
     Start-Sleep -Seconds 2
 }
 
@@ -376,70 +502,128 @@ function Install-Office {
 
     if (-Not (Test-Path $setupExe)) {
         Log "ERROR: setup.exe not found."
-        Write-Host "❌ Error: setup.exe not found in $installerFolder." -ForegroundColor Red
+        Write-Host "❌ Installation file missing!" -ForegroundColor Red
+        Write-Host "   Something went wrong with the download. Please restart the script." -ForegroundColor Yellow
         Pause
         Exit 1
     }
 
-    Write-Host "🔧 Starting Office installation process..." -ForegroundColor Blue
-    Write-Host "⏳ This may take several minutes depending on your internet speed..." -ForegroundColor Yellow
+    Write-Host "🎯 Starting your Office installation now!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "📝 Note: Do not close this window during installation!" -ForegroundColor Red
+    Write-Host "⏳ This will take 10-30 minutes depending on:" -ForegroundColor Blue
+    Write-Host "   • Your internet speed (Office downloads during installation)" -ForegroundColor Gray
+    Write-Host "   • Your computer's performance" -ForegroundColor Gray
+    Write-Host "   • Which components you selected" -ForegroundColor Gray
     Write-Host ""
+    Write-Host "☕ Perfect time for a coffee break!" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "⚠️  IMPORTANT: Don't close this window or turn off your computer!" -ForegroundColor Red
+    Write-Host "   Doing so could corrupt the installation." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "🔄 Starting installation in 3 seconds..." -ForegroundColor Green
+    Start-Sleep -Seconds 3
 
     Show-Progress -Activity "Installation" -PercentComplete 0 -Status "Launching Office installer..."
     
     try {
-        Start-Process -FilePath $setupExe -ArgumentList "/configure config.xml" -Wait
-        Log "Office installation process finished."
-        Write-Host "✅ Office installation completed successfully!" -ForegroundColor Green
+        Log "Executing: $setupExe /configure config.xml"
+        $process = Start-Process -FilePath $setupExe -ArgumentList "/configure config.xml" -PassThru -NoNewWindow
+        
+        # Monitor the installation process
+        $counter = 0
+        while (-not $process.HasExited) {
+            $counter++
+            $percent = [Math]::Min(90, $counter * 2)  # Cap at 90% until we know it's done
+            Show-Progress -Activity "Installation" -PercentComplete $percent -Status "Installing Office... Please wait..."
+            Start-Sleep -Seconds 5
+        }
+        
+        $process.WaitForExit()
+        $exitCode = $process.ExitCode
+        
+        if ($exitCode -eq 0) {
+            Show-Progress -Activity "Installation" -PercentComplete 100 -Status "Installation completed successfully!"
+            Log "Office installation completed successfully with exit code: $exitCode"
+            Write-Host "✅ Office installation completed successfully!" -ForegroundColor Green
+        } else {
+            Log "Office installation failed with exit code: $exitCode"
+            Write-Host "⚠️  Installation completed with warnings (Exit code: $exitCode)" -ForegroundColor Yellow
+            Write-Host "   Office should still work normally. Check the programs in your Start Menu." -ForegroundColor Gray
+        }
+        
     } catch {
         Log "Installation failed: $_"
-        Write-Host "❌ Installation failed: $_" -ForegroundColor Red
+        Write-Host "❌ Installation encountered an error!" -ForegroundColor Red
+        Write-Host "   Error: $_" -ForegroundColor Yellow
+        Write-Host "   You can try running the script again, or contact support." -ForegroundColor Gray
         Pause
         Exit 1
     }
 }
 
-function Show-CompletionSummary($options) {
+function Show-FriendlyCompletionSummary($options) {
     Show-Header
-    Write-Host "🎉 INSTALLATION COMPLETE!" -ForegroundColor Green
+    Write-Host "🎉 CONGRATULATIONS! OFFICE IS INSTALLED!" -ForegroundColor Green
     Write-Host "═" * 50 -ForegroundColor DarkGray
     Write-Host ""
     
-    Write-Host "📦 Installed Configuration:" -ForegroundColor Cyan
-    Write-Host "  • Edition: " -ForegroundColor White -NoNewline
+    Write-Host "✅ Your Microsoft Office installation is complete!" -ForegroundColor Green
+    Write-Host ""
+    
+    Write-Host "📦 What was installed:" -ForegroundColor Cyan
+    Write-Host "   • " -NoNewline -ForegroundColor White
     Write-Host $options.editionName -ForegroundColor Yellow
-    Write-Host "  • Architecture: " -ForegroundColor White -NoNewline
-    Write-Host "$($options.bit)-bit" -ForegroundColor Yellow
-    Write-Host "  • Language: " -ForegroundColor White -NoNewline
+    Write-Host "   • Word, Excel, PowerPoint, Outlook, and more!" -ForegroundColor White
+    if ($options.visio -eq "1") {
+        Write-Host "   • Visio Professional (for diagrams)" -ForegroundColor White
+    }
+    if ($options.project -eq "1") {
+        Write-Host "   • Project Professional (for project management)" -ForegroundColor White
+    }
+    Write-Host "   • Language: " -NoNewline -ForegroundColor White
     Write-Host $options.languageName -ForegroundColor Yellow
-    Write-Host "  • Update Channel: " -ForegroundColor White -NoNewline
-    Write-Host $options.channel -ForegroundColor Yellow
-    Write-Host "  • Visio: " -ForegroundColor White -NoNewline
-    Write-Host $(if ($options.visio -eq "1") { "Included" } else { "Not included" }) -ForegroundColor Yellow
-    Write-Host "  • Project: " -ForegroundColor White -NoNewline
-    Write-Host $(if ($options.project -eq "1") { "Included" } else { "Not included" }) -ForegroundColor Yellow
-    Write-Host "  • UI Level: " -ForegroundColor White -NoNewline
-    Write-Host $options.ui -ForegroundColor Yellow
+    Write-Host "   • Architecture: " -NoNewline -ForegroundColor White
+    Write-Host "$($options.bit)-bit" -ForegroundColor Yellow
     
     Write-Host ""
-    Write-Host "📁 Installation Files:" -ForegroundColor Cyan
-    Write-Host "  • Installer folder: " -ForegroundColor White -NoNewline
+    Write-Host "🚀 How to start using Office:" -ForegroundColor Cyan
+    Write-Host "   1. Click the Windows Start button" -ForegroundColor White
+    Write-Host "   2. Look for 'Word', 'Excel', 'PowerPoint', etc." -ForegroundColor White
+    Write-Host "   3. Click on any Office app to start using it!" -ForegroundColor White
+    
+    Write-Host ""
+    Write-Host "🔐 First time setup:" -ForegroundColor Cyan
+    Write-Host "   • Office may ask you to sign in with a Microsoft account" -ForegroundColor White
+    Write-Host "   • This is normal and helps sync your settings" -ForegroundColor White
+    Write-Host "   • You can skip this if you prefer to use Office offline" -ForegroundColor White
+    
+    Write-Host ""
+    Write-Host "🔄 Keeping Office updated:" -ForegroundColor Cyan
+    Write-Host "   • Office will automatically check for updates" -ForegroundColor White
+    Write-Host "   • You chose: " -NoNewline -ForegroundColor White
+    Write-Host $(if ($options.channel -eq "Current") { "Monthly updates (recommended)" } else { "Less frequent updates" }) -ForegroundColor Yellow
+    
+    Write-Host ""
+    Write-Host "📁 Installation files:" -ForegroundColor Cyan
+    Write-Host "   • Saved in: " -NoNewline -ForegroundColor White
     Write-Host $installerFolder -ForegroundColor Yellow
-    Write-Host "  • Installation log: " -ForegroundColor White -NoNewline
+    Write-Host "   • You can safely delete this folder after confirming Office works" -ForegroundColor White
+    Write-Host "   • Installation log: " -NoNewline -ForegroundColor White
     Write-Host $logFile -ForegroundColor Yellow
     
     Write-Host ""
-    Write-Host "🔍 Next Steps:" -ForegroundColor Cyan
-    Write-Host "  • Look for Office applications in your Start Menu" -ForegroundColor White
-    Write-Host "  • First launch may require Microsoft account sign-in" -ForegroundColor White
-    Write-Host "  • Check Windows Updates for the latest Office patches" -ForegroundColor White
+    Write-Host "❓ Need help?" -ForegroundColor Cyan
+    Write-Host "   • Office has built-in help - just press F1 in any Office app" -ForegroundColor White
+    Write-Host "   • Visit support.microsoft.com for online help" -ForegroundColor White
+    Write-Host "   • Check Windows Updates for the latest Office patches" -ForegroundColor White
     
     Write-Host ""
-    Write-Host "⚠️  Important: This installer uses Microsoft's official deployment tools." -ForegroundColor Yellow
-    Write-Host "    Ensure you have proper licensing for the installed Office edition." -ForegroundColor Yellow
+    Write-Host "⚖️  Important reminder:" -ForegroundColor Yellow
+    Write-Host "   This installer uses Microsoft's official tools and doesn't modify licensing." -ForegroundColor Gray
+    Write-Host "   Make sure you have proper licensing for your Office installation." -ForegroundColor Gray
     
+    Write-Host ""
+    Write-Host "🎊 Enjoy your new Microsoft Office installation!" -ForegroundColor Green
     Write-Host ""
     Write-Host "Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -448,36 +632,51 @@ function Show-CompletionSummary($options) {
 # ==== Main Execution Flow ====
 
 try {
-    Log "=== Enhanced Office Installer Started ==="
+    Log "=== Enhanced Office Installer Started (Windows Enhanced Version) ==="
     
-    Show-Header
-    Write-Host "🔧 SYSTEM PREPARATION" -ForegroundColor Yellow
-    Write-Host "═" * 50 -ForegroundColor DarkGray
-    Write-Host ""
+    # Show welcome screen and handle admin elevation
+    Show-WelcomeScreen
     
-    Fix-SystemPath
-    Check-Internet
+    # Run system requirements check
+    Test-SystemRequirements
     
-    Write-Host ""
-    Write-Host "✅ System checks completed successfully!" -ForegroundColor Green
-    Write-Host "Press any key to continue to configuration..." -ForegroundColor Yellow
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    # Get user configuration with beginner-friendly interface
+    $options = Show-BeginnerFriendlyMenu
     
-    $options = Show-ConfigurationMenu
-    Show-ConfigurationSummary -options $options
+    # Show friendly summary
+    Show-FriendlyConfigurationSummary -options $options
+    
+    # Download, configure, and install
     Download-ODT
     Generate-Config -options $options
     Install-Office
-    Show-CompletionSummary -options $options
+    
+    # Show completion summary
+    Show-FriendlyCompletionSummary -options $options
     
     Log "=== Enhanced Office Installer Completed Successfully ==="
     
 } catch {
     Log "FATAL ERROR: $_"
     Write-Host ""
-    Write-Host "❌ FATAL ERROR OCCURRED" -ForegroundColor Red
-    Write-Host "Error: $_" -ForegroundColor Yellow
-    Write-Host "Check the log file for details: $logFile" -ForegroundColor Gray
-    Pause
+    Write-Host "❌ SOMETHING WENT WRONG!" -ForegroundColor Red
+    Write-Host "═" * 30 -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "Don't worry - this happens sometimes. Here's what you can try:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "🔧 Quick fixes:" -ForegroundColor Cyan
+    Write-Host "   1. Make sure you're connected to the internet" -ForegroundColor White
+    Write-Host "   2. Try running the script again" -ForegroundColor White
+    Write-Host "   3. Restart your computer and try again" -ForegroundColor White
+    Write-Host "   4. Temporarily disable antivirus and try again" -ForegroundColor White
+    Write-Host ""
+    Write-Host "📋 Error details:" -ForegroundColor Cyan
+    Write-Host "   $($_)" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "📁 Check the log file for more details:" -ForegroundColor Cyan
+    Write-Host "   $logFile" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Press any key to exit..." -ForegroundColor Gray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     Exit 1
 }
