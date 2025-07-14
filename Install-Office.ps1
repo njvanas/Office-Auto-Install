@@ -1,29 +1,84 @@
-# Office Auto Installer - Enhanced UI Version
+# Office Auto Installer - Enhanced UI Version with Robust Pause Protection
 # Downloads and installs Microsoft Office through official channels
 # No licensing modifications - uses Microsoft's official deployment tools
+
+# ==== IMMEDIATE HARD PAUSE PROTECTION ====
+# This MUST be the very first thing that runs - before ANY other code
+# Set error handling to catch ALL errors immediately
+$ErrorActionPreference = "Stop"
+
+# Global trap for ANY terminating error - this catches errors before our other protection loads
+trap {
+    Write-Host ""
+    Write-Host "❌ An unexpected error occurred: $_" -ForegroundColor Red
+    Write-Host "This happened before the main script could load properly." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Press Enter to exit..." -ForegroundColor Yellow
+    try {
+        Read-Host
+    } catch {
+        Start-Sleep -Seconds 5
+    }
+    exit 1
+}
+
+# Immediate window title and pause setup
+try {
+    $Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer - Loading..."
+} catch {
+    # If we can't set window title, continue anyway
+}
 
 # ==== UNIVERSAL PAUSE PROTECTION ====
 # This ensures the window NEVER closes automatically, regardless of how it's run
 param()
 
-# Set window title immediately
-$Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer - Loading..."
-
 # Create a global flag to track if we should pause
 $global:ShouldPauseOnExit = $true
+
+# Hard fallback pause function that tries multiple methods
+function global:Hard-Pause {
+    param([string]$Message = "Press any key to close this window...")
+    
+    Write-Host ""
+    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+    Write-Host $Message -ForegroundColor Yellow -BackgroundColor DarkBlue
+    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+    
+    # Try method 1: ReadKey (works in most PowerShell consoles)
+    try {
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        return
+    } catch {
+        # Method 1 failed, try method 2
+    }
+    
+    # Try method 2: Read-Host (more compatible)
+    try {
+        Read-Host "Press Enter to continue"
+        return
+    } catch {
+        # Method 2 failed, try method 3
+    }
+    
+    # Try method 3: Simple pause command (Windows fallback)
+    try {
+        cmd /c pause
+        return
+    } catch {
+        # Method 3 failed, try method 4
+    }
+    
+    # Method 4: Just wait (last resort)
+    Write-Host "Waiting 10 seconds before closing..." -ForegroundColor Gray
+    Start-Sleep -Seconds 10
+}
 
 # Override the exit function globally to always pause
 function global:Exit-WithPause {
     param([int]$ExitCode = 0)
-    Write-Host ""
-    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
-    Write-Host "Press any key to close this window..." -ForegroundColor Yellow -BackgroundColor DarkBlue
-    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
-    try {
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    } catch {
-        # Fallback if ReadKey fails
-        Read-Host "Press Enter to continue"
+    if ($global:ShouldPauseOnExit) {
+        Hard-Pause -Message "Script finished. Press any key to close this window..."
     }
     [Environment]::Exit($ExitCode)
 }
@@ -34,19 +89,15 @@ function global:Exit {
     Exit-WithPause -ExitCode $ExitCode 
 }
 
-# Also handle script termination
-$null = Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
-    if ($global:ShouldPauseOnExit) {
-        Write-Host ""
-        Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
-        Write-Host "Script is closing - Press any key to close this window..." -ForegroundColor Yellow -BackgroundColor DarkBlue
-        Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
-        try {
-            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-        } catch {
-            Start-Sleep -Seconds 3
+# Also handle script termination events
+try {
+    $null = Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
+        if ($global:ShouldPauseOnExit) {
+            Hard-Pause -Message "PowerShell is closing - Press any key to close this window..."
         }
     }
+} catch {
+    # If event registration fails, continue anyway
 }
 
 # ==== EXECUTION POLICY FIX ====
@@ -71,7 +122,11 @@ try {
 }
 
 # Update window title
-$Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer - Ready"
+try {
+    $Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer - Ready"
+} catch {
+    # Continue if window title can't be set
+}
 
 # Welcome message and admin check
 function Show-WelcomeScreen {
@@ -80,7 +135,7 @@ function Show-WelcomeScreen {
     $border = "═" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Easy Office Installation for Everyone"
-    $version = "v3.2 - Universal Pause Protection"
+    $version = "v3.3 - Robust Pause Protection"
     
     Write-Host "╔$border╗" -ForegroundColor Cyan
     Write-Host "║" -ForegroundColor Cyan -NoNewline
@@ -126,8 +181,7 @@ function Show-WelcomeScreen {
         Write-Host "✅ This is completely safe and standard for software installation!" -ForegroundColor Green
         Write-Host ""
         
-        Write-Host "Press any key to request administrator privileges..." -ForegroundColor Yellow
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        Hard-Pause -Message "Press any key to request administrator privileges..."
         
         try {
             Write-Host "🔄 Requesting administrator privileges..." -ForegroundColor Blue
@@ -180,8 +234,7 @@ function Show-WelcomeScreen {
     } else {
         Write-Host "✅ Running with administrator privileges - Ready to install!" -ForegroundColor Green
         Write-Host ""
-        Write-Host "Press any key to continue..." -ForegroundColor Yellow
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        Hard-Pause -Message "Press any key to continue..."
     }
 }
 
@@ -211,7 +264,7 @@ function Show-Header {
     $border = "═" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Official Microsoft Office Deployment Tool Interface"
-    $version = "v3.2 - Universal Pause Protection"
+    $version = "v3.3 - Robust Pause Protection"
     
     Write-Host "╔$border╗" -ForegroundColor Cyan
     Write-Host "║" -ForegroundColor Cyan -NoNewline
@@ -319,7 +372,7 @@ function Test-SystemRequirements {
     if ($freeSpaceGB -lt 4) {
         Write-Host "❌ Error: At least 4GB of free space is required" -ForegroundColor Red
         Write-Host "   Please free up some disk space and try again" -ForegroundColor Yellow
-        Read-Host "Press Enter to exit"
+        Hard-Pause -Message "Press any key to exit..."
         Exit 1
     } else {
         Write-Host "✅ Sufficient disk space available" -ForegroundColor Green
@@ -350,7 +403,7 @@ function Test-SystemRequirements {
         Write-Host "❌ No internet connection detected!" -ForegroundColor Red
         Write-Host "   Please check your internet connection and try again" -ForegroundColor Yellow
         Log "Internet connection failed. Exiting script."
-        Read-Host "Press Enter to exit"
+        Hard-Pause -Message "Press any key to exit..."
         Exit 1
     }
     
@@ -358,8 +411,7 @@ function Test-SystemRequirements {
     Write-Host ""
     Write-Host "✅ All system requirements met!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Press any key to continue..." -ForegroundColor Yellow
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    Hard-Pause -Message "Press any key to continue..."
 }
 
 function Show-BeginnerFriendlyMenu {
@@ -500,8 +552,7 @@ function Show-FriendlyConfigurationSummary($options) {
     Write-Host "⏱️  Installation will take about 10-30 minutes depending on your internet speed." -ForegroundColor Blue
     Write-Host "☕ Perfect time to grab a coffee!" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "✅ Everything look good? Press any key to start installing..." -ForegroundColor Green
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    Hard-Pause -Message "Everything look good? Press any key to start installing..."
 }
 
 function Download-ODT {
@@ -541,14 +592,14 @@ function Download-ODT {
         Write-Host "❌ Download failed!" -ForegroundColor Red
         Write-Host "   Error: $_" -ForegroundColor Yellow
         Write-Host "   Please check your internet connection and try again." -ForegroundColor Gray
-        Read-Host "Press Enter to exit"
+        Hard-Pause -Message "Press any key to exit..."
         Exit 1
     }
 
     if (-Not (Test-Path $output) -or ((Get-Item $output).Length -lt 100000)) {
         Log "Downloaded file appears to be corrupted or incomplete."
         Write-Host "❌ Download seems incomplete. Please try again." -ForegroundColor Red
-        Read-Host "Press Enter to exit"
+        Hard-Pause -Message "Press any key to exit..."
         Exit 1
     }
 
@@ -612,7 +663,7 @@ function Install-Office {
         Log "ERROR: setup.exe not found."
         Write-Host "❌ Installation file missing!" -ForegroundColor Red
         Write-Host "   Something went wrong with the download. Please restart the script." -ForegroundColor Yellow
-        Read-Host "Press Enter to exit"
+        Hard-Pause -Message "Press any key to exit..."
         Exit 1
     }
 
@@ -664,7 +715,7 @@ function Install-Office {
         Write-Host "❌ Installation encountered an error!" -ForegroundColor Red
         Write-Host "   Error: $_" -ForegroundColor Yellow
         Write-Host "   You can try running the script again, or contact support." -ForegroundColor Gray
-        Read-Host "Press Enter to exit"
+        Hard-Pause -Message "Press any key to exit..."
         Exit 1
     }
 }
@@ -733,18 +784,12 @@ function Show-FriendlyCompletionSummary($options) {
     Write-Host ""
     Write-Host "🎊 Enjoy your new Microsoft Office installation!" -ForegroundColor Green
     Write-Host ""
-    
-    # Final pause message
-    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
-    Write-Host "Installation complete! Press any key to close this window..." -ForegroundColor Yellow -BackgroundColor DarkBlue
-    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
 # ==== Main Execution Flow ====
 
 try {
-    Log "=== Enhanced Office Installer Started (Universal Pause Protection Version) ==="
+    Log "=== Enhanced Office Installer Started (Robust Pause Protection Version) ==="
     
     # Show welcome screen and handle admin elevation
     Show-WelcomeScreen
@@ -793,6 +838,16 @@ try {
     Write-Host "   and pasting it into an Administrator PowerShell window" -ForegroundColor White
     Write-Host ""
     Exit 1
+}
+
+# ==== FINAL HARD PAUSE ====
+# This runs at the very end to ensure the window never auto-closes
+Write-Host ""
+Write-Host "Script finished. Press any key to exit..." -ForegroundColor Yellow
+try {
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+} catch {
+    Read-Host "Press Enter to continue"
 }
 
 # Disable the pause flag at the very end for clean exit
