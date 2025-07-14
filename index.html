@@ -17,22 +17,30 @@
         }
 
         :root {
-            --primary-color: #2173dc;
-            --primary-dark: #1a5bb8;
-            --secondary-color: #f8fafc;
-            --accent-color: #10b981;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --border-color: #e5e7eb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            /* Dark theme colors matching njvanas.github.io */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --text-muted: #656d76;
+            --accent-primary: #58a6ff;
+            --accent-secondary: #1f6feb;
+            --accent-success: #3fb950;
+            --accent-warning: #d29922;
+            --border-primary: #30363d;
+            --border-secondary: #21262d;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.6);
+            --gradient-primary: linear-gradient(135deg, #1f6feb 0%, #58a6ff 100%);
+            --gradient-bg: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
             line-height: 1.6;
             color: var(--text-primary);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-bg);
             min-height: 100vh;
         }
 
@@ -44,9 +52,9 @@
 
         /* Header */
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-color);
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-primary);
             padding: 1rem 0;
             position: sticky;
             top: 0;
@@ -65,20 +73,26 @@
             gap: 12px;
             font-size: 1.5rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--accent-primary);
             text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .logo:hover {
+            color: var(--text-primary);
         }
 
         .logo-icon {
             width: 32px;
             height: 32px;
-            background: var(--primary-color);
-            border-radius: 6px;
+            background: var(--gradient-primary);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
+            font-size: 1.1rem;
         }
 
         .nav-links {
@@ -91,31 +105,34 @@
             color: var(--text-secondary);
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.2s;
+            transition: color 0.2s ease;
+            padding: 0.5rem 0;
         }
 
         .nav-links a:hover {
-            color: var(--primary-color);
+            color: var(--accent-primary);
         }
 
         /* Hero Section */
         .hero {
             padding: 4rem 0;
             text-align: center;
-            color: white;
         }
 
         .hero h1 {
             font-size: 3.5rem;
             font-weight: 800;
             margin-bottom: 1rem;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--text-primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .hero p {
             font-size: 1.25rem;
             margin-bottom: 2rem;
-            opacity: 0.9;
+            color: var(--text-secondary);
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
@@ -123,21 +140,23 @@
 
         .version-badge {
             display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
             padding: 0.5rem 1rem;
             border-radius: 50px;
             font-size: 0.9rem;
             margin-bottom: 2rem;
-            backdrop-filter: blur(10px);
+            color: var(--accent-success);
+            font-weight: 600;
         }
 
         /* Download Section */
         .download-section {
-            background: white;
-            margin: -2rem 0 0 0;
-            border-radius: 20px 20px 0 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
             padding: 3rem 0;
-            position: relative;
+            margin: 2rem 0;
         }
 
         .section-title {
@@ -167,9 +186,9 @@
         }
 
         .download-card {
-            background: white;
-            border: 2px solid var(--border-color);
-            border-radius: 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
             padding: 2rem;
             text-align: center;
             transition: all 0.3s ease;
@@ -178,22 +197,22 @@
         }
 
         .download-card:hover {
-            border-color: var(--primary-color);
+            border-color: var(--accent-primary);
             box-shadow: var(--shadow-lg);
             transform: translateY(-4px);
         }
 
         .download-card.recommended {
-            border-color: var(--accent-color);
-            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            border-color: var(--accent-success);
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(63, 185, 80, 0.1) 100%);
         }
 
         .recommended-badge {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: var(--accent-color);
-            color: white;
+            background: var(--accent-success);
+            color: var(--bg-primary);
             padding: 0.25rem 0.75rem;
             border-radius: 50px;
             font-size: 0.8rem;
@@ -204,7 +223,7 @@
             width: 64px;
             height: 64px;
             margin: 0 auto 1rem;
-            background: var(--primary-color);
+            background: var(--gradient-primary);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -214,7 +233,7 @@
         }
 
         .download-card.recommended .download-icon {
-            background: var(--accent-color);
+            background: linear-gradient(135deg, var(--accent-success) 0%, #56d364 100%);
         }
 
         .download-card h3 {
@@ -234,35 +253,35 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            background: var(--primary-color);
+            background: var(--gradient-primary);
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             border: none;
             cursor: pointer;
             font-size: 1rem;
         }
 
         .download-btn:hover {
-            background: var(--primary-dark);
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.4);
         }
 
         .download-card.recommended .download-btn {
-            background: var(--accent-color);
+            background: linear-gradient(135deg, var(--accent-success) 0%, #56d364 100%);
         }
 
         .download-card.recommended .download-btn:hover {
-            background: #059669;
+            box-shadow: 0 4px 12px rgba(63, 185, 80, 0.4);
         }
 
         .file-list {
             margin-top: 1rem;
             padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-primary);
         }
 
         .file-item {
@@ -271,13 +290,15 @@
             gap: 0.5rem;
             margin-bottom: 0.5rem;
             font-size: 0.9rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
         }
 
         /* Instructions Section */
         .instructions {
-            background: var(--secondary-color);
+            background: var(--bg-primary);
             padding: 3rem 0;
+            border-radius: 16px;
+            margin: 2rem 0;
         }
 
         .instructions-grid {
@@ -287,16 +308,22 @@
         }
 
         .instruction-card {
-            background: white;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             padding: 2rem;
             border-radius: 12px;
-            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .instruction-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
         }
 
         .instruction-number {
             width: 40px;
             height: 40px;
-            background: var(--primary-color);
+            background: var(--gradient-primary);
             color: white;
             border-radius: 50%;
             display: flex;
@@ -310,11 +337,19 @@
             font-size: 1.25rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .instruction-card p {
+            color: var(--text-secondary);
         }
 
         /* Features Section */
         .features {
             padding: 3rem 0;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            margin: 2rem 0;
         }
 
         .features-grid {
@@ -326,12 +361,21 @@
         .feature-item {
             text-align: center;
             padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
         }
 
         .feature-icon {
             width: 48px;
             height: 48px;
-            background: var(--primary-color);
+            background: var(--gradient-primary);
             color: white;
             border-radius: 8px;
             display: flex;
@@ -345,6 +389,7 @@
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
+            color: var(--text-primary);
         }
 
         .feature-item p {
@@ -354,19 +399,32 @@
 
         /* Footer */
         .footer {
-            background: var(--text-primary);
-            color: white;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-primary);
+            color: var(--text-secondary);
             padding: 2rem 0;
             text-align: center;
+            margin-top: 2rem;
         }
 
         .footer a {
-            color: var(--primary-color);
+            color: var(--accent-primary);
             text-decoration: none;
         }
 
         .footer a:hover {
             text-decoration: underline;
+        }
+
+        /* Code styling */
+        code {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9em;
+            color: var(--accent-primary);
         }
 
         /* Responsive */
@@ -411,6 +469,24 @@
         .download-card:nth-child(3) {
             animation-delay: 0.2s;
         }
+
+        /* Scrollbar styling for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
     </style>
 </head>
 <body>
@@ -425,7 +501,7 @@
                 <li><a href="#download">Download</a></li>
                 <li><a href="#instructions">Instructions</a></li>
                 <li><a href="#features">Features</a></li>
-                <li><a href="https://github.com/njvanas/office-auto-installer">GitHub</a></li>
+                <li><a href="https://github.com/njvanas/Office-Auto-Install">GitHub</a></li>
             </ul>
         </nav>
     </header>
@@ -471,11 +547,11 @@
                     <h3>Individual Files</h3>
                     <p>Download each file separately. Make sure to save both files in the same folder!</p>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <a href="https://raw.githubusercontent.com/njvanas/office-auto-installer/main/Install-Office-SAFE.bat" 
+                        <a href="https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-SAFE.bat" 
                            class="download-btn" download="Install-Office-SAFE.bat">
                             📥 Download Launcher (.bat)
                         </a>
-                        <a href="https://raw.githubusercontent.com/njvanas/office-auto-installer/main/Install-Office.ps1" 
+                        <a href="https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office.ps1" 
                            class="download-btn" download="Install-Office.ps1">
                             📥 Download Script (.ps1)
                         </a>
@@ -487,7 +563,7 @@
                     <div class="download-icon">🚀</div>
                     <h3>GitHub Release</h3>
                     <p>Get the official release from GitHub with changelog and version history.</p>
-                    <a href="https://github.com/njvanas/office-auto-installer/releases/latest" 
+                    <a href="https://github.com/njvanas/Office-Auto-Install/releases/latest" 
                        class="download-btn" target="_blank">
                         🔗 View on GitHub
                     </a>
@@ -598,7 +674,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 Office Auto Installer. Licensed under <a href="https://github.com/njvanas/office-auto-installer/blob/main/LICENSE">MIT License</a>.</p>
+            <p>&copy; 2025 Office Auto Installer. Licensed under <a href="https://github.com/njvanas/Office-Auto-Install/blob/main/LICENSE">MIT License</a>.</p>
             <p>This tool uses official Microsoft deployment tools. You are responsible for proper Office licensing.</p>
         </div>
     </footer>
@@ -615,8 +691,8 @@
 
                 // Fetch both files
                 const [batResponse, ps1Response] = await Promise.all([
-                    fetch('https://raw.githubusercontent.com/njvanas/office-auto-installer/main/Install-Office-SAFE.bat'),
-                    fetch('https://raw.githubusercontent.com/njvanas/office-auto-installer/main/Install-Office.ps1')
+                    fetch('https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-SAFE.bat'),
+                    fetch('https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office.ps1')
                 ]);
 
                 if (!batResponse.ok || !ps1Response.ok) {
@@ -648,7 +724,7 @@ Instructions:
 3. Click "Yes" when Windows asks for admin permission
 4. Follow the simple prompts to install Office
 
-For more help, visit: https://njvanas.github.io/office-auto-installer/
+For more help, visit: https://njvanas.github.io/Office-Auto-Install/
 
 This package contains:
 - Install-Office-SAFE.bat (Launcher)
@@ -675,7 +751,7 @@ This package contains:
                 console.error('Download failed:', error);
                 
                 // Fallback to GitHub release
-                window.open('https://github.com/njvanas/office-auto-installer/releases/latest', '_blank');
+                window.open('https://github.com/njvanas/Office-Auto-Install/releases/latest', '_blank');
                 
                 // Restore button
                 const btn = event.target;
