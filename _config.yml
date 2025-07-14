@@ -1,0 +1,8 @@
+theme: jekyll-theme-minimal
+title: Office Auto Installer
+description: Easy Microsoft Office installation for everyone
+url: https://njvanas.github.io
+baseurl: /office-auto-installer
+plugins:
+  - jekyll-sitemap
+  - jekyll-feed
