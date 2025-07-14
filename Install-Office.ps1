@@ -442,7 +442,7 @@ function Test-SystemRequirements {
 
 function Show-BeginnerFriendlyMenu {
     Show-Header
-    Write-Host "OFFICE SETUP - MADE SIMPLE!" -ForegroundColor Yellow
+    Write-Host "OFFICE SETUP - MADE SIMPLE" -ForegroundColor Yellow
     Write-Host "=" * 50 -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "Don't worry - we'll guide you through each step!" -ForegroundColor Green
