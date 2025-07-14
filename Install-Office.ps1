@@ -2,70 +2,75 @@
 # Downloads and installs Microsoft Office through official channels
 # No licensing modifications - uses Microsoft's official deployment tools
 
-# ==== PREVENT AUTO-CLOSE ON RIGHT-CLICK ====
-# This MUST be at the very beginning to catch right-click execution
+# ==== UNIVERSAL PAUSE PROTECTION ====
+# This ensures the window NEVER closes automatically, regardless of how it's run
+param()
+
+# Set window title immediately
 $Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer - Loading..."
 
-# Detect if script was run via right-click (no interactive session)
-$isRightClick = $false
-try {
-    # Multiple detection methods for right-click execution
-    $isRightClick = (
-        $Host.Name -eq "ConsoleHost" -and 
-        [Environment]::GetCommandLineArgs().Count -gt 1 -and
-        [Environment]::GetCommandLineArgs() -contains "-File"
-    ) -or (
-        $MyInvocation.InvocationName -like "*.ps1" -and
-        -not [Environment]::UserInteractive
-    ) -or (
-        $Host.Name -eq "ConsoleHost" -and
-        $PSCommandPath -and
-        -not $MyInvocation.Line
-    )
-} catch {
-    # If detection fails, assume right-click for safety
-    $isRightClick = $true
+# Create a global flag to track if we should pause
+$global:ShouldPauseOnExit = $true
+
+# Override the exit function globally to always pause
+function global:Exit-WithPause {
+    param([int]$ExitCode = 0)
+    Write-Host ""
+    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+    Write-Host "Press any key to close this window..." -ForegroundColor Yellow -BackgroundColor DarkBlue
+    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+    try {
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    } catch {
+        # Fallback if ReadKey fails
+        Read-Host "Press Enter to continue"
+    }
+    [Environment]::Exit($ExitCode)
 }
 
-# If right-click detected, ensure window stays open
-if ($isRightClick) {
-    Write-Host "🖱️  Right-click execution detected - Window will stay open!" -ForegroundColor Green
-    
-    # Override the exit behavior
-    function Exit-WithPause {
-        param([int]$ExitCode = 0)
+# Replace the built-in exit with our pause version
+function global:Exit { 
+    param([int]$ExitCode = 0)
+    Exit-WithPause -ExitCode $ExitCode 
+}
+
+# Also handle script termination
+$null = Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
+    if ($global:ShouldPauseOnExit) {
         Write-Host ""
-        Write-Host "Press any key to close this window..." -ForegroundColor Yellow
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-        exit $ExitCode
-    }
-    
-    # Replace all exit calls with our pause version
-    $originalExit = Get-Command Exit -CommandType Cmdlet
-    function global:Exit { 
-        param([int]$ExitCode = 0)
-        Exit-WithPause -ExitCode $ExitCode 
+        Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+        Write-Host "Script is closing - Press any key to close this window..." -ForegroundColor Yellow -BackgroundColor DarkBlue
+        Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+        try {
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        } catch {
+            Start-Sleep -Seconds 3
+        }
     }
 }
 
 # ==== EXECUTION POLICY FIX ====
 # This section ensures the script can run regardless of PowerShell execution policy
-param()
 
 # Check if we need to bypass execution policy
-$currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
-if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'AllSigned') {
-    Write-Host "🔧 Fixing PowerShell execution policy..." -ForegroundColor Yellow
-    try {
-        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-        Write-Host "✅ Execution policy updated successfully!" -ForegroundColor Green
-    } catch {
-        Write-Host "⚠️  Could not update execution policy automatically." -ForegroundColor Yellow
-        Write-Host "   This script will still work, but you may see warnings." -ForegroundColor Gray
+try {
+    $currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
+    if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'AllSigned') {
+        Write-Host "🔧 Fixing PowerShell execution policy..." -ForegroundColor Yellow
+        try {
+            Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+            Write-Host "✅ Execution policy updated successfully!" -ForegroundColor Green
+        } catch {
+            Write-Host "⚠️  Could not update execution policy automatically." -ForegroundColor Yellow
+            Write-Host "   This script will still work, but you may see warnings." -ForegroundColor Gray
+        }
     }
+} catch {
+    # If execution policy check fails, continue anyway
+    Write-Host "⚠️  Could not check execution policy, continuing anyway..." -ForegroundColor Yellow
 }
 
-# Prevent the window from closing immediately if run via right-click
+# Update window title
 $Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer - Ready"
 
 # Welcome message and admin check
@@ -75,7 +80,7 @@ function Show-WelcomeScreen {
     $border = "═" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Easy Office Installation for Everyone"
-    $version = "v3.1 - Execution Policy Fixed"
+    $version = "v3.2 - Universal Pause Protection"
     
     Write-Host "╔$border╗" -ForegroundColor Cyan
     Write-Host "║" -ForegroundColor Cyan -NoNewline
@@ -94,9 +99,11 @@ function Show-WelcomeScreen {
     Write-Host "   No technical knowledge required - just follow the simple prompts!" -ForegroundColor Gray
     Write-Host ""
     
-    # Show how the script was launched
-    $launchMethod = if ($MyInvocation.Line) { "Command Line" } else { "Right-Click Menu" }
-    Write-Host "📋 Launch Method: $launchMethod" -ForegroundColor Blue
+    # Show execution method
+    Write-Host "🖥️  Execution Method: " -ForegroundColor Blue -NoNewline
+    Write-Host "PowerShell Script" -ForegroundColor White
+    Write-Host "🔒 Window Protection: " -ForegroundColor Blue -NoNewline
+    Write-Host "Enabled (window will not auto-close)" -ForegroundColor Green
     Write-Host ""
     
     # Check if running as admin
@@ -125,7 +132,7 @@ function Show-WelcomeScreen {
         try {
             Write-Host "🔄 Requesting administrator privileges..." -ForegroundColor Blue
             
-            # Multiple methods to ensure elevation works
+            # Get the current script path
             $scriptPath = $MyInvocation.MyCommand.Path
             if (-not $scriptPath) {
                 $scriptPath = $PSCommandPath
@@ -135,9 +142,10 @@ function Show-WelcomeScreen {
                 # Method 1: Try with the script file path
                 Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs
             } else {
-                # Method 2: Try with the current command
-                $command = $MyInvocation.MyCommand.Definition
-                Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -Command `"$command`"" -Verb RunAs
+                # Method 2: Try with encoded command
+                $bytes = [System.Text.Encoding]::Unicode.GetBytes($MyInvocation.MyCommand.Definition)
+                $encodedCommand = [Convert]::ToBase64String($bytes)
+                Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs
             }
             
             Write-Host "✅ New window should open with admin rights. You can close this one." -ForegroundColor Green
@@ -152,25 +160,23 @@ function Show-WelcomeScreen {
             Write-Host ""
             Write-Host "🔧 Manual solutions (try these in order):" -ForegroundColor Cyan
             Write-Host ""
-            Write-Host "   METHOD 1 - Copy & Paste Method:" -ForegroundColor Yellow
+            Write-Host "   METHOD 1 - Right-Click as Admin:" -ForegroundColor Yellow
+            Write-Host "   1. Right-click on this script file" -ForegroundColor White
+            Write-Host "   2. Select 'Run as administrator'" -ForegroundColor White
+            Write-Host "   3. Click 'Yes' when Windows asks for permission" -ForegroundColor White
+            Write-Host ""
+            Write-Host "   METHOD 2 - Copy & Paste Method:" -ForegroundColor Yellow
             Write-Host "   1. Press Win+X and select 'Windows PowerShell (Admin)'" -ForegroundColor White
             Write-Host "   2. Copy this entire script content" -ForegroundColor White
             Write-Host "   3. Paste it into the admin PowerShell window" -ForegroundColor White
             Write-Host "   4. Press Enter to run" -ForegroundColor White
             Write-Host ""
-            Write-Host "   METHOD 2 - File Method:" -ForegroundColor Yellow
-            Write-Host "   1. Right-click on this script file" -ForegroundColor White
-            Write-Host "   2. Select 'Run as administrator'" -ForegroundColor White
-            Write-Host "   3. Click 'Yes' when Windows asks for permission" -ForegroundColor White
-            Write-Host ""
             Write-Host "   METHOD 3 - Command Line:" -ForegroundColor Yellow
             Write-Host "   1. Open Command Prompt as Administrator" -ForegroundColor White
             Write-Host "   2. Type: powershell -ExecutionPolicy Bypass -File `"[path to this script]`"" -ForegroundColor White
             Write-Host ""
-            Write-Host "Press any key to exit..." -ForegroundColor Gray
-            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
         }
-        if ($isRightClick) { Exit-WithPause 1 } else { Exit 1 }
+        Exit 1
     } else {
         Write-Host "✅ Running with administrator privileges - Ready to install!" -ForegroundColor Green
         Write-Host ""
@@ -205,7 +211,7 @@ function Show-Header {
     $border = "═" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Official Microsoft Office Deployment Tool Interface"
-    $version = "v3.1 - Execution Policy Fixed"
+    $version = "v3.2 - Universal Pause Protection"
     
     Write-Host "╔$border╗" -ForegroundColor Cyan
     Write-Host "║" -ForegroundColor Cyan -NoNewline
@@ -345,7 +351,7 @@ function Test-SystemRequirements {
         Write-Host "   Please check your internet connection and try again" -ForegroundColor Yellow
         Log "Internet connection failed. Exiting script."
         Read-Host "Press Enter to exit"
-        if ($isRightClick) { Exit-WithPause 1 } else { Exit 1 }
+        Exit 1
     }
     
     Show-Progress -Activity "System Check" -PercentComplete 100 -Status "System check complete"
@@ -535,27 +541,15 @@ function Download-ODT {
         Write-Host "❌ Download failed!" -ForegroundColor Red
         Write-Host "   Error: $_" -ForegroundColor Yellow
         Write-Host "   Please check your internet connection and try again." -ForegroundColor Gray
-        if ($isRightClick) {
-            Write-Host "Press any key to exit..." -ForegroundColor Yellow
-            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-            Exit-WithPause 1
-        } else {
-            Read-Host "Press Enter to exit"
-            Exit 1
-        }
+        Read-Host "Press Enter to exit"
+        Exit 1
     }
 
     if (-Not (Test-Path $output) -or ((Get-Item $output).Length -lt 100000)) {
         Log "Downloaded file appears to be corrupted or incomplete."
         Write-Host "❌ Download seems incomplete. Please try again." -ForegroundColor Red
-        if ($isRightClick) {
-            Write-Host "Press any key to exit..." -ForegroundColor Yellow
-            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-            Exit-WithPause 1
-        } else {
-            Read-Host "Press Enter to exit"
-            Exit 1
-        }
+        Read-Host "Press Enter to exit"
+        Exit 1
     }
 
     Log "Office Deployment Tool downloaded successfully."
@@ -618,14 +612,8 @@ function Install-Office {
         Log "ERROR: setup.exe not found."
         Write-Host "❌ Installation file missing!" -ForegroundColor Red
         Write-Host "   Something went wrong with the download. Please restart the script." -ForegroundColor Yellow
-        if ($isRightClick) {
-            Write-Host "Press any key to exit..." -ForegroundColor Yellow
-            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-            Exit-WithPause 1
-        } else {
-            Read-Host "Press Enter to exit"
-            Exit 1
-        }
+        Read-Host "Press Enter to exit"
+        Exit 1
     }
 
     Write-Host "🎯 Starting your Office installation now!" -ForegroundColor Green
@@ -676,14 +664,8 @@ function Install-Office {
         Write-Host "❌ Installation encountered an error!" -ForegroundColor Red
         Write-Host "   Error: $_" -ForegroundColor Yellow
         Write-Host "   You can try running the script again, or contact support." -ForegroundColor Gray
-        if ($isRightClick) {
-            Write-Host "Press any key to exit..." -ForegroundColor Yellow
-            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-            Exit-WithPause 1
-        } else {
-            Read-Host "Press Enter to exit"
-            Exit 1
-        }
+        Read-Host "Press Enter to exit"
+        Exit 1
     }
 }
 
@@ -751,19 +733,18 @@ function Show-FriendlyCompletionSummary($options) {
     Write-Host ""
     Write-Host "🎊 Enjoy your new Microsoft Office installation!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Press any key to exit..." -ForegroundColor Gray
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     
-    # Final safety net for right-click execution
-    if ($isRightClick) {
-        Start-Sleep -Seconds 1  # Brief pause to ensure message is seen
-    }
+    # Final pause message
+    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+    Write-Host "Installation complete! Press any key to close this window..." -ForegroundColor Yellow -BackgroundColor DarkBlue
+    Write-Host "═══════════════════════════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
 # ==== Main Execution Flow ====
 
 try {
-    Log "=== Enhanced Office Installer Started (Execution Policy Fixed Version) ==="
+    Log "=== Enhanced Office Installer Started (Universal Pause Protection Version) ==="
     
     # Show welcome screen and handle admin elevation
     Show-WelcomeScreen
@@ -811,15 +792,8 @@ try {
     Write-Host "   If this keeps failing, try copying this entire script" -ForegroundColor White
     Write-Host "   and pasting it into an Administrator PowerShell window" -ForegroundColor White
     Write-Host ""
-    Write-Host "Press any key to exit..." -ForegroundColor Gray
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    if ($isRightClick) { Exit-WithPause 1 } else { Exit 1 }
+    Exit 1
 }
 
-# Final safety net - ensure window doesn't close for right-click execution
-if ($isRightClick) {
-    Write-Host ""
-    Write-Host "✅ Script completed successfully!" -ForegroundColor Green
-    Write-Host "Press any key to close this window..." -ForegroundColor Yellow
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-}
+# Disable the pause flag at the very end for clean exit
+$global:ShouldPauseOnExit = $false
