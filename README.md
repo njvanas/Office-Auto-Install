@@ -1,6 +1,7 @@
 # Office Auto Installer
 
-![Screenshot](./screenshot.png)
+![Screenshot](./screenshot1.png)
+![Screenshot](./screenshot2.png)
 
 This enhanced PowerShell script provides a beautiful, beginner-friendly interface for downloading, configuring, and installing Microsoft Office 2024/2021/365 through official Microsoft channels. **Now with PowerShell execution policy fixes** - designed for any Windows user with no technical knowledge required!
 
