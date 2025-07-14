@@ -2,6 +2,52 @@
 # Downloads and installs Microsoft Office through official channels
 # No licensing modifications - uses Microsoft's official deployment tools
 
+# ==== PREVENT AUTO-CLOSE ON RIGHT-CLICK ====
+# This MUST be at the very beginning to catch right-click execution
+$Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer - Loading..."
+
+# Detect if script was run via right-click (no interactive session)
+$isRightClick = $false
+try {
+    # Multiple detection methods for right-click execution
+    $isRightClick = (
+        $Host.Name -eq "ConsoleHost" -and 
+        [Environment]::GetCommandLineArgs().Count -gt 1 -and
+        [Environment]::GetCommandLineArgs() -contains "-File"
+    ) -or (
+        $MyInvocation.InvocationName -like "*.ps1" -and
+        -not [Environment]::UserInteractive
+    ) -or (
+        $Host.Name -eq "ConsoleHost" -and
+        $PSCommandPath -and
+        -not $MyInvocation.Line
+    )
+} catch {
+    # If detection fails, assume right-click for safety
+    $isRightClick = $true
+}
+
+# If right-click detected, ensure window stays open
+if ($isRightClick) {
+    Write-Host "🖱️  Right-click execution detected - Window will stay open!" -ForegroundColor Green
+    
+    # Override the exit behavior
+    function Exit-WithPause {
+        param([int]$ExitCode = 0)
+        Write-Host ""
+        Write-Host "Press any key to close this window..." -ForegroundColor Yellow
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        exit $ExitCode
+    }
+    
+    # Replace all exit calls with our pause version
+    $originalExit = Get-Command Exit -CommandType Cmdlet
+    function global:Exit { 
+        param([int]$ExitCode = 0)
+        Exit-WithPause -ExitCode $ExitCode 
+    }
+}
+
 # ==== EXECUTION POLICY FIX ====
 # This section ensures the script can run regardless of PowerShell execution policy
 param()
@@ -20,7 +66,7 @@ if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'AllSigned') {
 }
 
 # Prevent the window from closing immediately if run via right-click
-$Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer"
+$Host.UI.RawUI.WindowTitle = "Microsoft Office Auto Installer - Ready"
 
 # Welcome message and admin check
 function Show-WelcomeScreen {
@@ -124,7 +170,7 @@ function Show-WelcomeScreen {
             Write-Host "Press any key to exit..." -ForegroundColor Gray
             $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
         }
-        Exit
+        if ($isRightClick) { Exit-WithPause 1 } else { Exit 1 }
     } else {
         Write-Host "✅ Running with administrator privileges - Ready to install!" -ForegroundColor Green
         Write-Host ""
@@ -299,7 +345,7 @@ function Test-SystemRequirements {
         Write-Host "   Please check your internet connection and try again" -ForegroundColor Yellow
         Log "Internet connection failed. Exiting script."
         Read-Host "Press Enter to exit"
-        Exit 1
+        if ($isRightClick) { Exit-WithPause 1 } else { Exit 1 }
     }
     
     Show-Progress -Activity "System Check" -PercentComplete 100 -Status "System check complete"
@@ -489,15 +535,27 @@ function Download-ODT {
         Write-Host "❌ Download failed!" -ForegroundColor Red
         Write-Host "   Error: $_" -ForegroundColor Yellow
         Write-Host "   Please check your internet connection and try again." -ForegroundColor Gray
-        Read-Host "Press Enter to exit"
-        Exit 1
+        if ($isRightClick) {
+            Write-Host "Press any key to exit..." -ForegroundColor Yellow
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            Exit-WithPause 1
+        } else {
+            Read-Host "Press Enter to exit"
+            Exit 1
+        }
     }
 
     if (-Not (Test-Path $output) -or ((Get-Item $output).Length -lt 100000)) {
         Log "Downloaded file appears to be corrupted or incomplete."
         Write-Host "❌ Download seems incomplete. Please try again." -ForegroundColor Red
-        Read-Host "Press Enter to exit"
-        Exit 1
+        if ($isRightClick) {
+            Write-Host "Press any key to exit..." -ForegroundColor Yellow
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            Exit-WithPause 1
+        } else {
+            Read-Host "Press Enter to exit"
+            Exit 1
+        }
     }
 
     Log "Office Deployment Tool downloaded successfully."
@@ -560,8 +618,14 @@ function Install-Office {
         Log "ERROR: setup.exe not found."
         Write-Host "❌ Installation file missing!" -ForegroundColor Red
         Write-Host "   Something went wrong with the download. Please restart the script." -ForegroundColor Yellow
-        Read-Host "Press Enter to exit"
-        Exit 1
+        if ($isRightClick) {
+            Write-Host "Press any key to exit..." -ForegroundColor Yellow
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            Exit-WithPause 1
+        } else {
+            Read-Host "Press Enter to exit"
+            Exit 1
+        }
     }
 
     Write-Host "🎯 Starting your Office installation now!" -ForegroundColor Green
@@ -612,8 +676,14 @@ function Install-Office {
         Write-Host "❌ Installation encountered an error!" -ForegroundColor Red
         Write-Host "   Error: $_" -ForegroundColor Yellow
         Write-Host "   You can try running the script again, or contact support." -ForegroundColor Gray
-        Read-Host "Press Enter to exit"
-        Exit 1
+        if ($isRightClick) {
+            Write-Host "Press any key to exit..." -ForegroundColor Yellow
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            Exit-WithPause 1
+        } else {
+            Read-Host "Press Enter to exit"
+            Exit 1
+        }
     }
 }
 
@@ -683,6 +753,11 @@ function Show-FriendlyCompletionSummary($options) {
     Write-Host ""
     Write-Host "Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    
+    # Final safety net for right-click execution
+    if ($isRightClick) {
+        Start-Sleep -Seconds 1  # Brief pause to ensure message is seen
+    }
 }
 
 # ==== Main Execution Flow ====
@@ -738,12 +813,13 @@ try {
     Write-Host ""
     Write-Host "Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    Exit 1
+    if ($isRightClick) { Exit-WithPause 1 } else { Exit 1 }
 }
 
-# Prevent window from closing immediately when run via right-click
-if (-not $MyInvocation.Line) {
+# Final safety net - ensure window doesn't close for right-click execution
+if ($isRightClick) {
     Write-Host ""
-    Write-Host "Script completed. Press any key to close this window..." -ForegroundColor Gray
+    Write-Host "✅ Script completed successfully!" -ForegroundColor Green
+    Write-Host "Press any key to close this window..." -ForegroundColor Yellow
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
