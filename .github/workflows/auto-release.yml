@@ -1,0 +1,223 @@
+name: Auto Release on Script Updates
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Install-Office.ps1'
+      - 'Install-Office-SAFE.bat'
+  workflow_dispatch:
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Extract version from PowerShell script
+      id: get_version
+      run: |
+        # Try to extract version from PowerShell script
+        if grep -q 'v[0-9]\+\.[0-9]\+' Install-Office.ps1; then
+          VERSION=$(grep -o 'v[0-9]\+\.[0-9]\+[^"]*' Install-Office.ps1 | head -1)
+        else
+          # Fallback to date-based versioning
+          VERSION="v$(date +'%Y.%m.%d')"
+        fi
+        
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Detected version: $VERSION"
+
+    - name: Check if release exists
+      id: check_release
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        
+        # Check if release already exists
+        if gh release view "$VERSION" >/dev/null 2>&1; then
+          echo "Release $VERSION already exists, creating incremental version"
+          COUNTER=1
+          while gh release view "$VERSION-$COUNTER" >/dev/null 2>&1; do
+            COUNTER=$((COUNTER + 1))
+          done
+          VERSION="$VERSION-$COUNTER"
+        fi
+        
+        echo "final_version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Final version: $VERSION"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create release package
+      run: |
+        VERSION="${{ steps.check_release.outputs.final_version }}"
+        
+        # Create release directory
+        mkdir -p release-package
+        
+        # Copy main files
+        cp Install-Office.ps1 release-package/
+        cp Install-Office-SAFE.bat release-package/
+        
+        # Create comprehensive README for the package
+        cat > release-package/README.txt << 'EOF'
+        Office Auto Installer Package - ${{ steps.check_release.outputs.final_version }}
+        ================================================================
+
+        QUICK START INSTRUCTIONS:
+        1. Extract both files to the same folder (like Downloads)
+        2. Double-click "Install-Office-SAFE.bat" to start
+        3. Click "Yes" when Windows asks for admin permission
+        4. Follow the simple prompts to install Office
+
+        WHAT'S INCLUDED:
+        - Install-Office-SAFE.bat (Launcher - fixes PowerShell issues)
+        - Install-Office.ps1 (Main installer script)
+        - README.txt (This file with instructions)
+
+        SYSTEM REQUIREMENTS:
+        - Windows 10/11 (Windows 7/8 may work)
+        - 4GB+ free disk space
+        - 2GB+ RAM recommended
+        - Internet connection (Office downloads during install)
+        - Administrator privileges
+
+        SUPPORTED OFFICE VERSIONS:
+        - Office 2024 Pro Plus (Latest - Recommended)
+        - Office LTSC 2021 (Stable long-term version)
+        - Microsoft 365 Apps (Cloud-connected)
+
+        SUPPORTED LANGUAGES:
+        - English (US/UK), French, German, Dutch, Spanish, Portuguese
+
+        OPTIONAL COMPONENTS:
+        - Visio Professional (Diagrams and flowcharts)
+        - Project Professional (Project management)
+
+        TROUBLESHOOTING:
+        If you have problems:
+        1. Make sure both files are in the same folder
+        2. Right-click the .bat file and "Run as administrator"
+        3. Temporarily disable antivirus during installation
+        4. Check your internet connection
+
+        For more help, visit: https://njvanas.github.io/Office-Auto-Install/
+
+        IMPORTANT DISCLAIMER:
+        This tool uses Microsoft's official Office Deployment Tool.
+        You are responsible for having proper Office licenses.
+        This does not crack, modify, or bypass any licensing.
+
+        Licensed under MIT License
+        Copyright (c) 2025 Dolfie
+        EOF
+        
+        # Create ZIP package
+        cd release-package
+        zip -r "../Office-Auto-Installer-$VERSION.zip" .
+        cd ..
+        
+        echo "Package created: Office-Auto-Installer-$VERSION.zip"
+        ls -la *.zip
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        VERSION="${{ steps.check_release.outputs.final_version }}"
+        
+        # Get commits since last release
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
+        if [ -n "$LAST_TAG" ]; then
+          COMMITS=$(git log $LAST_TAG..HEAD --oneline --pretty=format:"- %s" -- Install-Office.ps1 Install-Office-SAFE.bat)
+        else
+          COMMITS=$(git log --oneline --pretty=format:"- %s" -10 -- Install-Office.ps1 Install-Office-SAFE.bat)
+        fi
+        
+        # Create changelog
+        cat > changelog.md << EOF
+        ## 🚀 Office Auto Installer $VERSION
+        
+        ### 📥 Download Options
+        - **Recommended**: Download the complete ZIP package below
+        - **Individual Files**: Download the .ps1 and .bat files separately
+        - **All files must be in the same folder to work properly**
+        
+        ### 🆕 What's New
+        $COMMITS
+        
+        ### ✨ Features
+        - 🎯 **Beginner-Friendly**: No technical knowledge required
+        - 🔒 **100% Safe**: Uses only official Microsoft tools
+        - ⚡ **Fast Setup**: Automatic downloads and smart defaults
+        - 🎨 **Beautiful Interface**: Colorful, easy-to-read menus
+        - 🔧 **Flexible Options**: Choose Office version, language, and components
+        - 🛡️ **Error Protection**: Built-in troubleshooting and help
+        
+        ### 🖥️ Supported Office Versions
+        - **Office 2024 Pro Plus** (Latest with newest features)
+        - **Office LTSC 2021** (Stable, less frequent updates)
+        - **Microsoft 365 Apps** (Cloud-connected with online features)
+        
+        ### 🌍 Supported Languages
+        English (US/UK), French, German, Dutch, Spanish, Portuguese (Brazil)
+        
+        ### 📋 System Requirements
+        - Windows 10/11 (Windows 7/8 may work)
+        - 4GB+ free disk space
+        - 2GB+ RAM recommended
+        - Internet connection required
+        - Administrator privileges
+        
+        ### 🚀 Quick Start
+        1. Download the ZIP package below
+        2. Extract both files to the same folder
+        3. Double-click \`Install-Office-SAFE.bat\`
+        4. Click "Yes" for admin permission
+        5. Follow the simple prompts
+        
+        ### 🆘 Need Help?
+        - 📖 **Full Documentation**: [Visit our website](https://njvanas.github.io/Office-Auto-Install/)
+        - 🐛 **Report Issues**: [GitHub Issues](https://github.com/njvanas/Office-Auto-Install/issues)
+        - 💬 **Get Support**: Check the troubleshooting section in README.txt
+        
+        ### ⚠️ Important Notes
+        - This tool uses Microsoft's official Office Deployment Tool
+        - **You must have proper Office licenses** - this doesn't provide licenses
+        - No cracking, patching, or license bypassing is performed
+        - Use at your own risk and ensure license compliance
+        
+        ---
+        
+        **Installation Time**: 10-30 minutes depending on internet speed  
+        **Perfect for**: Home users, small businesses, IT support, students  
+        **License**: MIT License - Free to use and modify
+        EOF
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.check_release.outputs.final_version }}
+        name: "Office Auto Installer ${{ steps.check_release.outputs.final_version }}"
+        body_path: changelog.md
+        files: |
+          Office-Auto-Installer-${{ steps.check_release.outputs.final_version }}.zip
+          Install-Office.ps1
+          Install-Office-SAFE.bat
+        draft: false
+        prerelease: false
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update latest release info
+      run: |
+        VERSION="${{ steps.check_release.outputs.final_version }}"
+        echo "✅ Release $VERSION created successfully!"
+        echo "📦 ZIP package: Office-Auto-Installer-$VERSION.zip"
+        echo "🔗 Release URL: https://github.com/njvanas/Office-Auto-Install/releases/tag/$VERSION"
+        echo "🌐 Download page: https://njvanas.github.io/Office-Auto-Install/"
