@@ -2,6 +2,33 @@
 # Downloads and installs Microsoft Office through official channels
 # No licensing modifications - uses Microsoft's official deployment tools
 
+<#
+.SYNOPSIS
+Microsoft Office Auto Installer - Easy Office Installation for Everyone
+
+.DESCRIPTION
+This script provides a user-friendly interface for downloading and installing Microsoft Office
+through official Microsoft channels. It handles execution policy issues automatically.
+
+.NOTES
+If you're getting execution policy errors, try one of these methods:
+
+METHOD 1 - Bypass Execution Policy (Recommended):
+Right-click PowerShell -> "Run as Administrator" -> Run this command:
+powershell -ExecutionPolicy Bypass -File "Install-Office.ps1"
+
+METHOD 2 - Copy & Paste Method:
+1. Right-click PowerShell -> "Run as Administrator"
+2. Copy this ENTIRE script content (Ctrl+A, Ctrl+C)
+3. Paste it into the PowerShell window (Right-click -> Paste)
+4. Press Enter to run
+
+METHOD 3 - Temporary Policy Change:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+Then run: .\Install-Office.ps1
+
+#>
+
 # ==== IMMEDIATE HARD PAUSE PROTECTION ====
 # This MUST be the very first thing that runs - before ANY other code
 # Set error handling to catch ALL errors immediately

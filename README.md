@@ -42,10 +42,25 @@ This enhanced PowerShell script provides a beautiful, beginner-friendly interfac
 1. **Download** the PowerShell script:
    - `Install-Office.ps1`
 
-2. **Run the installer** (choose the method that works for you):
-   - **Method 1:** Right-click `Install-Office.ps1` → "Run with PowerShell"
-   - **Method 2:** Copy the entire script content and paste into Administrator PowerShell
-   - **Method 3:** Open PowerShell as admin and run: `powershell -ExecutionPolicy Bypass -File "Install-Office.ps1"`
+2. **Run the installer** (try these methods in order):
+
+   **🥇 METHOD 1 - Bypass Execution Policy (RECOMMENDED):**
+   1. Right-click on PowerShell → "Run as Administrator"
+   2. Navigate to the script location: `cd "C:\Users\YourName\Downloads"`
+   3. Run: `powershell -ExecutionPolicy Bypass -File "Install-Office.ps1"`
+   4. Click "Yes" when Windows asks for permission
+
+   **🥈 METHOD 2 - Copy & Paste Method:**
+   1. Right-click on PowerShell → "Run as Administrator"
+   2. Open the script file in Notepad
+   3. Select all content (Ctrl+A) and copy (Ctrl+C)
+   4. Paste into PowerShell window (Right-click → Paste)
+   5. Press Enter to run
+
+   **🥉 METHOD 3 - Change Execution Policy:**
+   1. Right-click on PowerShell → "Run as Administrator"
+   2. Run: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force`
+   3. Run: `.\Install-Office.ps1`
 
 3. **Follow the prompts:**
    - Click "Yes" when Windows asks for administrator permission
@@ -58,8 +73,9 @@ This enhanced PowerShell script provides a beautiful, beginner-friendly interfac
    - Perfect time for a coffee break! ☕
 
 ### 🆘 **If You Have Problems**
-- **Script won't run?** Try the copy & paste method (see instructions in the script)
-- **Execution policy error?** The script now fixes this automatically
+- **Script won't run?** Try Method 1 above with `-ExecutionPolicy Bypass`
+- **"Cannot be loaded" error?** This is Windows security - use Method 1 or 2 above
+- **Right-click doesn't work?** Use Method 1 or 2 instead - they're more reliable
 - **Need admin rights?** The script will request them automatically
 - **Antivirus blocking?** Temporarily disable it during installation
 - **Still stuck?** Check the generated log file for details
