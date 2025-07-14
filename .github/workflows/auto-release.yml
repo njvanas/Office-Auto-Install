@@ -11,6 +11,10 @@ on:
 jobs:
   create-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     
     steps:
     - name: Checkout repository
@@ -18,24 +22,40 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Debug - Check files exist
+      run: |
+        echo "Checking if files exist..."
+        ls -la
+        if [ -f "Install-Office.ps1" ]; then
+          echo "✅ Install-Office.ps1 found"
+        else
+          echo "❌ Install-Office.ps1 NOT found"
+        fi
+        if [ -f "Install-Office-SAFE.bat" ]; then
+          echo "✅ Install-Office-SAFE.bat found"
+        else
+          echo "❌ Install-Office-SAFE.bat NOT found"
+        fi
+
     - name: Extract version from PowerShell script
       id: get_version
       run: |
         # Try to extract version from PowerShell script
-        if grep -q 'v[0-9]\+\.[0-9]\+' Install-Office.ps1; then
-          VERSION=$(grep -o 'v[0-9]\+\.[0-9]\+[^"]*' Install-Office.ps1 | head -1)
+        if [ -f "Install-Office.ps1" ] && grep -q 'v[0-9]\+\.[0-9]\+' Install-Office.ps1; then
+          VERSION=$(grep -o 'v[0-9]\+\.[0-9]\+[^"]*' Install-Office.ps1 | head -1 | sed 's/[^v0-9\.]//g')
         else
           # Fallback to date-based versioning
           VERSION="v$(date +'%Y.%m.%d')"
         fi
         
+        echo "Extracted version: $VERSION"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "Detected version: $VERSION"
 
     - name: Check if release exists
       id: check_release
       run: |
         VERSION="${{ steps.get_version.outputs.version }}"
+        echo "Checking if release $VERSION exists..."
         
         # Check if release already exists
         if gh release view "$VERSION" >/dev/null 2>&1; then
@@ -55,13 +75,27 @@ jobs:
     - name: Create release package
       run: |
         VERSION="${{ steps.check_release.outputs.final_version }}"
+        echo "Creating release package for version: $VERSION"
         
         # Create release directory
         mkdir -p release-package
         
         # Copy main files
-        cp Install-Office.ps1 release-package/
-        cp Install-Office-SAFE.bat release-package/
+        if [ -f "Install-Office.ps1" ]; then
+          cp Install-Office.ps1 release-package/
+          echo "✅ Copied Install-Office.ps1"
+        else
+          echo "❌ Install-Office.ps1 not found for packaging"
+          exit 1
+        fi
+        
+        if [ -f "Install-Office-SAFE.bat" ]; then
+          cp Install-Office-SAFE.bat release-package/
+          echo "✅ Copied Install-Office-SAFE.bat"
+        else
+          echo "❌ Install-Office-SAFE.bat not found for packaging"
+          exit 1
+        fi
         
         # Create comprehensive README for the package
         cat > release-package/README.txt << 'EOF'
