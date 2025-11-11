@@ -6,6 +6,8 @@ on:
     paths:
       - 'Install-Office.ps1'
       - 'Install-Office-SAFE.bat'
+      - 'Install-Office-GUI-WPF.ps1'
+      - 'Install-Office-GUI-SAFE.bat'
   workflow_dispatch:
 
 jobs:
@@ -35,6 +37,16 @@ jobs:
           echo "✅ Install-Office-SAFE.bat found"
         else
           echo "❌ Install-Office-SAFE.bat NOT found"
+        fi
+        if [ -f "Install-Office-GUI-WPF.ps1" ]; then
+          echo "✅ Install-Office-GUI-WPF.ps1 found"
+        else
+          echo "❌ Install-Office-GUI-WPF.ps1 NOT found"
+        fi
+        if [ -f "Install-Office-GUI-SAFE.bat" ]; then
+          echo "✅ Install-Office-GUI-SAFE.bat found"
+        else
+          echo "❌ Install-Office-GUI-SAFE.bat NOT found"
         fi
 
     - name: Extract version from PowerShell script
@@ -72,34 +84,37 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Create release package
+    - name: Create release packages
       run: |
         VERSION="${{ steps.check_release.outputs.final_version }}"
-        echo "Creating release package for version: $VERSION"
+        echo "Creating release packages for version: $VERSION"
         
-        # Create release directory
-        mkdir -p release-package
-        
-        # Copy main files
+        # Create Console version package
+        mkdir -p release-package-console
         if [ -f "Install-Office.ps1" ]; then
-          cp Install-Office.ps1 release-package/
+          cp Install-Office.ps1 release-package-console/
           echo "✅ Copied Install-Office.ps1"
-        else
-          echo "❌ Install-Office.ps1 not found for packaging"
-          exit 1
         fi
-        
         if [ -f "Install-Office-SAFE.bat" ]; then
-          cp Install-Office-SAFE.bat release-package/
+          cp Install-Office-SAFE.bat release-package-console/
           echo "✅ Copied Install-Office-SAFE.bat"
-        else
-          echo "❌ Install-Office-SAFE.bat not found for packaging"
-          exit 1
         fi
         
-        # Create comprehensive README for the package
-        cat > release-package/README.txt << 'EOF'
-        Office Auto Installer Package - ${{ steps.check_release.outputs.final_version }}
+        # Create GUI version package
+        mkdir -p release-package-gui
+        if [ -f "Install-Office-GUI-WPF.ps1" ]; then
+          cp Install-Office-GUI-WPF.ps1 release-package-gui/
+          echo "✅ Copied Install-Office-GUI-WPF.ps1"
+        fi
+        if [ -f "Install-Office-GUI-SAFE.bat" ]; then
+          cp Install-Office-GUI-SAFE.bat release-package-gui/
+          echo "✅ Copied Install-Office-GUI-SAFE.bat"
+        fi
+        
+        # Create comprehensive README for Console package
+        if [ -d "release-package-console" ] && [ "$(ls -A release-package-console)" ]; then
+          cat > release-package-console/README.txt << EOF
+        Office Auto Installer - Console Version Package - $VERSION
         ================================================================
 
         QUICK START INSTRUCTIONS:
@@ -110,7 +125,7 @@ jobs:
 
         WHAT'S INCLUDED:
         - Install-Office-SAFE.bat (Launcher - fixes PowerShell issues)
-        - Install-Office.ps1 (Main installer script)
+        - Install-Office.ps1 (Main console installer script)
         - README.txt (This file with instructions)
 
         SYSTEM REQUIREMENTS:
@@ -149,13 +164,134 @@ jobs:
         Licensed under MIT License
         Copyright (c) 2025 Dolfie
         EOF
+          
+          # Create Console ZIP package
+          cd release-package-console
+          zip -r "../Office-Auto-Installer-Console-$VERSION.zip" .
+          cd ..
+          echo "✅ Console package created: Office-Auto-Installer-Console-$VERSION.zip"
+        fi
         
-        # Create ZIP package
-        cd release-package
-        zip -r "../Office-Auto-Installer-$VERSION.zip" .
-        cd ..
+        # Create comprehensive README for GUI package
+        if [ -d "release-package-gui" ] && [ "$(ls -A release-package-gui)" ]; then
+          cat > release-package-gui/README.txt << EOF
+        Office Auto Installer - GUI Version Package - $VERSION
+        ================================================================
+
+        QUICK START INSTRUCTIONS:
+        1. Extract both files to the same folder (like Downloads)
+        2. Double-click "Install-Office-GUI-SAFE.bat" to start
+        3. Click "Yes" when Windows asks for admin permission
+        4. The beautiful GUI window will open with all options pre-configured
+        5. Click "Install Office" (or customize settings first)
+
+        WHAT'S INCLUDED:
+        - Install-Office-GUI-SAFE.bat (Launcher for GUI version)
+        - Install-Office-GUI-WPF.ps1 (Main GUI installer script)
+        - README.txt (This file with instructions)
+
+        FEATURES:
+        - Windows 11 Fluent Design interface
+        - Pre-filled defaults
+        - Real-time progress tracking
+        - One-click ready
+
+        SYSTEM REQUIREMENTS:
+        - Windows 10/11 (Windows 7/8 may work)
+        - 4GB+ free disk space
+        - 2GB+ RAM recommended
+        - Internet connection (Office downloads during install)
+        - Administrator privileges
+
+        SUPPORTED OFFICE VERSIONS:
+        - Office 2024 Pro Plus (Latest - Recommended)
+        - Office LTSC 2021 (Stable long-term version)
+        - Microsoft 365 Apps (Cloud-connected)
+
+        SUPPORTED LANGUAGES:
+        - English (US/UK), French, German, Dutch, Spanish, Portuguese
+
+        OPTIONAL COMPONENTS:
+        - Visio Professional (Diagrams and flowcharts)
+        - Project Professional (Project management)
+
+        TROUBLESHOOTING:
+        If you have problems:
+        1. Make sure both files are in the same folder
+        2. Right-click the .bat file and "Run as administrator"
+        3. Temporarily disable antivirus during installation
+        4. Check your internet connection
+
+        For more help, visit: https://njvanas.github.io/Office-Auto-Install/
+
+        IMPORTANT DISCLAIMER:
+        This tool uses Microsoft's official Office Deployment Tool.
+        You are responsible for having proper Office licenses.
+        This does not crack, modify, or bypass any licensing.
+
+        Licensed under MIT License
+        Copyright (c) 2025 Dolfie
+        EOF
+          
+          # Create GUI ZIP package
+          cd release-package-gui
+          zip -r "../Office-Auto-Installer-GUI-$VERSION.zip" .
+          cd ..
+          echo "✅ GUI package created: Office-Auto-Installer-GUI-$VERSION.zip"
+        fi
         
-        echo "Package created: Office-Auto-Installer-$VERSION.zip"
+        # Create complete package with all files
+        mkdir -p release-package-complete
+        if [ -f "Install-Office.ps1" ]; then cp Install-Office.ps1 release-package-complete/; fi
+        if [ -f "Install-Office-SAFE.bat" ]; then cp Install-Office-SAFE.bat release-package-complete/; fi
+        if [ -f "Install-Office-GUI-WPF.ps1" ]; then cp Install-Office-GUI-WPF.ps1 release-package-complete/; fi
+        if [ -f "Install-Office-GUI-SAFE.bat" ]; then cp Install-Office-GUI-SAFE.bat release-package-complete/; fi
+        if [ -f "README.md" ]; then cp README.md release-package-complete/; fi
+        if [ -f "LICENSE" ]; then cp LICENSE release-package-complete/; fi
+        
+        if [ -d "release-package-complete" ] && [ "$(ls -A release-package-complete)" ]; then
+          cat > release-package-complete/README.txt << EOF
+        Office Auto Installer - Complete Package - $VERSION
+        ================================================================
+
+        This package contains both GUI and Console versions of the Office Auto Installer.
+
+        QUICK START:
+        Choose one version to use:
+
+        GUI VERSION (RECOMMENDED):
+        1. Extract all files to the same folder
+        2. Double-click "Install-Office-GUI-SAFE.bat"
+        3. Click "Yes" for admin permission
+        4. Use the beautiful GUI interface
+
+        CONSOLE VERSION:
+        1. Extract all files to the same folder
+        2. Double-click "Install-Office-SAFE.bat"
+        3. Click "Yes" for admin permission
+        4. Follow the text-based prompts
+
+        WHAT'S INCLUDED:
+        - Install-Office-GUI-SAFE.bat (GUI Launcher)
+        - Install-Office-GUI-WPF.ps1 (GUI Installer)
+        - Install-Office-SAFE.bat (Console Launcher)
+        - Install-Office.ps1 (Console Installer)
+        - README.md (Full documentation)
+        - LICENSE (MIT License)
+
+        For more help, visit: https://njvanas.github.io/Office-Auto-Install/
+
+        Licensed under MIT License
+        Copyright (c) 2025 Dolfie
+        EOF
+          
+          cd release-package-complete
+          zip -r "../Office-Auto-Installer-Complete-$VERSION.zip" .
+          cd ..
+          echo "✅ Complete package created: Office-Auto-Installer-Complete-$VERSION.zip"
+        fi
+        
+        echo "All packages created successfully!"
         ls -la *.zip
 
     - name: Generate changelog
@@ -167,9 +303,9 @@ jobs:
         LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
         
         if [ -n "$LAST_TAG" ]; then
-          COMMITS=$(git log $LAST_TAG..HEAD --oneline --pretty=format:"- %s" -- Install-Office.ps1 Install-Office-SAFE.bat)
+          COMMITS=$(git log $LAST_TAG..HEAD --oneline --pretty=format:"- %s" -- Install-Office.ps1 Install-Office-SAFE.bat Install-Office-GUI-WPF.ps1 Install-Office-GUI-SAFE.bat)
         else
-          COMMITS=$(git log --oneline --pretty=format:"- %s" -10 -- Install-Office.ps1 Install-Office-SAFE.bat)
+          COMMITS=$(git log --oneline --pretty=format:"- %s" -10 -- Install-Office.ps1 Install-Office-SAFE.bat Install-Office-GUI-WPF.ps1 Install-Office-GUI-SAFE.bat)
         fi
         
         # Create changelog
@@ -177,8 +313,10 @@ jobs:
         ## 🚀 Office Auto Installer $VERSION
         
         ### 📥 Download Options
-        - **Recommended**: Download the complete ZIP package below
-        - **Individual Files**: Download the .ps1 and .bat files separately
+        - **GUI Version (Recommended)**: Download `Office-Auto-Installer-GUI-$VERSION.zip` for Windows 11 Fluent Design interface
+        - **Console Version**: Download `Office-Auto-Installer-Console-$VERSION.zip` for text-based interface
+        - **Complete Package**: Download `Office-Auto-Installer-Complete-$VERSION.zip` for both versions
+        - **Individual Files**: Download the .ps1 and .bat files separately below
         - **All files must be in the same folder to work properly**
         
         ### 🆕 What's New
@@ -208,11 +346,20 @@ jobs:
         - Administrator privileges
         
         ### 🚀 Quick Start
-        1. Download the ZIP package below
+        
+        **GUI Version (Recommended):**
+        1. Download `Office-Auto-Installer-GUI-$VERSION.zip`
+        2. Extract both files to the same folder
+        3. Double-click \`Install-Office-GUI-SAFE.bat\`
+        4. Click "Yes" for admin permission
+        5. Use the beautiful GUI interface
+        
+        **Console Version:**
+        1. Download `Office-Auto-Installer-Console-$VERSION.zip`
         2. Extract both files to the same folder
         3. Double-click \`Install-Office-SAFE.bat\`
         4. Click "Yes" for admin permission
-        5. Follow the simple prompts
+        5. Follow the text-based prompts
         
         ### 🆘 Need Help?
         - 📖 **Full Documentation**: [Visit our website](https://njvanas.github.io/Office-Auto-Install/)
@@ -239,9 +386,13 @@ jobs:
         name: "Office Auto Installer ${{ steps.check_release.outputs.final_version }}"
         body_path: changelog.md
         files: |
-          Office-Auto-Installer-${{ steps.check_release.outputs.final_version }}.zip
+          Office-Auto-Installer-GUI-${{ steps.check_release.outputs.final_version }}.zip
+          Office-Auto-Installer-Console-${{ steps.check_release.outputs.final_version }}.zip
+          Office-Auto-Installer-Complete-${{ steps.check_release.outputs.final_version }}.zip
           Install-Office.ps1
           Install-Office-SAFE.bat
+          Install-Office-GUI-WPF.ps1
+          Install-Office-GUI-SAFE.bat
         draft: false
         prerelease: false
         generate_release_notes: false
@@ -252,6 +403,8 @@ jobs:
       run: |
         VERSION="${{ steps.check_release.outputs.final_version }}"
         echo "✅ Release $VERSION created successfully!"
-        echo "📦 ZIP package: Office-Auto-Installer-$VERSION.zip"
+        echo "📦 GUI package: Office-Auto-Installer-GUI-$VERSION.zip"
+        echo "📦 Console package: Office-Auto-Installer-Console-$VERSION.zip"
+        echo "📦 Complete package: Office-Auto-Installer-Complete-$VERSION.zip"
         echo "🔗 Release URL: https://github.com/njvanas/Office-Auto-Install/releases/tag/$VERSION"
         echo "🌐 Download page: https://njvanas.github.io/Office-Auto-Install/"
