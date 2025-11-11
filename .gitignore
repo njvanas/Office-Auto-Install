@@ -1,2 +1,20 @@
+# Node.js (if any)
 node_modules/
 .env
+
+# Temporary installation files (created during runtime)
+OfficeInstaller/
+*.log
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Keep all source files - we want everything in the repo
+# This ensures users can download the complete tool

@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Create Release Archive
+        run: |
+          # Create a release directory
+          New-Item -ItemType Directory -Path "release" -Force | Out-Null
+          
+          # Copy essential files
+          Copy-Item "Install-Office-GUI-WPF.ps1" -Destination "release/"
+          Copy-Item "Install-Office-GUI-SAFE.bat" -Destination "release/"
+          Copy-Item "Install-Office.ps1" -Destination "release/"
+          Copy-Item "Install-Office-SAFE.bat" -Destination "release/"
+          Copy-Item "README.md" -Destination "release/"
+          Copy-Item "LICENSE" -Destination "release/"
+          
+          # Create ZIP archive
+          Compress-Archive -Path "release\*" -DestinationPath "Office-Auto-Installer.zip" -Force
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Office-Auto-Installer.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
