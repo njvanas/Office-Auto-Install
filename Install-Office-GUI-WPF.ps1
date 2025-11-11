@@ -2,6 +2,7 @@
 # Office Auto Installer - WPF with Windows 11 Fluent Design
 # Single-file, self-contained Office installer with WPF and Fluent theme
 # Downloads and installs Microsoft Office through official channels
+# Updated release workflow to include both GUI and Console versions
 
 <#
 .SYNOPSIS
