@@ -53,24 +53,83 @@
   <div class="container mx-auto px-6">
     <span class="inline-block bg-slate-700/50 border border-slate-600/50 text-green-400 font-semibold rounded-full px-4 py-1 mb-6">v3.4 - Latest Version</span>
     <h1 class="text-5xl md:text-7xl font-bold text-white leading-tight mb-4">Office Auto Installer</h1>
-    <p class="text-xl text-gray-300 max-w-2xl mx-auto">Easy Microsoft Office installation for everyone. No technical knowledge required - just download, double-click, and follow the simple prompts!</p>
+    <p class="text-xl text-gray-300 max-w-2xl mx-auto">Easy Microsoft Office installation for everyone. No technical knowledge required - choose between a beautiful GUI or simple console interface!</p>
   </div>
 </section>
 
 <section id="download" class="py-20 bg-slate-900/50">
   <div class="container mx-auto px-6">
     <div class="text-center mb-16">
-      <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Choose Your Download Method</h2>
+      <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Choose Your Version</h2>
       <div class="w-24 h-1 bg-blue-500 mx-auto mb-8"></div>
-      <p class="text-xl text-gray-300 max-w-2xl mx-auto">Pick the option that works best for you. All methods give you the same powerful Office installer.</p>
+      <p class="text-xl text-gray-300 max-w-2xl mx-auto">Pick the interface style that works best for you. Both versions provide the same powerful Office installation.</p>
     </div>
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+    
+    <!-- Version Selection -->
+    <div class="grid md:grid-cols-2 gap-8 mb-12">
+      <!-- GUI Version -->
+      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border-2 border-blue-500/50 relative group">
+        <span class="absolute top-4 right-4 bg-green-600/20 text-green-400 px-3 py-1 rounded-full text-sm font-semibold">⭐ Recommended</span>
+        <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-lg flex items-center justify-center mb-4 mx-auto group-hover:bg-blue-600/30 transition-colors duration-300 text-2xl">🖥️</div>
+        <h3 class="text-2xl font-semibold text-white mb-2">GUI Version</h3>
+        <p class="text-gray-300 mb-4">Modern Windows 11 Fluent Design interface. Beautiful, visual, and pre-configured with smart defaults. Perfect for most users!</p>
+        <div class="space-y-3 mb-4">
+          <div class="flex items-center gap-2 text-gray-300 text-sm">
+            <span>✅</span> Windows 11 Fluent Design
+          </div>
+          <div class="flex items-center gap-2 text-gray-300 text-sm">
+            <span>✅</span> Pre-filled defaults
+          </div>
+          <div class="flex items-center gap-2 text-gray-300 text-sm">
+            <span>✅</span> One-click ready
+          </div>
+          <div class="flex items-center gap-2 text-gray-300 text-sm">
+            <span>✅</span> Real-time progress
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <button class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl download-btn" onclick="downloadZip('gui')">📥 Download GUI Package (ZIP)</button>
+          <div class="flex gap-2">
+            <a href="https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-GUI-SAFE.bat" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors duration-300 download-btn text-center" download="Install-Office-GUI-SAFE.bat">📄 .bat</a>
+            <a href="https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-GUI-WPF.ps1" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors duration-300 download-btn text-center" download="Install-Office-GUI-WPF.ps1">📄 .ps1</a>
+          </div>
+        </div>
+        <div class="border-t border-slate-600/50 mt-4 pt-4 space-y-2">
+          <div class="flex items-center gap-2 text-gray-400 text-sm">
+            <span>📄</span> Install-Office-GUI-SAFE.bat
+          </div>
+          <div class="flex items-center gap-2 text-gray-400 text-sm">
+            <span>📄</span> Install-Office-GUI-WPF.ps1
+          </div>
+        </div>
+      </div>
+
+      <!-- Console Version -->
       <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50 relative group">
-        <span class="absolute top-4 right-4 bg-green-600/20 text-green-400 px-3 py-1 rounded-full text-sm font-semibold">Recommended</span>
-        <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-lg flex items-center justify-center mb-4 mx-auto group-hover:bg-blue-600/30 transition-colors duration-300 text-2xl">📦</div>
-        <h3 class="text-xl font-semibold text-white mb-2">Complete Package</h3>
-        <p class="text-gray-300 mb-4">Download both files in a single ZIP package. Perfect for most users - just extract and run!</p>
-        <button class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl download-btn" onclick="downloadZip()">📥 Download ZIP Package</button>
+        <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-lg flex items-center justify-center mb-4 mx-auto group-hover:bg-blue-600/30 transition-colors duration-300 text-2xl">💻</div>
+        <h3 class="text-2xl font-semibold text-white mb-2">Console Version</h3>
+        <p class="text-gray-300 mb-4">Step-by-step text-based interface. Great for learning and users who prefer command-line interactions.</p>
+        <div class="space-y-3 mb-4">
+          <div class="flex items-center gap-2 text-gray-300 text-sm">
+            <span>✅</span> Text-based prompts
+          </div>
+          <div class="flex items-center gap-2 text-gray-300 text-sm">
+            <span>✅</span> Step-by-step guidance
+          </div>
+          <div class="flex items-center gap-2 text-gray-300 text-sm">
+            <span>✅</span> Educational
+          </div>
+          <div class="flex items-center gap-2 text-gray-300 text-sm">
+            <span>✅</span> Lightweight
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <button class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl download-btn" onclick="downloadZip('console')">📥 Download Console Package (ZIP)</button>
+          <div class="flex gap-2">
+            <a href="https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-SAFE.bat" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors duration-300 download-btn text-center" download="Install-Office-SAFE.bat">📄 .bat</a>
+            <a href="https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office.ps1" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors duration-300 download-btn text-center" download="Install-Office.ps1">📄 .ps1</a>
+          </div>
+        </div>
         <div class="border-t border-slate-600/50 mt-4 pt-4 space-y-2">
           <div class="flex items-center gap-2 text-gray-400 text-sm">
             <span>📄</span> Install-Office-SAFE.bat
@@ -80,29 +139,23 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
-        <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-lg flex items-center justify-center mb-4 mx-auto group-hover:bg-blue-600/30 transition-colors duration-300 text-2xl">📄</div>
-        <h3 class="text-xl font-semibold text-white mb-2">Individual Files</h3>
-        <p class="text-gray-300 mb-4">Download each file separately. Make sure to save both files in the same folder!</p>
-        <div class="flex flex-col gap-2">
-          <a href="https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-SAFE.bat" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl download-btn" download="Install-Office-SAFE.bat">📥 Download Launcher (.bat)</a>
-          <a href="https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office.ps1" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl download-btn" download="Install-Office.ps1">📥 Download Script (.ps1)</a>
+    <!-- Additional Download Options -->
+    <div class="text-center">
+      <h3 class="text-2xl font-semibold text-white mb-6">Other Download Options</h3>
+      <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-lg flex items-center justify-center mb-4 mx-auto text-xl">🚀</div>
+          <h4 class="text-lg font-semibold text-white mb-2">GitHub Release</h4>
+          <p class="text-gray-300 text-sm mb-4">Get the official release with changelog and version history.</p>
+          <a href="https://github.com/njvanas/Office-Auto-Install/releases/latest" target="_blank" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300 inline-flex items-center gap-2 download-btn">🔗 View on GitHub</a>
         </div>
-      </div>
-
-      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
-        <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-lg flex items-center justify-center mb-4 mx-auto group-hover:bg-blue-600/30 transition-colors duration-300 text-2xl">🚀</div>
-        <h3 class="text-xl font-semibold text-white mb-2">GitHub Release</h3>
-        <p class="text-gray-300 mb-4">Get the official release from GitHub with changelog and version history.</p>
-        <a href="https://github.com/njvanas/Office-Auto-Install/releases/latest" target="_blank" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl inline-flex items-center gap-2 download-btn">🔗 View on GitHub</a>
-        <div class="border-t border-slate-600/50 mt-4 pt-4 space-y-2">
-          <div class="flex items-center gap-2 text-gray-400 text-sm">
-            <span>📋</span> Release notes included
-          </div>
-          <div class="flex items-center gap-2 text-gray-400 text-sm">
-            <span>🔒</span> Verified checksums
-          </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-lg flex items-center justify-center mb-4 mx-auto text-xl">📦</div>
+          <h4 class="text-lg font-semibold text-white mb-2">All Files</h4>
+          <p class="text-gray-300 text-sm mb-4">Download the complete repository with all versions and documentation.</p>
+          <a href="https://github.com/njvanas/Office-Auto-Install/archive/refs/heads/main.zip" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300 inline-flex items-center gap-2 download-btn">📥 Download All Files</a>
         </div>
       </div>
     </div>
@@ -114,39 +167,110 @@
     <div class="text-center mb-16">
       <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">How to Use</h2>
       <div class="w-24 h-1 bg-blue-500 mx-auto mb-8"></div>
-      <p class="text-xl text-gray-300 max-w-2xl mx-auto">Follow these simple steps to install Microsoft Office</p>
+      <p class="text-xl text-gray-300 max-w-2xl mx-auto">Follow these simple steps to install Microsoft Office. Choose the instructions for your version below.</p>
     </div>
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
-        <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">1</div>
-        <h3 class="text-lg font-semibold text-white mb-2">Download Files</h3>
-        <p class="text-gray-300">Get the installer files from above and place them in the same folder.</p>
+
+    <!-- GUI Version Instructions -->
+    <div class="mb-16">
+      <div class="text-center mb-8">
+        <h3 class="text-3xl font-bold text-white mb-2">GUI Version (Recommended) ⭐</h3>
+        <p class="text-gray-300">Modern Windows 11 Fluent Design interface</p>
       </div>
-      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
-        <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">2</div>
-        <h3 class="text-lg font-semibold text-white mb-2">Run the Launcher</h3>
-        <p class="text-gray-300">Double-click <code>Install-Office-SAFE.bat</code> and grant administrator permission.</p>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">1</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Download Files</h4>
+          <p class="text-gray-300 text-sm">Download both <code class="text-blue-400">Install-Office-GUI-SAFE.bat</code> and <code class="text-blue-400">Install-Office-GUI-WPF.ps1</code> to the same folder.</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">2</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Run the Launcher</h4>
+          <p class="text-gray-300 text-sm">Double-click <code class="text-blue-400">Install-Office-GUI-SAFE.bat</code> and click "Yes" when Windows asks for administrator permission.</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">3</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Use the GUI</h4>
+          <p class="text-gray-300 text-sm">The beautiful GUI window will open with all options pre-configured. Click "Install Office" or customize settings first.</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">4</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Monitor Progress</h4>
+          <p class="text-gray-300 text-sm">Watch real-time progress with visual feedback as Office downloads and installs.</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">5</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Wait for Installation</h4>
+          <p class="text-gray-300 text-sm">Office will download and install automatically (10-30 minutes). Don't close the window!</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">6</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Start Using Office</h4>
+          <p class="text-gray-300 text-sm">Find Word, Excel, PowerPoint, and other Office apps in your Start Menu.</p>
+        </div>
       </div>
-      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
-        <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">3</div>
-        <h3 class="text-lg font-semibold text-white mb-2">Answer Questions</h3>
-        <p class="text-gray-300">The installer will guide you through simple questions about what you want to install.</p>
+    </div>
+
+    <!-- Console Version Instructions -->
+    <div>
+      <div class="text-center mb-8">
+        <h3 class="text-3xl font-bold text-white mb-2">Console Version</h3>
+        <p class="text-gray-300">Step-by-step text-based interface</p>
       </div>
-      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
-        <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">4</div>
-        <h3 class="text-lg font-semibold text-white mb-2">Confirm Choices</h3>
-        <p class="text-gray-300">Review your selections before the download begins.</p>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">1</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Download Files</h4>
+          <p class="text-gray-300 text-sm">Download both <code class="text-blue-400">Install-Office-SAFE.bat</code> and <code class="text-blue-400">Install-Office.ps1</code> to the same folder.</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">2</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Run the Launcher</h4>
+          <p class="text-gray-300 text-sm">Double-click <code class="text-blue-400">Install-Office-SAFE.bat</code> and click "Yes" when Windows asks for administrator permission.</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">3</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Follow Prompts</h4>
+          <p class="text-gray-300 text-sm">The installer will guide you through simple questions about what you want to install.</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">4</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Confirm Choices</h4>
+          <p class="text-gray-300 text-sm">Review your selections before the download begins.</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">5</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Wait for Installation</h4>
+          <p class="text-gray-300 text-sm">Office will download and install automatically (10-30 minutes). Keep the window open!</p>
+        </div>
+        <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
+          <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">6</div>
+          <h4 class="text-lg font-semibold text-white mb-2">Start Using Office</h4>
+          <p class="text-gray-300 text-sm">Find Word, Excel, PowerPoint, and other Office apps in your Start Menu.</p>
+        </div>
       </div>
-      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
-        <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">5</div>
-        <h3 class="text-lg font-semibold text-white mb-2">Wait for Installation</h3>
-        <p class="text-gray-300">Office will download and install automatically (10-30 minutes).</p>
-      </div>
-      <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50">
-        <div class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mb-4 font-semibold">6</div>
-        <h3 class="text-lg font-semibold text-white mb-2">Start Using Office</h3>
-        <p class="text-gray-300">Find Word, Excel, PowerPoint, and other Office apps in your Start Menu.</p>
-      </div>
+    </div>
+
+    <!-- Important Notes -->
+    <div class="mt-12 bg-blue-900/20 border border-blue-500/50 rounded-lg p-6">
+      <h4 class="text-xl font-semibold text-white mb-4">⚠️ Important Notes</h4>
+      <ul class="space-y-2 text-gray-300">
+        <li class="flex items-start gap-2">
+          <span>•</span>
+          <span><strong class="text-white">Both files must be in the same folder</strong> for this to work</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span>•</span>
+          <span><strong class="text-white">You need administrator rights</strong> - Windows will ask for permission</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span>•</span>
+          <span><strong class="text-white">Stay connected to the internet</strong> - Office downloads during installation</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span>•</span>
+          <span><strong class="text-white">Don't close the window</strong> during installation (10-30 minutes)</span>
+        </li>
+      </ul>
     </div>
   </div>
 </section>
@@ -176,12 +300,12 @@
       <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50 text-center">
         <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-lg mx-auto mb-4 flex items-center justify-center text-2xl">🎨</div>
         <h3 class="text-lg font-semibold text-white mb-2">Beautiful Interface</h3>
-        <p class="text-gray-300 text-sm">Colorful, easy-to-read menus with helpful explanations for every option.</p>
+        <p class="text-gray-300 text-sm">GUI version features Windows 11 Fluent Design. Console version has colorful, easy-to-read menus with helpful explanations.</p>
       </div>
       <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50 text-center">
         <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-lg mx-auto mb-4 flex items-center justify-center text-2xl">🔧</div>
         <h3 class="text-lg font-semibold text-white mb-2">Flexible Options</h3>
-        <p class="text-gray-300 text-sm">Choose Office version, language, components, and update frequency.</p>
+        <p class="text-gray-300 text-sm">Choose Office version (2024/2021/365), architecture, language, components (Visio/Project), and update channels.</p>
       </div>
       <div class="bg-slate-800/50 rounded-lg p-6 hover:bg-slate-800/70 transition-colors duration-300 border border-slate-700/50 text-center">
         <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-lg mx-auto mb-4 flex items-center justify-center text-2xl">🛡️</div>
@@ -200,7 +324,7 @@
 </footer>
 
 <script>
-        async function downloadZip() {
+        async function downloadZip(version) {
             try {
                 // Show loading state
                 const btn = event.target;
@@ -208,10 +332,70 @@
                 btn.innerHTML = '⏳ Creating package...';
                 btn.disabled = true;
 
+                let batUrl, ps1Url, batFileName, ps1FileName, zipFileName, readmeText, versionName;
+
+                if (version === 'gui') {
+                    batUrl = 'https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-GUI-SAFE.bat';
+                    ps1Url = 'https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-GUI-WPF.ps1';
+                    batFileName = 'Install-Office-GUI-SAFE.bat';
+                    ps1FileName = 'Install-Office-GUI-WPF.ps1';
+                    zipFileName = 'Office-Auto-Installer-GUI.zip';
+                    versionName = 'GUI Version';
+                    readmeText = `Office Auto Installer - GUI Version Package
+
+Instructions:
+1. Extract both files to the same folder
+2. Double-click "Install-Office-GUI-SAFE.bat" to start
+3. Click "Yes" when Windows asks for admin permission
+4. The beautiful GUI window will open with all options pre-configured
+5. Click "Install Office" (or customize settings first)
+
+For more help, visit: https://njvanas.github.io/Office-Auto-Install/
+
+This package contains:
+- Install-Office-GUI-SAFE.bat (Launcher for GUI version)
+- Install-Office-GUI-WPF.ps1 (Main GUI installer script)
+- README.txt (This file)
+
+Features:
+- Windows 11 Fluent Design interface
+- Pre-filled defaults
+- Real-time progress tracking
+- One-click ready
+`;
+                } else {
+                    batUrl = 'https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-SAFE.bat';
+                    ps1Url = 'https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office.ps1';
+                    batFileName = 'Install-Office-SAFE.bat';
+                    ps1FileName = 'Install-Office.ps1';
+                    zipFileName = 'Office-Auto-Installer-Console.zip';
+                    versionName = 'Console Version';
+                    readmeText = `Office Auto Installer - Console Version Package
+
+Instructions:
+1. Extract both files to the same folder
+2. Double-click "Install-Office-SAFE.bat" to start
+3. Click "Yes" when Windows asks for admin permission
+4. Follow the simple prompts to install Office
+
+For more help, visit: https://njvanas.github.io/Office-Auto-Install/
+
+This package contains:
+- Install-Office-SAFE.bat (Launcher for console version)
+- Install-Office.ps1 (Main console installer script)
+- README.txt (This file)
+
+Features:
+- Step-by-step text-based interface
+- Educational and informative
+- Lightweight and fast
+`;
+                }
+
                 // Fetch both files
                 const [batResponse, ps1Response] = await Promise.all([
-                    fetch('https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office-SAFE.bat'),
-                    fetch('https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/Install-Office.ps1')
+                    fetch(batUrl),
+                    fetch(ps1Url)
                 ]);
 
                 if (!batResponse.ok || !ps1Response.ok) {
@@ -233,30 +417,16 @@
                 }
 
                 const zip = new JSZip();
-                zip.file('Install-Office-SAFE.bat', batContent);
-                zip.file('Install-Office.ps1', ps1Content);
-                zip.file('README.txt', `Office Auto Installer Package
-
-Instructions:
-1. Extract both files to the same folder
-2. Double-click "Install-Office-SAFE.bat" to start
-3. Click "Yes" when Windows asks for admin permission
-4. Follow the simple prompts to install Office
-
-For more help, visit: https://njvanas.github.io/Office-Auto-Install/
-
-This package contains:
-- Install-Office-SAFE.bat (Launcher)
-- Install-Office.ps1 (Main installer script)
-- README.txt (This file)
-`);
+                zip.file(batFileName, batContent);
+                zip.file(ps1FileName, ps1Content);
+                zip.file('README.txt', readmeText);
 
                 // Generate and download ZIP
                 const content = await zip.generateAsync({ type: 'blob' });
                 const url = URL.createObjectURL(content);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'Office-Auto-Installer.zip';
+                a.download = zipFileName;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -274,7 +444,7 @@ This package contains:
 
                 // Restore button
                 const btn = event.target;
-                btn.innerHTML = '📥 Download ZIP Package';
+                btn.innerHTML = btn.innerHTML.includes('GUI') ? '📥 Download GUI Package (ZIP)' : '📥 Download Console Package (ZIP)';
                 btn.disabled = false;
             }
         }
