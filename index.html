@@ -65,9 +65,40 @@
       @media print{body{display:none;}}
       summary::-webkit-details-marker{display:none;}
       summary{list-style:none;}
+
+      /* Portfolio-aligned footer (same as njvanas.github.io/typing-speed-test/) */
+      .site-footer{width:100%;margin-top:auto;background:#0f172a;border-top:1px solid #1e293b;color:#94a3b8;font-size:0.9375rem;}
+      .site-footer__inner{max-width:1280px;margin:0 auto;padding:3rem 1.5rem 1.5rem;}
+      .site-footer__grid{display:grid;gap:2rem;grid-template-columns:1fr;}
+      @media (min-width:768px){.site-footer__grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:2rem;}}
+      .site-footer__title{font-size:1.5rem;font-weight:700;color:#fff;margin:0 0 1rem;}
+      .site-footer__tagline{margin:0 0 1rem;color:#9ca3af;line-height:1.625;}
+      .site-footer__social{display:flex;flex-wrap:wrap;gap:1rem;list-style:none;margin:0;padding:0;}
+      .site-footer__social li{margin:0;}
+      .site-footer__social-btn{display:inline-flex;align-items:center;justify-content:center;padding:0.5rem;background:#1e293b;color:#9ca3af;border-radius:0.5rem;transition:background 0.3s ease,color 0.3s ease;}
+      .site-footer__social-btn:hover{background:#2563eb;color:#fff;}
+      .site-footer__icon{display:block;flex-shrink:0;}
+      .site-footer__heading{margin:0 0 1rem;font-size:1rem;font-weight:600;color:#fff;}
+      .site-footer__list{list-style:none;margin:0;padding:0;}
+      .site-footer__list li{margin-bottom:0.5rem;}
+      .site-footer__list li:last-child{margin-bottom:0;}
+      .site-footer__list a{color:#9ca3af;text-decoration:none;transition:color 0.3s ease;}
+      .site-footer__list a:hover{color:#fff;}
+      .site-footer__list--muted li{color:#9ca3af;}
+      .site-footer__bottom{display:flex;flex-direction:column;align-items:center;gap:1rem;margin-top:2rem;padding-top:2rem;border-top:1px solid #1e293b;}
+      @media (min-width:768px){.site-footer__bottom{flex-direction:row;justify-content:space-between;align-items:center;}}
+      .site-footer__legal,.site-footer__made{margin:0;font-size:0.875rem;color:#9ca3af;}
+      .site-footer__made{display:flex;align-items:center;gap:0.25rem;}
+      .site-footer__heart{color:#ef4444;flex-shrink:0;}
+      .site-footer__portfolio-note{margin:1.25rem 0 0;padding-top:1.25rem;border-top:1px solid #1e293b;font-size:0.8125rem;color:#64748b;text-align:center;line-height:1.5;}
+      .site-footer__portfolio-note a{color:#93c5fd;text-decoration:none;transition:color 0.2s ease;}
+      .site-footer__portfolio-note a:hover{color:#fff;}
+      .site-footer__sep{margin:0 0.35rem;color:#475569;}
     </style>
 </head>
-<body class="font-sans bg-[#0a0e27] text-slate-200 leading-[1.6] min-h-screen">
+<body class="font-sans bg-[#0a0e27] text-slate-200 leading-[1.6] min-h-screen flex flex-col">
+
+<main class="flex-1 w-full">
 
 <header class="bg-slate-900/95 backdrop-blur-sm shadow-lg border-b border-slate-700/50 sticky top-0 z-50">
   <nav class="container mx-auto px-6 py-4 flex items-center justify-between">
@@ -198,36 +229,88 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
   </div>
 </section>
 
-<footer class="bg-slate-900 border-t border-slate-800 text-gray-400 py-10 px-6">
-  <div class="container mx-auto max-w-3xl">
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-8 mb-8">
-      <a href="https://njvanas.github.io/" class="flex items-start gap-3 rounded-lg -m-2 p-2 text-left hover:bg-slate-900/80 transition-colors group">
-        <span class="w-10 h-10 shrink-0 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg" aria-hidden="true">NJV</span>
-        <div>
-          <div class="font-semibold text-white group-hover:text-blue-300 transition-colors">NJ van As</div>
-          <p class="text-xs text-gray-500 mt-0.5 leading-snug">Senior Cloud &amp; Microsoft 365 Engineer · Security &amp; infrastructure at scale</p>
-        </div>
-      </a>
-      <p class="text-sm text-gray-400 sm:max-w-md sm:text-right leading-relaxed">
-        This page is the companion site for <strong class="text-slate-200">Office Auto Install</strong>, a <a href="https://njvanas.github.io/" class="text-blue-400 hover:underline">portfolio</a> project—same background, hero gradient, typography, and PowerShell automation focus as the main site.
-      </p>
-    </div>
-    <div class="flex flex-wrap items-center justify-center sm:justify-between gap-x-6 gap-y-3 pt-6 border-t border-slate-700/80 text-sm">
-      <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-        <a href="https://njvanas.github.io/" class="text-blue-400 hover:underline">Main portfolio</a>
-        <span class="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
-        <a href="https://github.com/njvanas/Office-Auto-Install" class="text-blue-400 hover:underline">This repo</a>
-        <span class="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
-        <a href="https://github.com/njvanas/Office-Auto-Install/blob/main/LICENSE" class="text-blue-400 hover:underline">MIT License</a>
+</main>
+
+<footer class="site-footer" aria-label="Site footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <h3 class="site-footer__title">NJ van As</h3>
+        <p class="site-footer__tagline">
+          Senior Cloud &amp; Microsoft 365 Engineer—architecting secure, scalable infrastructure
+          for 60+ organizations and passionate about turning complex systems into reliable foundations.
+        </p>
+        <ul class="site-footer__social">
+          <li>
+            <a href="mailto:njvanas@duck.com" class="site-footer__social-btn" aria-label="Email">
+              <svg class="site-footer__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://linkedin.com/in/njvanas" class="site-footer__social-btn" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+              <svg class="site-footer__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/njvanas" class="site-footer__social-btn" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <svg class="site-footer__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            </a>
+          </li>
+        </ul>
       </div>
-      <p class="text-xs text-gray-500 text-center sm:text-right w-full sm:w-auto">
-        Uses Microsoft’s official deployment tools (ODT). Not affiliated with Microsoft.
+
+      <div class="site-footer__links">
+        <h4 class="site-footer__heading">Quick Links</h4>
+        <ul class="site-footer__list">
+          <li><a href="https://njvanas.github.io/#about">About</a></li>
+          <li><a href="https://njvanas.github.io/#experience">Experience</a></li>
+          <li><a href="https://njvanas.github.io/#projects">Projects</a></li>
+          <li><a href="https://njvanas.github.io/#contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="site-footer__expertise">
+        <h4 class="site-footer__heading">Expertise</h4>
+        <ul class="site-footer__list site-footer__list--muted">
+          <li>Microsoft 365 &amp; Azure Cloud</li>
+          <li>Identity &amp; Access Management</li>
+          <li>Multi-Tenant &amp; Security</li>
+          <li>PowerShell &amp; Automation</li>
+          <li>Threat Detection &amp; Response</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <p class="site-footer__legal">
+        © <span id="footer-year"></span> NJ van As. All rights reserved.
+      </p>
+      <p class="site-footer__made">
+        Made with
+        <svg class="site-footer__heart" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        in the Netherlands
       </p>
     </div>
+    <p class="site-footer__portfolio-note">
+      <a href="https://njvanas.github.io/">Main portfolio</a>
+      <span class="site-footer__sep" aria-hidden="true">·</span>
+      <span>Office Auto Install is featured in <a href="https://njvanas.github.io/#projects">Projects</a>.</span>
+      <br />
+      <a href="https://github.com/njvanas/Office-Auto-Install">This repository</a>
+      <span class="site-footer__sep" aria-hidden="true">·</span>
+      <a href="https://github.com/njvanas/Office-Auto-Install/blob/main/LICENSE">MIT License</a>
+      <span class="site-footer__sep" aria-hidden="true">·</span>
+      <span>Uses Microsoft’s official deployment tools (ODT). Not affiliated with Microsoft.</span>
+    </p>
   </div>
 </footer>
 
 <script>
+        (function () {
+            var y = document.getElementById('footer-year');
+            if (y) y.textContent = String(new Date().getFullYear());
+        })();
+
         document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var id = btn.getAttribute('data-copy-target');
