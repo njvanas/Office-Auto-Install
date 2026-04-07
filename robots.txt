@@ -1,0 +1,5 @@
+# https://njvanas.github.io/Office-Auto-Install/
+User-agent: *
+Allow: /
+
+Sitemap: https://njvanas.github.io/Office-Auto-Install/sitemap.xml
