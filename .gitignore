@@ -15,6 +15,3 @@ Desktop.ini
 .idea/
 *.swp
 *.swo
-
-# Keep all source files - we want everything in the repo
-# This ensures users can download the complete tool
