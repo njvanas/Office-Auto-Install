@@ -54,15 +54,15 @@
   <div class="container mx-auto px-6">
     <span class="inline-block bg-slate-700/50 border border-slate-600/50 text-green-400 font-semibold rounded-full px-4 py-1 mb-6">v3.4 - Latest Version</span>
     <h1 class="text-5xl md:text-7xl font-bold text-white leading-tight mb-4">Office Auto Installer</h1>
-    <p class="text-xl text-gray-300 max-w-2xl mx-auto">Easy Microsoft Office installation for everyone. No ZIP required — admin PowerShell: <code class="text-slate-200 text-base">irm &quot;&hellip;/office.ps1&quot; | iex</code> (same idea as <a href="https://github.com/ChrisTitusTech/winutil" class="text-blue-400 hover:underline" target="_blank" rel="noopener">WinUtil</a>), or download the classic packages below.</p>
+    <p class="text-xl text-gray-300 max-w-2xl mx-auto">Easy Microsoft Office installation for everyone. No ZIP required — admin PowerShell: <code class="text-slate-200 text-base">irm &quot;&hellip;/office.ps1&quot; | iex</code> (standard remote script pattern), or download the classic packages below.</p>
   </div>
 </section>
 
 <section id="run" class="py-16 bg-slate-900/40 border-y border-slate-600/40">
   <div class="container mx-auto px-6 max-w-4xl">
     <div class="text-center mb-10">
-      <h2 class="text-3xl md:text-4xl font-bold text-white mb-3">Usage (WinUtil-style)</h2>
-      <p class="text-gray-300 max-w-2xl mx-auto">Same launch model as <a href="https://github.com/ChrisTitusTech/winutil" class="text-blue-400 hover:underline" target="_blank" rel="noopener">Chris Titus Tech&rsquo;s WinUtil</a>: <strong class="text-white">Administrator</strong> PowerShell, then <code class="text-slate-200">irm &hellip; | iex</code>. This project uses <code class="text-slate-200">office.ps1</code> as the single bootstrap entry (like WinUtil&rsquo;s short URL).</p>
+      <h2 class="text-3xl md:text-4xl font-bold text-white mb-3">Usage</h2>
+      <p class="text-gray-300 max-w-2xl mx-auto"><strong class="text-white">Administrator</strong> PowerShell or Terminal, then <code class="text-slate-200">irm &hellip; | iex</code> — the usual way to download and run a script from a URL. This project uses <code class="text-slate-200">office.ps1</code> as the single public bootstrap; you can host it on GitHub Pages or any HTTPS URL you control.</p>
     </div>
     <div class="bg-slate-800/40 border border-slate-600/50 rounded-xl p-6 mb-8 text-left">
       <h3 class="text-lg font-semibold text-white mb-4">Run as Administrator</h3>
@@ -91,8 +91,8 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
 irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
       <button type="button" class="mt-3 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors" data-copy-target="cmd-console">Copy console</button>
 
-      <p class="text-gray-400 text-sm mt-8 leading-relaxed">Forks: set <code class="text-blue-400">$env:OFFICE_AUTO_INSTALL_REPO = "yourname/Office-Auto-Install"</code> before <code class="text-slate-300">irm</code>. Custom domain (like <code class="text-slate-300">christitus.com/win</code>): point it at this repo&rsquo;s GitHub Pages site or raw <code class="text-slate-300">office.ps1</code>. Only run <code class="text-slate-300">irm &hellip; | iex</code> from sources you trust.</p>
-      <p class="text-gray-500 text-xs mt-4">Renamed from <code class="text-slate-400">Launch-Office.ps1</code> &rarr; <code class="text-slate-400">office.ps1</code> for a single WinUtil-like entry point.</p>
+      <p class="text-gray-400 text-sm mt-8 leading-relaxed">Forks: set <code class="text-blue-400">$env:OFFICE_AUTO_INSTALL_REPO = "yourname/Office-Auto-Install"</code> before <code class="text-slate-300">irm</code>. Optional: use your own domain or short URL pointing at this repo&rsquo;s GitHub Pages <code class="text-slate-300">office.ps1</code> or the raw file. Only run <code class="text-slate-300">irm &hellip; | iex</code> from sources you trust.</p>
+      <p class="text-gray-500 text-xs mt-4">Bootstrap entry: <code class="text-slate-400">office.ps1</code> (replaces the older <code class="text-slate-400">Launch-Office.ps1</code> name).</p>
     </div>
   </div>
 </section>
@@ -207,7 +207,7 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
     <div class="text-center mb-16">
       <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">How to Use</h2>
       <div class="w-24 h-1 bg-blue-500 mx-auto mb-8"></div>
-      <p class="text-xl text-gray-300 max-w-2xl mx-auto">Fastest path: <a href="#run" class="text-blue-400 hover:underline">Run online</a> with <code class="text-slate-200">office.ps1</code> (WinUtil-style). Below are folder-based steps if you already downloaded the ZIP or individual files.</p>
+      <p class="text-xl text-gray-300 max-w-2xl mx-auto">Fastest path: <a href="#run" class="text-blue-400 hover:underline">Run online</a> with <code class="text-slate-200">office.ps1</code>. Below are folder-based steps if you already downloaded the ZIP or individual files.</p>
     </div>
 
     <!-- GUI Version Instructions -->
@@ -392,7 +392,7 @@ Instructions:
 
 For more help, visit: https://njvanas.github.io/Office-Auto-Install/
 
-Or run from the web (WinUtil-style, admin PowerShell):
+Or run from the web (admin PowerShell):
   irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 
 This package contains:
@@ -423,7 +423,7 @@ Instructions:
 
 For more help, visit: https://njvanas.github.io/Office-Auto-Install/
 
-Or run from the web (WinUtil-style, admin PowerShell):
+Or run from the web (admin PowerShell):
   $env:OFFICE_AUTO_INSTALL_USE_CONSOLE = "1"
   irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 

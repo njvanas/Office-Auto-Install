@@ -3,13 +3,13 @@
 ![Screenshot](Screenshot1.png)
 ![Screenshot](Screenshot2.png)
 
-Install Microsoft Office 2024 / 2021 / Microsoft 365 through **official Microsoft channels**. This project follows the same **web launch pattern** as [Chris Titus Tech's WinUtil](https://github.com/ChrisTitusTech/winutil): run **PowerShell as Administrator**, then **`irm "…/office.ps1" | iex`**. A small bootstrap ([`office.ps1`](./office.ps1)) downloads the full **GUI** or **console** installer from GitHub. WinUtil uses a custom short URL (`christitus.com/win`); here the recommended URL is **GitHub Pages** (`…/office.ps1`), with **raw.githubusercontent.com** as a fallback. For offline or locked-down networks, use the **two-file** `.bat` + `.ps1` packages in the sections below.
+Install Microsoft Office 2024 / 2021 / Microsoft 365 through **official Microsoft channels**. **Recommended:** run **PowerShell as Administrator**, then **`irm "…/office.ps1" | iex`** — a common pattern (`Invoke-RestMethod` / `Invoke-WebRequest` plus `Invoke-Expression`) to pull and run a script from a URL. The small bootstrap [`office.ps1`](./office.ps1) downloads the full **GUI** or **console** installer from GitHub. The usual public URLs are **GitHub Pages** (`…/office.ps1`) and **raw.githubusercontent.com** as a fallback. For offline or locked-down networks, use the **two-file** `.bat` + `.ps1` packages in the sections below.
 
 > **Breaking rename:** `Launch-Office.ps1` was removed. The only bootstrap entry is **`office.ps1`**.
 
 ## Usage
 
-Office Auto Install is meant to run **as Administrator**, like [WinUtil](https://github.com/ChrisTitusTech/winutil#usage).
+Office Auto Install is meant to run **as Administrator** (required for installing software system-wide).
 
 1. **Start menu:** Right-click the Start button → **Terminal (Admin)** or **Windows PowerShell (Admin)** (Windows 10/11).
 2. **Search:** Press Win, type *PowerShell* or *Terminal*, then **Ctrl+Shift+Enter**, or right-click → **Run as administrator**.
@@ -52,7 +52,7 @@ $env:OFFICE_AUTO_INSTALL_REPO = "yourname/Office-Auto-Install"
 irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 ```
 
-#### Custom domain (WinUtil-style short link)
+#### Custom domain (short URL)
 
 If you use a GitHub Pages [custom domain](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site), put the hostname in the root **`CNAME`** file (one line only — see GitHub’s docs; do not leave the placeholder comment lines in production). Then you can shorten the launch line to:
 
@@ -108,7 +108,7 @@ Only run **`irm … | iex`** from sources you trust.
 - Keep the window open so you can see the results
 
 ### **⚠️ Important Notes**
-- **Web launch (`office.ps1`):** stay online for bootstrap **and** Office setup; use **Windows PowerShell 5.1+** or **Windows Terminal** (same class of tool as WinUtil).
+- **Web launch (`office.ps1`):** stay online for bootstrap **and** Office setup; use **Windows PowerShell 5.1+** or **Windows Terminal**.
 - **Download-folder mode:** **both** the `.bat` and `.ps1` must sit in the **same** folder.
 - **Administrator rights** — required for a smooth run; the GUI can still prompt to elevate if needed.
 - **Stay connected to the internet** — Office downloads during installation.
@@ -188,7 +188,7 @@ Installer behavior (editions, languages, ODT) is the same for web vs folder laun
 - **Helpful Hints** - Guidance for every decision you need to make
 
 ### 🖥️ **Windows Integration**
-- **WinUtil-style launch** - [`office.ps1`](./office.ps1) via GitHub Pages or raw GitHub; optional env vars for forks, dev branch, or console mode ([WinUtil](https://github.com/ChrisTitusTech/winutil))
+- **Remote bootstrap** - [`office.ps1`](./office.ps1) via GitHub Pages or raw GitHub; optional env vars for forks, dev branch, or console mode
 - **Execution Policy Fix** - Automatically handles PowerShell execution policy restrictions
 - **Easy Double-Click Launch** - Just double-click the .bat file when using the folder download
 - **Right-Click Protection** - Prevents window from closing immediately
@@ -261,7 +261,7 @@ Installer behavior (editions, languages, ODT) is the same for web vs folder laun
 This script downloads and installs Microsoft software through official Microsoft deployment tools. **You are responsible for having proper Microsoft Office licenses.** This tool does not crack, modify, or bypass any licensing - it only makes installation easier. **Use at your own risk.** The author assumes no responsibility for licensing compliance or any issues that may arise.
 
 ## 🛠️ **Technical Details**
-- **WinUtil vs this repo** - [WinUtil](https://github.com/ChrisTitusTech/winutil) merges many sources with `Compile.ps1` into one large script; here the **GUI** and **console** payloads are already single files, and only the small [`office.ps1`](./office.ps1) bootstrap is needed for the `irm | iex` workflow.
+- **Script layout** - The **GUI** and **console** installers are each a single `.ps1` file. [`office.ps1`](./office.ps1) is a small bootstrap used for the standard remote pattern `irm <url> | iex`.
 - **Bootstrap** - [`office.ps1`](./office.ps1) downloads `Install-Office-GUI-WPF.ps1` or `Install-Office.ps1` from `raw.githubusercontent.com` over HTTPS, then runs it in-process with `Invoke-Expression`
 - **Official Tools Only** - Uses Microsoft's Office Deployment Tool (ODT)
 - **Execution Policy Safe** - Automatically handles PowerShell restrictions (folder and GUI flows)

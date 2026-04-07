@@ -1,12 +1,12 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Office Auto Install - web bootstrap (same pattern as Chris Titus Tech WinUtil: one URL, fetch, run).
+    Office Auto Install - remote bootstrap (standard PowerShell: fetch script, run with Invoke-Expression).
 
 .DESCRIPTION
     Downloads the latest Install-Office-GUI-WPF.ps1 or Install-Office.ps1 from GitHub and runs it in this
-    PowerShell session. WinUtil uses a short domain (e.g. christitus.com/win); this project uses GitHub Pages
-    for a shorter launch URL, with raw.githubusercontent.com as a fallback.
+    PowerShell session. The bootstrap is published on GitHub Pages for a shorter URL; raw.githubusercontent.com
+    is the fallback host for the same file.
 
 .EXAMPLE
     # Stable — GUI (recommended). Run in Windows Terminal or PowerShell as Administrator:
@@ -28,7 +28,7 @@
 
 .NOTES
     Forks: set OFFICE_AUTO_INSTALL_REPO (e.g. "yourname/Office-Auto-Install"). Optional: OFFICE_AUTO_INSTALL_BRANCH.
-    Only run irm ... | iex from sources you trust. Requires Administrator for a smooth install (same as WinUtil).
+    Only run irm ... | iex from sources you trust. Administrator rights are required for Office setup.
 #>
 
 $ErrorActionPreference = "Stop"
@@ -60,9 +60,8 @@ Write-Host ""
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
     [Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host " Administrator rights are required for Office setup (same as WinUtil)." -ForegroundColor Yellow
+    Write-Host " Administrator rights are required for Office setup." -ForegroundColor Yellow
     Write-Host " Open Terminal or PowerShell as Administrator, then run this command again." -ForegroundColor Yellow
-    Write-Host " https://github.com/ChrisTitusTech/winutil#usage" -ForegroundColor DarkGray
     Write-Host ""
 }
 

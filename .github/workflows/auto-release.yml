@@ -129,7 +129,7 @@ jobs:
         3. Click "Yes" when Windows asks for admin permission
         4. Follow the simple prompts to install Office
 
-        WEB LAUNCH (WinUtil-style, admin PowerShell):
+        WEB LAUNCH (admin PowerShell):
         $env:OFFICE_AUTO_INSTALL_USE_CONSOLE = "1"
         irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 
@@ -195,7 +195,7 @@ jobs:
         4. The beautiful GUI window will open with all options pre-configured
         5. Click "Install Office" (or customize settings first)
 
-        WEB LAUNCH (WinUtil-style, admin PowerShell):
+        WEB LAUNCH (admin PowerShell):
         irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 
         WHAT'S INCLUDED:
@@ -271,7 +271,7 @@ jobs:
         This package contains both GUI and Console versions of the Office Auto Installer.
 
         QUICK START:
-        WinUtil-style web launch (admin PowerShell):
+        Web launch (admin PowerShell):
         irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 
         Or choose one folder-based version:
@@ -331,7 +331,7 @@ jobs:
         ## 🚀 Office Auto Installer $VERSION
         
         ### 📥 Download Options
-        - **Web launch (WinUtil-style)**: Admin PowerShell: \`irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex\` (see README)
+        - **Web launch**: Admin PowerShell: \`irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex\` (see README)
         - **GUI Version (Recommended)**: Download \`Office-Auto-Installer-GUI-$VERSION.zip\` for Windows 11 Fluent Design interface
         - **Console Version**: Download \`Office-Auto-Installer-Console-$VERSION.zip\` for text-based interface
         - **Complete Package**: Download \`Office-Auto-Installer-Complete-$VERSION.zip\` for both versions + \`office.ps1\`
