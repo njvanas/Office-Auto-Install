@@ -12,7 +12,7 @@
     All options are pre-filled with recommended defaults for one-click installation.
     Fully self-contained - no external dependencies required.
 .NOTES
-    Version: 5.0 - WPF with Fluent Design Theme
+    Version: 3.5 - WPF with Fluent Design Theme
     Author: Office Auto Installer Team
     Requires: .NET Framework 4.7.2+ or .NET 6+ (for Fluent theme: .NET 9+)
 #>

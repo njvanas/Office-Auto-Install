@@ -161,7 +161,7 @@ function Show-WelcomeScreen {
     $border = "=" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Easy Office Installation for Everyone"
-    $version = "v3.4 - Syntax Fixed"
+    $version = "v3.5"
     
     Write-Host "/$border\" -ForegroundColor Cyan
     Write-Host "|" -ForegroundColor Cyan -NoNewline
@@ -290,7 +290,7 @@ function Show-Header {
     $border = "=" * $width
     $title = "MICROSOFT OFFICE AUTO INSTALLER"
     $subtitle = "Official Microsoft Office Deployment Tool Interface"
-    $version = "v3.4 - Syntax Fixed"
+    $version = "v3.5"
     
     Write-Host "/$border\" -ForegroundColor Cyan
     Write-Host "|" -ForegroundColor Cyan -NoNewline
@@ -815,7 +815,7 @@ function Show-FriendlyCompletionSummary($options) {
 # ==== Main Execution Flow ====
 
 try {
-    Log "=== Enhanced Office Installer Started (Syntax Fixed Version) ==="
+    Log "=== Enhanced Office Installer Started (v3.5) ==="
     
     # Show welcome screen and handle admin elevation
     Show-WelcomeScreen
