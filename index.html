@@ -11,7 +11,7 @@
     <link rel="canonical" href="https://njvanas.github.io/Office-Auto-Install/">
     <link rel="icon" href="/Office-Auto-Install/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/Office-Auto-Install/favicon.svg">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#0a0e27">
 
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_US">
@@ -49,7 +49,7 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
+              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'system-ui', 'sans-serif'],
             },
           }
         }
@@ -59,16 +59,17 @@
       *,*::before,*::after{box-sizing:border-box;}
       html{scroll-behavior:smooth;}
       ::-webkit-scrollbar{width:8px;}
-      ::-webkit-scrollbar-track{background:#0f172a;}
+      ::-webkit-scrollbar-track{background:#1e293b;}
       ::-webkit-scrollbar-thumb{background:#475569;border-radius:4px;}
+      ::-webkit-scrollbar-thumb:hover{background:#64748b;}
       @media print{body{display:none;}}
       summary::-webkit-details-marker{display:none;}
       summary{list-style:none;}
     </style>
 </head>
-<body class="font-sans bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-gray-300 leading-relaxed">
+<body class="font-sans bg-[#0a0e27] text-slate-200 leading-[1.6] min-h-screen">
 
-<header class="bg-slate-900/50 backdrop-blur border-b border-slate-600/50 sticky top-0 z-50">
+<header class="bg-slate-900/95 backdrop-blur-sm shadow-lg border-b border-slate-700/50 sticky top-0 z-50">
   <nav class="container mx-auto px-6 py-4 flex items-center justify-between">
     <a href="#" class="flex items-center gap-3 text-blue-400 font-bold text-2xl">
       <span class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">O</span>
@@ -83,14 +84,14 @@
   </nav>
 </header>
 
-<section class="py-16 md:py-20 text-center px-6">
-  <div class="container mx-auto max-w-3xl">
-    <h1 class="text-4xl md:text-6xl font-bold text-white leading-tight mb-4">Install Office in three steps</h1>
-    <p class="text-lg text-gray-300">Copy <strong class="text-white">one line</strong>, paste it into <strong class="text-white">PowerShell (Administrator)</strong>, press <kbd class="px-2 py-0.5 bg-slate-800 rounded text-sm text-white">Enter</kbd>. Stay online until setup finishes.</p>
+<section class="relative py-16 md:py-24 md:pt-28 text-center px-6 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden">
+  <div class="container mx-auto max-w-3xl relative z-10">
+    <h1 class="text-4xl md:text-7xl font-bold text-white leading-tight mb-4">Install Office in three steps</h1>
+    <p class="text-lg text-slate-200">Copy <strong class="text-white">one line</strong>, paste it into <strong class="text-white">PowerShell (Administrator)</strong>, press <kbd class="px-2 py-0.5 bg-slate-800 rounded text-sm text-white">Enter</kbd>. Stay online until setup finishes.</p>
   </div>
 </section>
 
-<section id="how" class="py-12 bg-slate-900/40 border-y border-slate-600/40">
+<section id="how" class="py-12 bg-slate-900/50 border-y border-slate-700/50">
   <div class="container mx-auto px-6 max-w-2xl">
     <h2 class="text-2xl md:text-3xl font-bold text-white text-center mb-3">How it works</h2>
     <p class="text-center text-sm text-gray-400 mb-10">Same three steps on every PC: copy → admin PowerShell → paste and Enter.</p>
@@ -150,13 +151,13 @@
     <h2 class="text-2xl md:text-3xl font-bold text-white text-center mb-6">Command to copy</h2>
     <p class="text-center text-gray-400 text-sm mb-6">Run this only from sources you trust. You need an internet connection.</p>
 
-    <div class="bg-slate-950/90 border border-slate-600 rounded-xl p-6 shadow-xl">
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 shadow-xl">
       <pre id="cmd-main" class="text-left text-sm md:text-base text-green-300 font-mono whitespace-pre-wrap break-all bg-[#0c0c0c] rounded-lg p-4 border border-slate-700 select-all" tabindex="0">irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
       <button type="button" class="mt-4 w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors" data-copy-target="cmd-main">Copy command</button>
     </div>
 
-    <details class="mt-8 rounded-xl border border-slate-700 bg-slate-900/50 p-4">
-      <summary class="cursor-pointer text-gray-300 hover:text-white font-medium flex items-center gap-2">
+    <details class="mt-8 rounded-xl border border-slate-700/50 bg-slate-900/50 p-4">
+      <summary class="cursor-pointer text-slate-200 hover:text-white font-medium flex items-center gap-2">
         <span class="text-blue-400">▸</span> Other options (only if you need them)
       </summary>
       <div class="mt-6 space-y-8 pt-4 border-t border-slate-700">
@@ -181,10 +182,10 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
   </div>
 </section>
 
-<section id="after" class="py-16 bg-slate-900/50 border-t border-slate-600/40">
+<section id="after" class="py-16 bg-slate-900/50 border-t border-slate-700/50">
   <div class="container mx-auto px-6 max-w-2xl text-center">
     <h2 class="text-2xl font-bold text-white mb-6">After you run it</h2>
-    <ul class="text-left text-gray-300 space-y-3 text-sm md:text-base inline-block">
+    <ul class="text-left text-slate-200 space-y-3 text-sm md:text-base inline-block">
       <li class="flex gap-2"><span class="text-blue-400 shrink-0">•</span> The script downloads the installer from GitHub, then continues — follow any prompts on screen.</li>
       <li class="flex gap-2"><span class="text-blue-400 shrink-0">•</span> Installation often takes <strong class="text-white">10–30 minutes</strong>; keep the PC on and online.</li>
       <li class="flex gap-2"><span class="text-blue-400 shrink-0">•</span> You must have a <strong class="text-white">valid Office license</strong>; this tool does not provide one.</li>
@@ -197,7 +198,7 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
   </div>
 </section>
 
-<footer class="bg-slate-950 border-t border-slate-600/50 text-gray-400 py-10 px-6">
+<footer class="bg-slate-900 border-t border-slate-800 text-gray-400 py-10 px-6">
   <div class="container mx-auto max-w-3xl">
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-8 mb-8">
       <a href="https://njvanas.github.io/" class="flex items-start gap-3 rounded-lg -m-2 p-2 text-left hover:bg-slate-900/80 transition-colors group">
@@ -208,7 +209,7 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
         </div>
       </a>
       <p class="text-sm text-gray-400 sm:max-w-md sm:text-right leading-relaxed">
-        This page is the companion site for <strong class="text-gray-300">Office Auto Install</strong>, a <a href="https://njvanas.github.io/" class="text-blue-400 hover:underline">portfolio</a> project—same dark theme and focus on PowerShell automation as the rest of my work.
+        This page is the companion site for <strong class="text-slate-200">Office Auto Install</strong>, a <a href="https://njvanas.github.io/" class="text-blue-400 hover:underline">portfolio</a> project—same background, hero gradient, typography, and PowerShell automation focus as the main site.
       </p>
     </div>
     <div class="flex flex-wrap items-center justify-center sm:justify-between gap-x-6 gap-y-3 pt-6 border-t border-slate-700/80 text-sm">
