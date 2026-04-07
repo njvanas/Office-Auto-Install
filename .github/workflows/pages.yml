@@ -5,7 +5,9 @@ on:
     branches: [ main ]
     paths:
       - 'index.html'
+      - 'README.md'
       - 'CNAME'
+      - 'office.ps1'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 

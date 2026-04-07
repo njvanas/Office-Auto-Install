@@ -18,6 +18,7 @@ jobs:
           New-Item -ItemType Directory -Path "release" -Force | Out-Null
           
           # Copy essential files
+          Copy-Item "office.ps1" -Destination "release/"
           Copy-Item "Install-Office-GUI-WPF.ps1" -Destination "release/"
           Copy-Item "Install-Office-GUI-SAFE.bat" -Destination "release/"
           Copy-Item "Install-Office.ps1" -Destination "release/"

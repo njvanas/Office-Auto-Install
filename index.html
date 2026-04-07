@@ -41,6 +41,7 @@
       Office Auto Installer
     </a>
     <ul class="hidden md:flex gap-8">
+      <li><a href="#run" class="hover:text-blue-400 transition-colors">Run online</a></li>
       <li><a href="#download" class="hover:text-blue-400 transition-colors">Download</a></li>
       <li><a href="#instructions" class="hover:text-blue-400 transition-colors">Instructions</a></li>
       <li><a href="#features" class="hover:text-blue-400 transition-colors">Features</a></li>
@@ -53,7 +54,46 @@
   <div class="container mx-auto px-6">
     <span class="inline-block bg-slate-700/50 border border-slate-600/50 text-green-400 font-semibold rounded-full px-4 py-1 mb-6">v3.4 - Latest Version</span>
     <h1 class="text-5xl md:text-7xl font-bold text-white leading-tight mb-4">Office Auto Installer</h1>
-    <p class="text-xl text-gray-300 max-w-2xl mx-auto">Easy Microsoft Office installation for everyone. No technical knowledge required - choose between a beautiful GUI or simple console interface!</p>
+    <p class="text-xl text-gray-300 max-w-2xl mx-auto">Easy Microsoft Office installation for everyone. No ZIP required — admin PowerShell: <code class="text-slate-200 text-base">irm &quot;&hellip;/office.ps1&quot; | iex</code> (same idea as <a href="https://github.com/ChrisTitusTech/winutil" class="text-blue-400 hover:underline" target="_blank" rel="noopener">WinUtil</a>), or download the classic packages below.</p>
+  </div>
+</section>
+
+<section id="run" class="py-16 bg-slate-900/40 border-y border-slate-600/40">
+  <div class="container mx-auto px-6 max-w-4xl">
+    <div class="text-center mb-10">
+      <h2 class="text-3xl md:text-4xl font-bold text-white mb-3">Usage (WinUtil-style)</h2>
+      <p class="text-gray-300 max-w-2xl mx-auto">Same launch model as <a href="https://github.com/ChrisTitusTech/winutil" class="text-blue-400 hover:underline" target="_blank" rel="noopener">Chris Titus Tech&rsquo;s WinUtil</a>: <strong class="text-white">Administrator</strong> PowerShell, then <code class="text-slate-200">irm &hellip; | iex</code>. This project uses <code class="text-slate-200">office.ps1</code> as the single bootstrap entry (like WinUtil&rsquo;s short URL).</p>
+    </div>
+    <div class="bg-slate-800/40 border border-slate-600/50 rounded-xl p-6 mb-8 text-left">
+      <h3 class="text-lg font-semibold text-white mb-4">Run as Administrator</h3>
+      <ol class="list-decimal list-inside text-gray-300 space-y-2 text-sm md:text-base">
+        <li><strong class="text-white">Start menu:</strong> Right-click the Start button &rarr; <strong class="text-white">Terminal (Admin)</strong> or <strong class="text-white">Windows PowerShell (Admin)</strong>.</li>
+        <li><strong class="text-white">Search:</strong> Press Win, type <em>PowerShell</em> or <em>Terminal</em>, then <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs">Ctrl+Shift+Enter</kbd> or right-click &rarr; Run as administrator.</li>
+      </ol>
+    </div>
+    <div class="bg-slate-950/80 border border-slate-600/60 rounded-xl p-6 md:p-8 shadow-2xl">
+      <h3 class="text-lg font-semibold text-white mb-4">Launch command</h3>
+      <p class="text-sm font-semibold text-green-400 mb-2">Stable (recommended) &mdash; GitHub Pages, shorter URL</p>
+      <pre id="cmd-stable-pages" class="text-left text-sm md:text-base text-gray-200 font-mono whitespace-pre-wrap break-all bg-slate-900/90 rounded-lg p-4 border border-slate-700 overflow-x-auto select-text" style="-webkit-user-select:text;user-select:text;">irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
+      <button type="button" class="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors" data-copy-target="cmd-stable-pages">Copy stable (Pages)</button>
+
+      <p class="text-sm font-semibold text-slate-300 mt-8 mb-2">Stable &mdash; raw GitHub (fallback if Pages is blocked)</p>
+      <pre id="cmd-stable-raw" class="text-left text-sm md:text-base text-gray-200 font-mono whitespace-pre-wrap break-all bg-slate-900/90 rounded-lg p-4 border border-slate-700 overflow-x-auto select-text" style="-webkit-user-select:text;user-select:text;">irm "https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/office.ps1" | iex</pre>
+      <button type="button" class="mt-3 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors" data-copy-target="cmd-stable-raw">Copy stable (raw)</button>
+
+      <p class="text-sm font-semibold text-amber-400/90 mt-8 mb-2">Dev branch payloads (bootstrap still from main/Pages; sets branch for Install-*.ps1)</p>
+      <pre id="cmd-dev" class="text-left text-sm md:text-base text-gray-200 font-mono whitespace-pre-wrap break-all bg-slate-900/90 rounded-lg p-4 border border-slate-700 overflow-x-auto select-text" style="-webkit-user-select:text;user-select:text;">$env:OFFICE_AUTO_INSTALL_BRANCH = "dev"
+irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
+      <button type="button" class="mt-3 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors" data-copy-target="cmd-dev">Copy dev</button>
+
+      <p class="text-sm font-semibold text-cyan-400/90 mt-8 mb-2">Console wizard (instead of GUI)</p>
+      <pre id="cmd-console" class="text-left text-sm md:text-base text-gray-200 font-mono whitespace-pre-wrap break-all bg-slate-900/90 rounded-lg p-4 border border-slate-700 overflow-x-auto select-text" style="-webkit-user-select:text;user-select:text;">$env:OFFICE_AUTO_INSTALL_USE_CONSOLE = "1"
+irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
+      <button type="button" class="mt-3 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors" data-copy-target="cmd-console">Copy console</button>
+
+      <p class="text-gray-400 text-sm mt-8 leading-relaxed">Forks: set <code class="text-blue-400">$env:OFFICE_AUTO_INSTALL_REPO = "yourname/Office-Auto-Install"</code> before <code class="text-slate-300">irm</code>. Custom domain (like <code class="text-slate-300">christitus.com/win</code>): point it at this repo&rsquo;s GitHub Pages site or raw <code class="text-slate-300">office.ps1</code>. Only run <code class="text-slate-300">irm &hellip; | iex</code> from sources you trust.</p>
+      <p class="text-gray-500 text-xs mt-4">Renamed from <code class="text-slate-400">Launch-Office.ps1</code> &rarr; <code class="text-slate-400">office.ps1</code> for a single WinUtil-like entry point.</p>
+    </div>
   </div>
 </section>
 
@@ -167,7 +207,7 @@
     <div class="text-center mb-16">
       <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">How to Use</h2>
       <div class="w-24 h-1 bg-blue-500 mx-auto mb-8"></div>
-      <p class="text-xl text-gray-300 max-w-2xl mx-auto">Follow these simple steps to install Microsoft Office. Choose the instructions for your version below.</p>
+      <p class="text-xl text-gray-300 max-w-2xl mx-auto">Fastest path: <a href="#run" class="text-blue-400 hover:underline">Run online</a> with <code class="text-slate-200">office.ps1</code> (WinUtil-style). Below are folder-based steps if you already downloaded the ZIP or individual files.</p>
     </div>
 
     <!-- GUI Version Instructions -->
@@ -352,6 +392,9 @@ Instructions:
 
 For more help, visit: https://njvanas.github.io/Office-Auto-Install/
 
+Or run from the web (WinUtil-style, admin PowerShell):
+  irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
+
 This package contains:
 - Install-Office-GUI-SAFE.bat (Launcher for GUI version)
 - Install-Office-GUI-WPF.ps1 (Main GUI installer script)
@@ -379,6 +422,10 @@ Instructions:
 4. Follow the simple prompts to install Office
 
 For more help, visit: https://njvanas.github.io/Office-Auto-Install/
+
+Or run from the web (WinUtil-style, admin PowerShell):
+  $env:OFFICE_AUTO_INSTALL_USE_CONSOLE = "1"
+  irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 
 This package contains:
 - Install-Office-SAFE.bat (Launcher for console version)
@@ -448,6 +495,20 @@ Features:
                 btn.disabled = false;
             }
         }
+
+        document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-copy-target');
+                var el = document.getElementById(id);
+                if (!el) return;
+                var text = el.textContent.trim();
+                navigator.clipboard.writeText(text).then(function () {
+                    var orig = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(function () { btn.textContent = orig; }, 2000);
+                });
+            });
+        });
 
         // Smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

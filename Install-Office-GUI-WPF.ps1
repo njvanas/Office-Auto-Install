@@ -624,6 +624,7 @@ try {
 # Make controls accessible globally for use in functions and event handlers
 # Using $script: scope ensures variables are accessible across function boundaries
 $script:window = $window
+$script:statusPanel = $statusPanel
 $script:statusLabel = $statusLabel
 $script:progressBar = $progressBar
 
