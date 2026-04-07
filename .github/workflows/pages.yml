@@ -5,11 +5,11 @@ on:
     branches: [ main ]
     paths:
       - 'index.html'
+      - 'icons/**'
       - 'README.md'
       - 'office.ps1'
       - 'robots.txt'
       - 'sitemap.xml'
-      - 'favicon.svg'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 

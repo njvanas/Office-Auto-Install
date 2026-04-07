@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Auto Installer — install Microsoft Office with one PowerShell command</title>
+    <title>Office Auto Installer | NJ van As</title>
     <meta name="description" content="Install Microsoft Office 2024, 2021, or Microsoft 365 on Windows: copy one PowerShell command, run as Administrator, stay online. Uses Microsoft’s official deployment tools (ODT). Free open-source helper; license not included.">
     <meta name="keywords" content="Microsoft Office, Office install, PowerShell, Office Deployment Tool, ODT, Windows, Microsoft 365, Office 2024, Office 2021">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-    <meta name="author" content="Office Auto Installer">
-    <link rel="canonical" href="https://njvanas.github.io/Office-Auto-Install/">
-    <link rel="icon" href="/Office-Auto-Install/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/Office-Auto-Install/favicon.svg">
+    <meta name="author" content="NJ van As">
     <meta name="theme-color" content="#0a0e27">
+    <link rel="canonical" href="https://njvanas.github.io/Office-Auto-Install/">
+    <link rel="icon" href="https://njvanas.github.io/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="https://njvanas.github.io/favicon.ico">
 
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_US">
@@ -42,293 +42,972 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'system-ui', 'sans-serif'],
-            },
-          }
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      /* Base — aligned with njvanas.github.io companion pages (typing-speed-test / CI-CD) */
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      :root {
+        --bg-deep: #0a0e27;
+        --bg-elevated: rgba(30, 41, 59, 0.55);
+        --bg-panel: rgba(15, 23, 42, 0.65);
+        --text-primary: #e2e8f0;
+        --text-muted: #94a3b8;
+        --text-subtle: #9ca3af;
+        --border: rgba(51, 65, 85, 0.55);
+        --border-strong: #334155;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --blue-soft: #93c5fd;
+        --blue-400: #60a5fa;
+        --header-h: 5.5rem;
+      }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+        line-height: 1.6;
+        color: var(--text-primary);
+        background: var(--bg-deep);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+      }
+
+      main { flex: 1; width: 100%; }
+
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #1e293b; }
+      ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+      @media print { body { display: none; } }
+
+      /* Header — fixed, transparent → solid on scroll */
+      .site-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease;
+        background: transparent;
+        border-bottom: 1px solid transparent;
+      }
+
+      .site-header.site-header--solid {
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        border-bottom-color: rgba(51, 65, 85, 0.45);
+      }
+
+      .site-header__nav { width: 100%; }
+
+      .site-header__inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem 1.5rem;
+      }
+
+      .site-header__brand {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.35rem 0.5rem;
+      }
+
+      .site-header__name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-decoration: none;
+        letter-spacing: -0.02em;
+        transition: color 0.2s ease;
+      }
+
+      .site-header__name:hover { color: var(--blue-soft); }
+
+      .site-header__sep {
+        color: #64748b;
+        font-weight: 600;
+      }
+
+      .site-header__page {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-subtle);
+      }
+
+      .site-header__links {
+        display: flex;
+        list-style: none;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      .site-header__links a {
+        text-decoration: none;
+        color: #d1d5db;
+        font-weight: 500;
+        font-size: 0.9375rem;
+        transition: color 0.2s ease;
+      }
+
+      .site-header__links a:hover { color: #ffffff; }
+
+      @media (max-width: 640px) {
+        .site-header__inner { padding: 0.875rem 1rem; }
+        .site-header__links { gap: 0.5rem 1rem; }
+      }
+
+      /* Main band — gradient pattern (typing-speed-test) */
+      .main-wrap {
+        position: relative;
+        flex: 1;
+        display: block;
+        width: 100%;
+        padding: calc(var(--header-h) + 2rem) 0 3rem;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      .main-wrap__pattern {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.35;
+        background:
+          linear-gradient(to right, rgba(37, 99, 235, 0.12), rgba(147, 51, 234, 0.1)),
+          radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.15) 0%, transparent 45%),
+          radial-gradient(circle at 75% 70%, rgba(147, 51, 234, 0.12) 0%, transparent 45%);
+      }
+
+      .content-shell {
+        position: relative;
+        z-index: 1;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+
+      .scroll-target { scroll-margin-top: calc(var(--header-h) + 0.5rem); }
+
+      /* Hero */
+      .hero-intro {
+        text-align: center;
+        margin-bottom: 0;
+        max-width: 56rem;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-eyebrow {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--blue-soft);
+        margin-bottom: 1rem;
+      }
+
+      .hero-title {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        margin-bottom: 1.5rem;
+      }
+
+      .hero-subtitle {
+        font-size: clamp(1.25rem, 2.5vw, 1.875rem);
+        font-weight: 300;
+        color: var(--blue-soft);
+        margin-bottom: 1.5rem;
+        line-height: 1.3;
+      }
+
+      .hero-lede {
+        font-size: 1.125rem;
+        color: #cbd5e1;
+        max-width: 42rem;
+        margin: 0 auto 1.5rem;
+        line-height: 1.65;
+      }
+
+      @media (min-width: 768px) {
+        .hero-lede { font-size: 1.25rem; }
+      }
+
+      .hero__actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.25rem;
+      }
+
+      @media (min-width: 40rem) {
+        .hero__actions {
+          flex-direction: row;
+          justify-content: center;
         }
       }
-    </script>
-    <style>
-      *,*::before,*::after{box-sizing:border-box;}
-      html{scroll-behavior:smooth;}
-      ::-webkit-scrollbar{width:8px;}
-      ::-webkit-scrollbar-track{background:#1e293b;}
-      ::-webkit-scrollbar-thumb{background:#475569;border-radius:4px;}
-      ::-webkit-scrollbar-thumb:hover{background:#64748b;}
-      @media print{body{display:none;}}
-      summary::-webkit-details-marker{display:none;}
-      summary{list-style:none;}
 
-      /* Portfolio-aligned footer (same as njvanas.github.io/typing-speed-test/) */
-      .site-footer{width:100%;margin-top:auto;background:#0f172a;border-top:1px solid #1e293b;color:#94a3b8;font-size:0.9375rem;}
-      .site-footer__inner{max-width:1280px;margin:0 auto;padding:3rem 1.5rem 1.5rem;}
-      .site-footer__grid{display:grid;gap:2rem;grid-template-columns:1fr;}
-      @media (min-width:768px){.site-footer__grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:2rem;}}
-      .site-footer__title{font-size:1.5rem;font-weight:700;color:#fff;margin:0 0 1rem;}
-      .site-footer__tagline{margin:0 0 1rem;color:#9ca3af;line-height:1.625;}
-      .site-footer__social{display:flex;flex-wrap:wrap;gap:1rem;list-style:none;margin:0;padding:0;}
-      .site-footer__social li{margin:0;}
-      .site-footer__social-btn{display:inline-flex;align-items:center;justify-content:center;padding:0.5rem;background:#1e293b;color:#9ca3af;border-radius:0.5rem;transition:background 0.3s ease,color 0.3s ease;}
-      .site-footer__social-btn:hover{background:#2563eb;color:#fff;}
-      .site-footer__icon{display:block;flex-shrink:0;}
-      .site-footer__heading{margin:0 0 1rem;font-size:1rem;font-weight:600;color:#fff;}
-      .site-footer__list{list-style:none;margin:0;padding:0;}
-      .site-footer__list li{margin-bottom:0.5rem;}
-      .site-footer__list li:last-child{margin-bottom:0;}
-      .site-footer__list a{color:#9ca3af;text-decoration:none;transition:color 0.3s ease;}
-      .site-footer__list a:hover{color:#fff;}
-      .site-footer__list--muted li{color:#9ca3af;}
-      .site-footer__bottom{display:flex;flex-direction:column;align-items:center;gap:1rem;margin-top:2rem;padding-top:2rem;border-top:1px solid #1e293b;}
-      @media (min-width:768px){.site-footer__bottom{flex-direction:row;justify-content:space-between;align-items:center;}}
-      .site-footer__legal,.site-footer__made{margin:0;font-size:0.875rem;color:#9ca3af;}
-      .site-footer__made{display:flex;align-items:center;gap:0.25rem;}
-      .site-footer__heart{color:#ef4444;flex-shrink:0;}
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.75rem;
+        font-size: 1rem;
+        font-weight: 600;
+        font-family: inherit;
+        line-height: 1.25;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        text-decoration: none;
+        border: none;
+        transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+      }
+
+      .btn--primary {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25);
+      }
+
+      .btn--primary:hover {
+        background: var(--accent-hover);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      }
+
+      .btn--primary:active { transform: translateY(1px); }
+
+      .btn--outline {
+        background: transparent;
+        color: var(--blue-400);
+        border: 2px solid var(--blue-400);
+      }
+
+      .btn--outline:hover {
+        background: var(--blue-400);
+        color: #fff;
+      }
+
+      .btn--sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+      }
+
+      .btn--muted {
+        background: #334155;
+        color: #fff;
+      }
+
+      .btn--muted:hover { background: #475569; }
+
+      .btn--block {
+        width: 100%;
+        margin-top: 1rem;
+      }
+
+      @media (min-width: 640px) {
+        .btn--block { width: auto; }
+      }
+
+      /* Content panels */
+      .page-panel {
+        max-width: 52rem;
+        margin: 2rem auto 0;
+        background: var(--bg-elevated);
+        padding: 2rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+
+      .content-shell > .page-panel:first-of-type { margin-top: 2.5rem; }
+
+      .section-head {
+        text-align: center;
+        margin-bottom: 1.75rem;
+      }
+
+      .section-head__title {
+        font-size: clamp(1.5rem, 3vw, 1.85rem);
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 0.65rem;
+        letter-spacing: -0.02em;
+      }
+
+      .section-head__rule {
+        width: 3rem;
+        height: 0.2rem;
+        background: #3b82f6;
+        margin: 0 auto 1rem;
+        border-radius: 9999px;
+      }
+
+      .section-head__lead {
+        font-size: 1rem;
+        color: var(--text-muted);
+        max-width: 40rem;
+        margin: 0 auto;
+        line-height: 1.55;
+      }
+
+      .steps { list-style: none; padding: 0; margin: 0; }
+
+      .steps > li {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 2.5rem;
+      }
+
+      .steps > li:last-child { margin-bottom: 0; }
+
+      .step-num {
+        flex-shrink: 0;
+        width: 2.25rem;
+        height: 2.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 2px solid var(--border-strong);
+        background: rgba(30, 41, 59, 0.8);
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--blue-soft);
+      }
+
+      .step-body { min-width: 0; flex: 1; padding-top: 0.125rem; }
+
+      .step-body h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 0.35rem;
+      }
+
+      .step-body p {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        line-height: 1.6;
+      }
+
+      .kbd {
+        display: inline-block;
+        padding: 0.125rem 0.375rem;
+        background: rgba(51, 65, 85, 0.85);
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-family: ui-monospace, monospace;
+        color: #e2e8f0;
+      }
+
+      .mock-bar {
+        background: rgba(71, 85, 105, 0.85);
+        padding: 0.375rem 0.75rem;
+        font-size: 0.6875rem;
+        color: #cbd5e1;
+        border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      }
+
+      .mock-body {
+        padding: 0.75rem 1rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        background: rgba(15, 23, 42, 0.9);
+      }
+
+      .mock-window {
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-strong);
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+      }
+
+      .mock-titlebar {
+        background: #3c3c3c;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.6875rem;
+        color: #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+      }
+
+      .mock-dots {
+        display: flex;
+        gap: 0.375rem;
+        flex-shrink: 0;
+      }
+
+      .mock-dots span {
+        width: 0.625rem;
+        height: 0.625rem;
+        border-radius: 9999px;
+      }
+
+      .mock-dots span:nth-child(1) { background: #ff5f57; }
+      .mock-dots span:nth-child(2) { background: #febc2e; }
+      .mock-dots span:nth-child(3) { background: #28c840; }
+
+      .mock-ps {
+        background: #0c0c0c;
+        padding: 1rem 0.75rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+        color: #ccc;
+        min-height: 3.5rem;
+      }
+
+      .mock-ps .kw { color: #569cd6; }
+      .mock-ps .str { color: #ce9178; }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.25; }
+      }
+
+      .pre-command {
+        text-align: left;
+        font-size: 0.875rem;
+        color: #86efac;
+        font-family: ui-monospace, monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #0c0c0c;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        border: 1px solid var(--border-strong);
+        margin: 0;
+      }
+
+      @media (min-width: 768px) {
+        .pre-command { font-size: 1rem; }
+      }
+
+      .text-center { text-align: center; }
+
+      .text-muted { color: var(--text-muted); font-size: 0.875rem; }
+
+      .footer-links {
+        margin-top: 2.5rem;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+
+      .footer-links a {
+        color: var(--blue-400);
+        text-decoration: none;
+      }
+
+      .footer-links a:hover { text-decoration: underline; }
+
+      details.details-block {
+        margin-top: 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.5);
+        padding: 1rem 1.25rem;
+      }
+
+      details.details-block[open] { padding-bottom: 1.25rem; }
+
+      .details-summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--text-primary);
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .details-summary::-webkit-details-marker { display: none; }
+
+      .details-chevron {
+        color: var(--blue-400);
+        font-size: 0.875rem;
+        width: 1.25rem;
+        text-align: center;
+      }
+
+      .details-inner {
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .option-block { margin-bottom: 2rem; }
+      .option-block:last-child { margin-bottom: 0; }
+
+      .option-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+      }
+
+      .pre-small {
+        font-size: 0.75rem;
+        color: #e2e8f0;
+        font-family: ui-monospace, monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: rgba(2, 6, 23, 0.6);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        border: 1px solid var(--border-strong);
+        margin: 0;
+      }
+
+      @media (min-width: 768px) {
+        .pre-small { font-size: 0.8125rem; }
+      }
+
+      /* Footer — portfolio Footer.tsx */
+      .site-footer {
+        width: 100%;
+        margin-top: auto;
+        background: #0f172a;
+        border-top: 1px solid #1e293b;
+        color: #94a3b8;
+        font-size: 0.9375rem;
+      }
+
+      .site-footer__inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 1.5rem;
+      }
+
+      .site-footer__grid {
+        display: grid;
+        gap: 2rem;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 768px) {
+        .site-footer__grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 2rem;
+        }
+      }
+
+      .site-footer__title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0 0 1rem;
+      }
+
+      .site-footer__tagline {
+        margin: 0 0 1rem;
+        color: #9ca3af;
+        line-height: 1.625;
+      }
+
+      .site-footer__social {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .site-footer__social li { margin: 0; }
+
+      .site-footer__social-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+        min-height: 2.5rem;
+        padding: 0.5rem;
+        background: #1e293b;
+        color: #9ca3af;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        transition: background 0.3s ease;
+      }
+
+      .site-footer__social-btn:hover { background: #2563eb; }
+
+      .site-footer__icon-img {
+        display: block;
+        width: 1.25rem;
+        height: 1.25rem;
+        flex-shrink: 0;
+        object-fit: contain;
+      }
+
+      .site-footer__social-btn:hover .site-footer__icon-img {
+        filter: brightness(0) invert(1);
+      }
+
+      .site-footer__heading {
+        margin: 0 0 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .site-footer__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .site-footer__list li { margin-bottom: 0.5rem; }
+      .site-footer__list li:last-child { margin-bottom: 0; }
+
+      .site-footer__list a {
+        color: #9ca3af;
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      .site-footer__list a:hover { color: #fff; }
+
+      .site-footer__list--muted li { color: #9ca3af; }
+
+      .site-footer__bottom {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #1e293b;
+      }
+
+      @media (min-width: 768px) {
+        .site-footer__bottom {
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+        }
+      }
+
+      .site-footer__legal,
+      .site-footer__made {
+        margin: 0;
+        font-size: 0.875rem;
+        color: #9ca3af;
+      }
+
+      .site-footer__made {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .site-footer__heart {
+        color: #ef4444;
+        flex-shrink: 0;
+      }
+
+      .after-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 auto;
+        max-width: 36rem;
+        text-align: left;
+      }
+
+      .after-list li {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.9375rem;
+        color: var(--text-primary);
+      }
+
+      .after-list li::before {
+        content: "•";
+        color: var(--blue-400);
+        flex-shrink: 0;
+      }
     </style>
 </head>
-<body class="font-sans bg-[#0a0e27] text-slate-200 leading-[1.6] min-h-screen flex flex-col">
-
-<main class="flex-1 w-full">
-
-<header class="bg-slate-900/95 backdrop-blur-sm shadow-lg border-b border-slate-700/50 sticky top-0 z-50">
-  <nav class="container mx-auto px-6 py-4 flex items-center justify-between">
-    <a href="#" class="flex items-center gap-3 text-blue-400 font-bold text-2xl">
-      <span class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white">O</span>
-      Office Auto Installer
-    </a>
-    <ul class="hidden md:flex gap-8">
-      <li><a href="#how" class="hover:text-blue-400 transition-colors">How it works</a></li>
-      <li><a href="#command" class="hover:text-blue-400 transition-colors">Command</a></li>
-      <li><a href="#after" class="hover:text-blue-400 transition-colors">After you run it</a></li>
-      <li><a href="https://github.com/njvanas/Office-Auto-Install" class="hover:text-blue-400 transition-colors">GitHub</a></li>
-    </ul>
-  </nav>
-</header>
-
-<section class="relative py-16 md:py-24 md:pt-28 text-center px-6 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden">
-  <div class="container mx-auto max-w-3xl relative z-10">
-    <h1 class="text-4xl md:text-7xl font-bold text-white leading-tight mb-4">Install Office in three steps</h1>
-    <p class="text-lg text-slate-200">Copy <strong class="text-white">one line</strong>, paste it into <strong class="text-white">PowerShell (Administrator)</strong>, press <kbd class="px-2 py-0.5 bg-slate-800 rounded text-sm text-white">Enter</kbd>. Stay online until setup finishes.</p>
-  </div>
-</section>
-
-<section id="how" class="py-12 bg-slate-900/50 border-y border-slate-700/50">
-  <div class="container mx-auto px-6 max-w-2xl">
-    <h2 class="text-2xl md:text-3xl font-bold text-white text-center mb-3">How it works</h2>
-    <p class="text-center text-sm text-gray-400 mb-10">Same three steps on every PC: copy → admin PowerShell → paste and Enter.</p>
-
-    <ol class="space-y-12 pb-2" role="list" aria-label="Steps to run the installer">
-      <li class="flex gap-4 sm:gap-5 items-start">
-        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-600 bg-slate-800 text-sm font-bold text-blue-300" aria-hidden="true">1</span>
-        <div class="min-w-0 flex-1 pt-0.5">
-          <h3 class="text-base font-semibold text-white mb-1">Copy the command</h3>
-          <p class="text-sm text-gray-400 mb-4">Scroll to <strong class="text-gray-300">Command to copy</strong> below, then click <strong class="text-gray-300">Copy command</strong>. Or select the line in the box and press <kbd class="px-1 py-0.5 bg-slate-700 rounded text-xs text-gray-200">Ctrl+C</kbd>.</p>
-          <div class="rounded-lg border border-slate-600 bg-slate-950/90 overflow-hidden shadow-lg" aria-hidden="true">
-            <div class="bg-slate-700/80 px-3 py-1.5 text-[11px] text-gray-300 border-b border-slate-600">Clipboard</div>
-            <div class="px-3 py-3 font-mono text-xs text-gray-400 select-text">irm &quot;…/office.ps1&quot; | iex</div>
-          </div>
+<body>
+  <header class="site-header" id="site-header">
+    <nav class="site-header__nav" aria-label="Primary">
+      <div class="site-header__inner">
+        <div class="site-header__brand">
+          <a href="https://njvanas.github.io/" class="site-header__name">NJ van As</a>
+          <span class="site-header__sep" aria-hidden="true">·</span>
+          <span class="site-header__page">Office Auto Installer</span>
         </div>
-      </li>
-
-      <li class="flex gap-4 sm:gap-5 items-start">
-        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-600 bg-slate-800 text-sm font-bold text-blue-300" aria-hidden="true">2</span>
-        <div class="min-w-0 flex-1 pt-0.5">
-          <h3 class="text-base font-semibold text-white mb-1">Open PowerShell as Administrator</h3>
-          <p class="text-sm text-gray-400 mb-4">You must see <strong class="text-gray-300">Administrator</strong> in the title bar. Quick route: <kbd class="px-1 py-0.5 bg-slate-700 rounded text-xs text-gray-200">Win</kbd> → type <em class="text-gray-300">PowerShell</em> → <kbd class="px-1 py-0.5 bg-slate-700 rounded text-xs text-gray-200">Ctrl+Shift+Enter</kbd> → confirm UAC. Alternatively: right-click Start → <strong class="text-gray-300">Terminal (Admin)</strong> or <strong class="text-gray-300">Windows PowerShell (Admin)</strong>.</p>
-          <div class="rounded-lg border border-slate-600 overflow-hidden shadow-lg text-left" aria-hidden="true">
-            <div class="bg-[#3c3c3c] px-3 py-2 text-[11px] text-gray-200 flex items-center gap-2 border-b border-black/40">
-              <span class="flex gap-1.5 shrink-0"><span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></span></span>
-              <span class="truncate font-medium">Windows PowerShell (Administrator)</span>
-            </div>
-            <div class="bg-[#0c0c0c] px-3 py-4 font-mono text-[12px] text-[#cccccc] min-h-[3.5rem]">
-              <span class="text-[#569cd6]">PS</span> C:\Windows\system32&gt;<span class="inline-block w-2 h-4 bg-[#cccccc] ml-0.5 align-middle animate-pulse" style="animation-duration:1.1s"></span>
-            </div>
-          </div>
-        </div>
-      </li>
-
-      <li class="flex gap-4 sm:gap-5 items-start">
-        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-600 bg-slate-800 text-sm font-bold text-blue-300" aria-hidden="true">3</span>
-        <div class="min-w-0 flex-1 pt-0.5">
-          <h3 class="text-base font-semibold text-white mb-1">Paste and run</h3>
-          <p class="text-sm text-gray-400 mb-4">Click inside the <strong class="text-gray-300">PowerShell</strong> window so the cursor is on the line. Paste with <strong class="text-gray-300">right-click</strong> or <kbd class="px-1 py-0.5 bg-slate-700 rounded text-xs text-gray-200">Ctrl+V</kbd>, then press <kbd class="px-1 py-0.5 bg-slate-700 rounded text-xs text-gray-200">Enter</kbd>.</p>
-          <div class="rounded-lg border border-slate-600 overflow-hidden shadow-lg text-left" aria-hidden="true">
-            <div class="bg-[#3c3c3c] px-3 py-2 text-[11px] text-gray-200 flex items-center gap-2 border-b border-black/40">
-              <span class="flex gap-1.5 shrink-0"><span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></span></span>
-              <span class="truncate font-medium">Windows PowerShell (Administrator)</span>
-            </div>
-            <div class="bg-[#0c0c0c] px-3 py-3 font-mono text-[11px] text-[#cccccc] leading-relaxed break-all">
-              <span class="text-[#569cd6]">PS</span> C:\Windows\system32&gt; <span class="text-[#ce9178]">irm &quot;…/office.ps1&quot; | iex</span>
-            </div>
-          </div>
-        </div>
-      </li>
-    </ol>
-  </div>
-</section>
-
-<section id="command" class="py-16">
-  <div class="container mx-auto px-6 max-w-3xl">
-    <h2 class="text-2xl md:text-3xl font-bold text-white text-center mb-6">Command to copy</h2>
-    <p class="text-center text-gray-400 text-sm mb-6">Run this only from sources you trust. You need an internet connection.</p>
-
-    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 shadow-xl">
-      <pre id="cmd-main" class="text-left text-sm md:text-base text-green-300 font-mono whitespace-pre-wrap break-all bg-[#0c0c0c] rounded-lg p-4 border border-slate-700 select-all" tabindex="0">irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
-      <button type="button" class="mt-4 w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors" data-copy-target="cmd-main">Copy command</button>
-    </div>
-
-    <details class="mt-8 rounded-xl border border-slate-700/50 bg-slate-900/50 p-4">
-      <summary class="cursor-pointer text-slate-200 hover:text-white font-medium flex items-center gap-2">
-        <span class="text-blue-400">▸</span> Other options (only if you need them)
-      </summary>
-      <div class="mt-6 space-y-8 pt-4 border-t border-slate-700">
-        <div>
-          <p class="text-xs font-semibold text-slate-400 mb-2">If GitHub Pages is blocked — raw file</p>
-          <pre id="cmd-raw" class="text-xs md:text-sm text-gray-200 font-mono whitespace-pre-wrap break-all bg-slate-950 rounded-lg p-3 border border-slate-700 select-all">irm "https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/office.ps1" | iex</pre>
-          <button type="button" class="mt-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg" data-copy-target="cmd-raw">Copy</button>
-        </div>
-        <div>
-          <p class="text-xs font-semibold text-slate-400 mb-2">Text-only prompts in the terminal (no separate installer window)</p>
-          <pre id="cmd-console" class="text-xs md:text-sm text-gray-200 font-mono whitespace-pre-wrap break-all bg-slate-950 rounded-lg p-3 border border-slate-700 select-all">$env:OFFICE_AUTO_INSTALL_USE_CONSOLE = "1"
-irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
-          <button type="button" class="mt-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg" data-copy-target="cmd-console">Copy</button>
-        </div>
-        <div>
-          <p class="text-xs font-semibold text-slate-400 mb-2">Using your own fork</p>
-          <p class="text-xs text-gray-500 mb-2">Set this <em>before</em> the <code class="text-slate-300">irm</code> line:</p>
-          <pre class="text-xs text-gray-200 font-mono bg-slate-950 rounded-lg p-3 border border-slate-700 select-all">$env:OFFICE_AUTO_INSTALL_REPO = "yourname/Office-Auto-Install"</pre>
-        </div>
-      </div>
-    </details>
-  </div>
-</section>
-
-<section id="after" class="py-16 bg-slate-900/50 border-t border-slate-700/50">
-  <div class="container mx-auto px-6 max-w-2xl text-center">
-    <h2 class="text-2xl font-bold text-white mb-6">After you run it</h2>
-    <ul class="text-left text-slate-200 space-y-3 text-sm md:text-base inline-block">
-      <li class="flex gap-2"><span class="text-blue-400 shrink-0">•</span> The script downloads the installer from GitHub, then continues — follow any prompts on screen.</li>
-      <li class="flex gap-2"><span class="text-blue-400 shrink-0">•</span> Installation often takes <strong class="text-white">10–30 minutes</strong>; keep the PC on and online.</li>
-      <li class="flex gap-2"><span class="text-blue-400 shrink-0">•</span> You must have a <strong class="text-white">valid Office license</strong>; this tool does not provide one.</li>
-    </ul>
-    <p class="mt-10 text-sm text-gray-500">
-      <a href="https://github.com/njvanas/Office-Auto-Install/releases/latest" class="text-blue-400 hover:underline">Releases</a>
-      ·
-      <a href="https://github.com/njvanas/Office-Auto-Install" class="text-blue-400 hover:underline">Source &amp; issues</a>
-    </p>
-  </div>
-</section>
-
-</main>
-
-<footer class="site-footer" aria-label="Site footer">
-  <div class="site-footer__inner">
-    <div class="site-footer__grid">
-      <div class="site-footer__brand">
-        <h3 class="site-footer__title">NJ van As</h3>
-        <p class="site-footer__tagline">
-          Senior Cloud &amp; Microsoft 365 Engineer—architecting secure, scalable infrastructure
-          for 60+ organizations and passionate about turning complex systems into reliable foundations.
-        </p>
-        <ul class="site-footer__social">
-          <li>
-            <a href="mailto:njvanas@duck.com" class="site-footer__social-btn" aria-label="Email">
-              <svg class="site-footer__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-            </a>
-          </li>
-          <li>
-            <a href="https://linkedin.com/in/njvanas" class="site-footer__social-btn" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-              <svg class="site-footer__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/njvanas" class="site-footer__social-btn" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-              <svg class="site-footer__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <div class="site-footer__links">
-        <h4 class="site-footer__heading">Quick Links</h4>
-        <ul class="site-footer__list">
+        <ul class="site-header__links">
           <li><a href="https://njvanas.github.io/#about">About</a></li>
           <li><a href="https://njvanas.github.io/#experience">Experience</a></li>
           <li><a href="https://njvanas.github.io/#projects">Projects</a></li>
           <li><a href="https://njvanas.github.io/#contact">Contact</a></li>
-          <li><a href="https://github.com/njvanas/Office-Auto-Install" target="_blank" rel="noopener noreferrer">This demo (GitHub)</a></li>
+          <li><a id="nav-github-link" href="https://github.com/njvanas/Office-Auto-Install" target="_blank" rel="noopener noreferrer">GitHub</a></li>
         </ul>
       </div>
+    </nav>
+  </header>
 
-      <div class="site-footer__expertise">
-        <h4 class="site-footer__heading">Expertise</h4>
-        <ul class="site-footer__list site-footer__list--muted">
-          <li>Microsoft 365 &amp; Azure Cloud</li>
-          <li>Identity &amp; Access Management</li>
-          <li>Multi-Tenant &amp; Security</li>
-          <li>PowerShell &amp; Automation</li>
-          <li>Threat Detection &amp; Response</li>
+  <main class="main-wrap" id="main-content">
+    <div class="main-wrap__pattern" aria-hidden="true"></div>
+    <div class="content-shell">
+      <section class="hero-intro" aria-labelledby="hero-title">
+        <p class="hero-eyebrow">GitHub Pages · PowerShell</p>
+        <h1 id="hero-title" class="hero-title">Office Auto Installer</h1>
+        <p class="hero-subtitle">One command · Administrator PowerShell · official Microsoft tools</p>
+        <p class="hero-lede">
+          Copy <strong>one line</strong>, paste it into <strong>PowerShell (Administrator)</strong>, press <kbd class="kbd">Enter</kbd>. Stay online until setup finishes.
+        </p>
+        <div class="hero__actions">
+          <a href="#how" class="btn btn--primary">How it works</a>
+          <a href="#command" class="btn btn--outline">View command</a>
+        </div>
+      </section>
+
+      <section id="how" class="page-panel scroll-target" aria-labelledby="how-heading">
+        <div class="section-head">
+          <h2 id="how-heading" class="section-head__title">How it works</h2>
+          <div class="section-head__rule" aria-hidden="true"></div>
+          <p class="section-head__lead">Same three steps on every PC: copy → admin PowerShell → paste and Enter.</p>
+        </div>
+
+        <ol class="steps" role="list" aria-label="Steps to run the installer">
+          <li>
+            <span class="step-num" aria-hidden="true">1</span>
+            <div class="step-body">
+              <h3>Copy the command</h3>
+              <p>Go to <strong style="color:#e2e8f0">Command to copy</strong> below, then click <strong style="color:#e2e8f0">Copy command</strong>. Or select the line in the box and press <kbd class="kbd">Ctrl+C</kbd>.</p>
+              <div class="mock-window" aria-hidden="true">
+                <div class="mock-bar">Clipboard</div>
+                <div class="mock-body">irm "…/office.ps1" | iex</div>
+              </div>
+            </div>
+          </li>
+          <li>
+            <span class="step-num" aria-hidden="true">2</span>
+            <div class="step-body">
+              <h3>Open PowerShell as Administrator</h3>
+              <p>You must see <strong style="color:#e2e8f0">Administrator</strong> in the title bar. Quick route: <kbd class="kbd">Win</kbd> → type <em>PowerShell</em> → <kbd class="kbd">Ctrl+Shift+Enter</kbd> → confirm UAC. Alternatively: right-click Start → <strong style="color:#e2e8f0">Terminal (Admin)</strong> or <strong style="color:#e2e8f0">Windows PowerShell (Admin)</strong>.</p>
+              <div class="mock-window" aria-hidden="true">
+                <div class="mock-titlebar">
+                  <span class="mock-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                  <span>Windows PowerShell (Administrator)</span>
+                </div>
+                <div class="mock-ps"><span class="kw">PS</span> C:\Windows\system32&gt;<span class="cursor-blink" style="display:inline-block;width:2px;height:14px;background:#ccc;margin-left:2px;vertical-align:middle;animation:pulse 1.1s ease-in-out infinite"></span></div>
+              </div>
+            </div>
+          </li>
+          <li>
+            <span class="step-num" aria-hidden="true">3</span>
+            <div class="step-body">
+              <h3>Paste and run</h3>
+              <p>Click inside the <strong style="color:#e2e8f0">PowerShell</strong> window so the cursor is on the line. Paste with <strong style="color:#e2e8f0">right-click</strong> or <kbd class="kbd">Ctrl+V</kbd>, then press <kbd class="kbd">Enter</kbd>.</p>
+              <div class="mock-window" aria-hidden="true">
+                <div class="mock-titlebar">
+                  <span class="mock-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                  <span>Windows PowerShell (Administrator)</span>
+                </div>
+                <div class="mock-ps"><span class="kw">PS</span> C:\Windows\system32&gt; <span class="str">irm "…/office.ps1" | iex</span></div>
+              </div>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section id="command" class="page-panel scroll-target" aria-labelledby="command-heading">
+        <div class="section-head">
+          <h2 id="command-heading" class="section-head__title">Command to copy</h2>
+          <div class="section-head__rule" aria-hidden="true"></div>
+          <p class="section-head__lead">Run this only from sources you trust. You need an internet connection.</p>
+        </div>
+
+        <pre id="cmd-main" class="pre-command" tabindex="0">irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
+        <button type="button" class="btn btn--primary btn--block" data-copy-target="cmd-main">Copy command</button>
+
+        <details class="details-block">
+          <summary class="details-summary">
+            <span class="details-chevron" aria-hidden="true">▸</span>
+            Other options (only if you need them)
+          </summary>
+          <div class="details-inner">
+            <div class="option-block">
+              <p class="option-label">If GitHub Pages is blocked — raw file</p>
+              <pre id="cmd-raw" class="pre-small">irm "https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/office.ps1" | iex</pre>
+              <button type="button" class="btn btn--muted btn--sm" style="margin-top:0.5rem" data-copy-target="cmd-raw">Copy</button>
+            </div>
+            <div class="option-block">
+              <p class="option-label">Text-only prompts in the terminal (no separate installer window)</p>
+              <pre id="cmd-console" class="pre-small">$env:OFFICE_AUTO_INSTALL_USE_CONSOLE = "1"
+irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex</pre>
+              <button type="button" class="btn btn--muted btn--sm" style="margin-top:0.5rem" data-copy-target="cmd-console">Copy</button>
+            </div>
+            <div class="option-block">
+              <p class="option-label">Using your own fork</p>
+              <p class="text-muted" style="margin-bottom:0.5rem">Set this <em>before</em> the <code style="color:#cbd5e1">irm</code> line:</p>
+              <pre class="pre-small">$env:OFFICE_AUTO_INSTALL_REPO = "yourname/Office-Auto-Install"</pre>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="after" class="page-panel scroll-target" aria-labelledby="after-heading">
+        <div class="section-head">
+          <h2 id="after-heading" class="section-head__title">After you run it</h2>
+          <div class="section-head__rule" aria-hidden="true"></div>
+        </div>
+        <ul class="after-list">
+          <li>The script downloads the installer from GitHub, then continues — follow any prompts on screen.</li>
+          <li>Installation often takes <strong style="color:#fff">10–30 minutes</strong>; keep the PC on and online.</li>
+          <li>You must have a <strong style="color:#fff">valid Office license</strong>; this tool does not provide one.</li>
         </ul>
+        <p class="text-center footer-links">
+          <a href="https://github.com/njvanas/Office-Auto-Install/releases/latest">Releases</a>
+          ·
+          <a href="https://github.com/njvanas/Office-Auto-Install">Source &amp; issues</a>
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer" aria-label="Site footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__grid">
+        <div class="site-footer__brand">
+          <h3 class="site-footer__title">NJ van As</h3>
+          <p class="site-footer__tagline">
+            Senior Cloud &amp; Microsoft 365 Engineer—architecting secure, scalable infrastructure
+            for 60+ organizations and passionate about turning complex systems into reliable foundations.
+          </p>
+          <ul class="site-footer__social">
+            <li>
+              <a href="mailto:njvanas@duck.com" class="site-footer__social-btn" aria-label="Email">
+                <img class="site-footer__icon-img" src="icons/mail.svg" width="20" height="20" alt="" decoding="async" />
+              </a>
+            </li>
+            <li>
+              <a href="https://www.linkedin.com/in/njvanas" class="site-footer__social-btn" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <img class="site-footer__icon-img" src="icons/linkedin.svg" width="20" height="20" alt="" decoding="async" />
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/njvanas" class="site-footer__social-btn" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <img class="site-footer__icon-img" src="icons/github.svg" width="20" height="20" alt="" decoding="async" />
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="site-footer__links">
+          <h4 class="site-footer__heading">Quick Links</h4>
+          <ul class="site-footer__list">
+            <li><a href="https://njvanas.github.io/#about">About</a></li>
+            <li><a href="https://njvanas.github.io/#experience">Experience</a></li>
+            <li><a href="https://njvanas.github.io/#projects">Projects</a></li>
+            <li><a href="https://njvanas.github.io/#contact">Contact</a></li>
+            <li><a id="footer-repo-link" href="https://github.com/njvanas/Office-Auto-Install" target="_blank" rel="noopener noreferrer">This demo (GitHub)</a></li>
+          </ul>
+        </div>
+
+        <div class="site-footer__expertise">
+          <h4 class="site-footer__heading">Expertise</h4>
+          <ul class="site-footer__list site-footer__list--muted">
+            <li>Microsoft 365 &amp; Azure Cloud</li>
+            <li>Identity &amp; Access Management</li>
+            <li>Multi-Tenant &amp; Security</li>
+            <li>PowerShell &amp; Automation</li>
+            <li>Threat Detection &amp; Response</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="site-footer__bottom">
+        <p class="site-footer__legal">
+          © <span id="footer-year"></span> NJ van As. All rights reserved.
+        </p>
+        <p class="site-footer__made">
+          Made with
+          <svg class="site-footer__heart" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          in the Netherlands
+        </p>
       </div>
     </div>
+  </footer>
 
-    <div class="site-footer__bottom">
-      <p class="site-footer__legal">
-        © <span id="footer-year"></span> NJ van As. All rights reserved.
-      </p>
-      <p class="site-footer__made">
-        Made with
-        <svg class="site-footer__heart" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-        in the Netherlands
-      </p>
-    </div>
-  </div>
-</footer>
+  <script>
+    (function initSiteHeader() {
+      var header = document.getElementById("site-header");
+      if (!header) return;
+      function onScroll() {
+        header.classList.toggle("site-header--solid", window.scrollY > 50);
+      }
+      onScroll();
+      window.addEventListener("scroll", onScroll, { passive: true });
+    })();
 
-<script>
-        (function () {
-            var y = document.getElementById('footer-year');
-            if (y) y.textContent = String(new Date().getFullYear());
-        })();
+    (function () {
+      var y = document.getElementById("footer-year");
+      if (y) y.textContent = String(new Date().getFullYear());
+    })();
 
-        document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var id = btn.getAttribute('data-copy-target');
-                var el = document.getElementById(id);
-                if (!el) return;
-                var text = el.textContent.trim();
-                navigator.clipboard.writeText(text).then(function () {
-                    var orig = btn.textContent;
-                    btn.textContent = 'Copied!';
-                    setTimeout(function () { btn.textContent = orig; }, 2000);
-                });
-            });
+    document.querySelectorAll("[data-copy-target]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-copy-target");
+        var el = document.getElementById(id);
+        if (!el) return;
+        var text = el.textContent.trim();
+        navigator.clipboard.writeText(text).then(function () {
+          var orig = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(function () { btn.textContent = orig; }, 2000);
         });
+      });
+    });
 
-        document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
-            anchor.addEventListener('click', function (e) {
-                var href = this.getAttribute('href');
-                if (href === '#') return;
-                e.preventDefault();
-                var target = document.querySelector(href);
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
+    document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+      anchor.addEventListener("click", function (e) {
+        var href = anchor.getAttribute("href");
+        if (href === "#") return;
+        e.preventDefault();
+        var target = document.querySelector(href);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
 
-        document.querySelectorAll('details').forEach(function (d) {
-            d.addEventListener('toggle', function () {
-                var sum = d.querySelector('summary span.text-blue-400');
-                if (sum) sum.textContent = d.open ? '▾' : '▸';
-            });
-        });
-</script>
+    document.querySelectorAll("details.details-block").forEach(function (d) {
+      d.addEventListener("toggle", function () {
+        var chev = d.querySelector(".details-chevron");
+        if (chev) chev.textContent = d.open ? "▾" : "▸";
+      });
+    });
+  </script>
 </body>
 </html>
