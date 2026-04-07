@@ -178,7 +178,7 @@ jobs:
         - README.txt (This file with instructions)
 
         FEATURES:
-        - Windows 11 Fluent Design interface
+        - GUI styled to match the project website (slate / blue)
         - Pre-filled defaults
         - Real-time progress tracking
         - One-click ready
@@ -291,7 +291,7 @@ jobs:
         
         ### 📥 Download Options
         - **Web launch**: Admin PowerShell: \`irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex\` (see README)
-        - **GUI Version (Recommended)**: Download \`Office-Auto-Installer-GUI-$VERSION.zip\` for Windows 11 Fluent Design interface
+        - **GUI Version (Recommended)**: Download \`Office-Auto-Installer-GUI-$VERSION.zip\` for the website-themed installer UI
         - **Console Version**: Download \`Office-Auto-Installer-Console-$VERSION.zip\` for text-based interface
         - **Complete Package**: Download \`Office-Auto-Installer-Complete-$VERSION.zip\` for both versions + \`office.ps1\`
         - **Individual Files**: Download \`office.ps1\` and \`.ps1\` payloads from the release assets

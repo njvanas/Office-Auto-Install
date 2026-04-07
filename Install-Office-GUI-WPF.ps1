@@ -1,20 +1,20 @@
 #Requires -Version 5.1
-# Office Auto Installer - WPF with Windows 11 Fluent Design
-# Single-file, self-contained Office installer with WPF and Fluent theme
+# Office Auto Installer - WPF UI aligned with the GitHub Pages site (slate / blue)
+# Single-file, self-contained Office installer with WPF
 # Downloads and installs Microsoft Office through official channels
 # Updated release workflow to include both GUI and Console versions
 
 <#
 .SYNOPSIS
-    Microsoft Office Auto Installer - WPF Fluent Design Edition
+    Microsoft Office Auto Installer - WPF (site-themed UI)
 .DESCRIPTION
-    A beautiful, modern WPF application with Windows 11 Fluent Design theme.
+    WPF installer window styled to match the public site: slate gradient, blue accents, Inter font when installed.
     All options are pre-filled with recommended defaults for one-click installation.
     Fully self-contained - no external dependencies required.
 .NOTES
-    Version: 3.5 - WPF with Fluent Design Theme
+    Version: 3.6 - WPF UI matched to website theme
     Author: Office Auto Installer Team
-    Requires: .NET Framework 4.7.2+ or .NET 6+ (for Fluent theme: .NET 9+)
+    Requires: .NET Framework 4.7.2+ (Windows PowerShell; WPF is not available in PowerShell 7+)
 #>
 
 # ============================================================================
@@ -105,10 +105,9 @@ try {
     exit 1
 }
 
-# Try to load Fluent theme if available (.NET 9+)
-# Note: Fluent theme is only available in .NET 9+, so we'll use custom styling
+# Optional PresentationFramework.Fluent merge (.NET 9+ only; unused on .NET Framework)
 $fluentThemeAvailable = $false
-# Custom Fluent-like styling will be used instead
+# UI uses embedded site-themed brushes/styles (matches index.html)
 
 # ==== EXECUTION POLICY FIX ====
 try {
@@ -171,31 +170,32 @@ if (-not (Test-Path $installerFolder)) {
 # This embedded XAML string defines the entire WPF window structure.
 # 
 # Structure Overview:
-# 1. Window: Main application window with dark theme background
-# 2. Resources: Color brushes, styles for ComboBox, Button, etc.
-# 3. Layout: Grid-based layout with header, scrollable content, and footer
-# 4. Controls: ComboBoxes for selections, CheckBoxes for optional components
-# 5. Status Panel: Hidden by default, shown during installation
-# 6. Install Button: Primary action button at the bottom
+# 1. Window: gradient background matching site (slate-900 / blue-900)
+# 2. Resources: Tailwind-aligned brushes; ComboBox / Button / ProgressBar styles
+# 3. Layout: header (nav-style branding), scrollable content, footer bar with primary action
+# 4. Controls: ComboBoxes, CheckBoxes; status strip during install
 #
-# Design Philosophy:
-# - Windows 11 Fluent Design aesthetic with rounded corners
-# - Dark theme (#202020 background) for modern look
-# - Custom ComboBox styling to remove default white boxes
-# - Semi-transparent hover effects on dropdown items
-# - High-contrast focus indicators for accessibility (WCAG 2.4.7)
+# Design Philosophy (matches index.html):
+# - Inter, Segoe UI fallback (same stack as the site; Inter if installed on the PC)
+# - slate-950 cards, slate-600 borders, blue-600 primary, blue-400 accents / focus
+# - Custom ComboBox template (no default light chrome)
 #
-# Note: x:Class is intentionally omitted as it's not supported when
-# loading XAML dynamically in PowerShell.
+# Note: x:Class is intentionally omitted (dynamic XAML load in PowerShell).
 
 $xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Microsoft Office Auto Installer"
+        Title="Office Auto Installer"
         Width="920" Height="1050"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        Background="#202020">
+        ResizeMode="NoResize">
+  <Window.Background>
+    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#0F172A" Offset="0"/>
+      <GradientStop Color="#1E3A8A" Offset="0.5"/>
+      <GradientStop Color="#0F172A" Offset="1"/>
+    </LinearGradientBrush>
+  </Window.Background>
   <Window.Resources>
     <ResourceDictionary>
       $(if ($fluentThemeAvailable) {
@@ -205,38 +205,36 @@ $xaml = @"
       </ResourceDictionary.MergedDictionaries>
 "@
       })
-      
-      <!-- Windows 11 Fluent Design Colors -->
-      <SolidColorBrush x:Key="FluentBackgroundBrush" Color="#202020"/>
-      <SolidColorBrush x:Key="FluentCardBrush" Color="#252525"/>
-      <SolidColorBrush x:Key="FluentHeaderBrush" Color="#1C1C1C"/>
-      <SolidColorBrush x:Key="FluentTextBrush" Color="#FFFFFF"/>
-      <SolidColorBrush x:Key="FluentTextSecondaryBrush" Color="#F3F3F3"/>
-      <SolidColorBrush x:Key="FluentTextMutedBrush" Color="#C8C8C8"/>
-      <SolidColorBrush x:Key="FluentPrimaryBrush" Color="#0078D7"/>
-      <SolidColorBrush x:Key="FluentPrimaryHoverBrush" Color="#005AB8"/>
-      <SolidColorBrush x:Key="FluentFocusBrush" Color="#60CDFF"/>
-      <SolidColorBrush x:Key="FluentBorderBrush" Color="#484848"/>
-      <SolidColorBrush x:Key="FluentControlBrush" Color="#2B2B2B"/>
-      <SolidColorBrush x:Key="FluentHoverBrush" Color="#353535" Opacity="0.6"/>
-      <SolidColorBrush x:Key="FluentHoverSolidBrush" Color="#3A3A3A"/>
-      
-      <!-- Fluent ComboBox Style (fixes white boxes) -->
-      <Style x:Key="FluentComboBoxStyle" TargetType="ComboBox">
+
+      <!-- GitHub Pages / Tailwind palette (see index.html) -->
+      <SolidColorBrush x:Key="SitePanelBrush" Color="#0F172A"/>
+      <SolidColorBrush x:Key="SiteCardBrush" Color="#020617"/>
+      <SolidColorBrush x:Key="SiteHeaderBrush" Color="#0F172A"/>
+      <SolidColorBrush x:Key="SiteTextBrush" Color="#FFFFFF"/>
+      <SolidColorBrush x:Key="SiteTextBodyBrush" Color="#D1D5DB"/>
+      <SolidColorBrush x:Key="SiteTextMutedBrush" Color="#9CA3AF"/>
+      <SolidColorBrush x:Key="SitePrimaryBrush" Color="#2563EB"/>
+      <SolidColorBrush x:Key="SitePrimaryHoverBrush" Color="#1D4ED8"/>
+      <SolidColorBrush x:Key="SiteAccentBrush" Color="#60A5FA"/>
+      <SolidColorBrush x:Key="SiteBorderBrush" Color="#475569"/>
+      <SolidColorBrush x:Key="SiteControlBrush" Color="#1E293B"/>
+      <SolidColorBrush x:Key="SiteItemHoverBrush" Color="#334155"/>
+
+      <Style x:Key="SiteComboBoxStyle" TargetType="ComboBox">
         <Setter Property="MinHeight" Value="36"/>
         <Setter Property="Padding" Value="12,8"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Background" Value="{StaticResource FluentControlBrush}"/>
-        <Setter Property="Foreground" Value="{StaticResource FluentTextSecondaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource FluentBorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource SiteControlBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource SiteTextBodyBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SiteBorderBrush}"/>
         <Setter Property="FontSize" Value="13"/>
-        <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+        <Setter Property="FontFamily" Value="Inter, Segoe UI"/>
         <Setter Property="Template">
           <Setter.Value>
             <ControlTemplate TargetType="ComboBox">
               <Grid>
                 <Border x:Name="FocusBorder"
-                        BorderBrush="{StaticResource FluentFocusBrush}"
+                        BorderBrush="{StaticResource SiteAccentBrush}"
                         BorderThickness="0"
                         CornerRadius="8"
                         Margin="-1"
@@ -257,7 +255,7 @@ $xaml = @"
                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
                 <Path x:Name="Arrow"
                       Data="M 0 0 L 4 4 L 8 0 Z"
-                      Fill="{StaticResource FluentTextMutedBrush}"
+                      Fill="{StaticResource SiteTextMutedBrush}"
                       HorizontalAlignment="Right"
                       VerticalAlignment="Center"
                       Margin="0,0,12,0"
@@ -292,8 +290,8 @@ $xaml = @"
                        PopupAnimation="Slide"
                        IsOpen="{TemplateBinding IsDropDownOpen}">
                   <Border x:Name="DropDownBorder"
-                          Background="{StaticResource FluentCardBrush}"
-                          BorderBrush="{StaticResource FluentBorderBrush}"
+                          Background="{StaticResource SiteCardBrush}"
+                          BorderBrush="{StaticResource SiteBorderBrush}"
                           BorderThickness="1"
                           CornerRadius="8"
                           MaxHeight="{TemplateBinding MaxDropDownHeight}"
@@ -308,14 +306,14 @@ $xaml = @"
               <ControlTemplate.Triggers>
                 <Trigger Property="IsKeyboardFocusWithin" Value="True">
                   <Setter TargetName="FocusBorder" Property="BorderThickness" Value="2"/>
-                  <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource FluentFocusBrush}"/>
+                  <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource SiteAccentBrush}"/>
                   <Setter TargetName="Border" Property="BorderThickness" Value="1"/>
                 </Trigger>
                 <Trigger Property="IsKeyboardFocusWithin" Value="False">
                   <Setter TargetName="FocusBorder" Property="BorderThickness" Value="0"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
-                  <Setter Property="Foreground" Value="{StaticResource FluentTextMutedBrush}"/>
+                  <Setter Property="Foreground" Value="{StaticResource SiteTextMutedBrush}"/>
                 </Trigger>
               </ControlTemplate.Triggers>
             </ControlTemplate>
@@ -326,20 +324,16 @@ $xaml = @"
             <Style TargetType="ComboBoxItem">
               <Setter Property="Padding" Value="12,8"/>
               <Setter Property="Background" Value="Transparent"/>
-              <Setter Property="Foreground" Value="{StaticResource FluentTextSecondaryBrush}"/>
+              <Setter Property="Foreground" Value="{StaticResource SiteTextBodyBrush}"/>
               <Setter Property="FontSize" Value="13"/>
-              <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+              <Setter Property="FontFamily" Value="Inter, Segoe UI"/>
               <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                  <Setter Property="Background">
-                    <Setter.Value>
-                      <SolidColorBrush Color="#353535" Opacity="0.6"/>
-                    </Setter.Value>
-                  </Setter>
-                  <Setter Property="Foreground" Value="{StaticResource FluentTextBrush}"/>
+                  <Setter Property="Background" Value="{StaticResource SiteItemHoverBrush}"/>
+                  <Setter Property="Foreground" Value="{StaticResource SiteTextBrush}"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                  <Setter Property="Background" Value="{StaticResource FluentPrimaryBrush}"/>
+                  <Setter Property="Background" Value="{StaticResource SitePrimaryBrush}"/>
                   <Setter Property="Foreground" Value="White"/>
                 </Trigger>
                 <MultiTrigger>
@@ -347,7 +341,7 @@ $xaml = @"
                     <Condition Property="IsMouseOver" Value="True"/>
                     <Condition Property="IsSelected" Value="True"/>
                   </MultiTrigger.Conditions>
-                  <Setter Property="Background" Value="{StaticResource FluentPrimaryHoverBrush}"/>
+                  <Setter Property="Background" Value="{StaticResource SitePrimaryHoverBrush}"/>
                   <Setter Property="Foreground" Value="White"/>
                 </MultiTrigger>
               </Style.Triggers>
@@ -355,22 +349,21 @@ $xaml = @"
           </Setter.Value>
         </Setter>
       </Style>
-      
-      <!-- Fluent Button Style -->
-      <Style x:Key="FluentButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource FluentPrimaryBrush}"/>
+
+      <Style x:Key="SiteButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource SitePrimaryBrush}"/>
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FontSize" Value="15"/>
-        <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontFamily" Value="Inter, Segoe UI"/>
         <Setter Property="Padding" Value="24,12"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
           <Setter.Value>
             <ControlTemplate TargetType="Button">
               <Border Background="{TemplateBinding Background}"
-                      CornerRadius="12"
+                      CornerRadius="8"
                       Padding="{TemplateBinding Padding}">
                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
               </Border>
@@ -379,116 +372,164 @@ $xaml = @"
         </Setter>
         <Style.Triggers>
           <Trigger Property="IsMouseOver" Value="True">
-            <Setter Property="Background" Value="{StaticResource FluentPrimaryHoverBrush}"/>
+            <Setter Property="Background" Value="{StaticResource SitePrimaryHoverBrush}"/>
           </Trigger>
         </Style.Triggers>
       </Style>
+
+      <Style x:Key="SiteCheckBoxStyle" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource SiteTextBodyBrush}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontFamily" Value="Inter, Segoe UI"/>
+      </Style>
+
+      <Style x:Key="SiteProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="Foreground" Value="{StaticResource SitePrimaryBrush}"/>
+        <Setter Property="Background" Value="{StaticResource SiteControlBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SiteBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Height" Value="10"/>
+      </Style>
     </ResourceDictionary>
   </Window.Resources>
-  
+
   <Grid>
     <Grid.RowDefinitions>
-      <RowDefinition Height="100"/>
+      <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
-    
-    <!-- Header -->
-    <Border Grid.Row="0" Background="{StaticResource FluentHeaderBrush}">
-      <StackPanel Margin="30,0">
-        <TextBlock Text="Microsoft Office Auto Installer"
-                   FontSize="26" FontWeight="Bold"
-                   Foreground="{StaticResource FluentTextBrush}"
-                   FontFamily="Segoe UI Variable"
-                   Margin="0,28,0,0"/>
-        <TextBlock Text="Automated Office deployment with customizable options"
-                   FontSize="12"
-                   Foreground="{StaticResource FluentTextMutedBrush}"
-                   FontFamily="Segoe UI Variable"
-                   Margin="0,4,0,0"/>
+
+    <!-- Header (site nav: logo tile + title) -->
+    <Border Grid.Row="0"
+            Background="{StaticResource SiteHeaderBrush}"
+            BorderBrush="{StaticResource SiteBorderBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="24,16,24,16">
+      <StackPanel Orientation="Horizontal">
+        <Border Width="32" Height="32" CornerRadius="8" Margin="0,2,12,0" VerticalAlignment="Top">
+          <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+              <GradientStop Color="#2563EB" Offset="0"/>
+              <GradientStop Color="#60A5FA" Offset="1"/>
+            </LinearGradientBrush>
+          </Border.Background>
+          <TextBlock Text="O"
+                     Foreground="White"
+                     FontWeight="Bold"
+                     FontSize="16"
+                     FontFamily="Inter, Segoe UI"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"/>
+        </Border>
+        <StackPanel VerticalAlignment="Center">
+          <TextBlock Text="Office Auto Installer"
+                     FontSize="24"
+                     FontWeight="Bold"
+                     Foreground="{StaticResource SiteAccentBrush}"
+                     FontFamily="Inter, Segoe UI"/>
+          <TextBlock Text="Automated Office deployment with customizable options"
+                     FontSize="12"
+                     Foreground="{StaticResource SiteTextMutedBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,4,0,0"
+                     TextWrapping="Wrap"/>
+        </StackPanel>
       </StackPanel>
     </Border>
-    
-    <!-- Content -->
-    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-      <StackPanel Margin="40,30,40,20">
-        
-        <!-- System Configuration -->
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Background="Transparent">
+      <StackPanel Margin="40,28,40,20">
+
         <StackPanel Margin="0,0,0,24">
           <TextBlock Text="System Configuration"
-                     FontSize="15" FontWeight="Bold"
-                     Foreground="{StaticResource FluentTextSecondaryBrush}"
-                     FontFamily="Segoe UI Variable"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
-          <Border Background="{StaticResource FluentCardBrush}" CornerRadius="12" Padding="20,16">
-            <ComboBox x:Name="ArchCombo" Style="{StaticResource FluentComboBoxStyle}">
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
+            <ComboBox x:Name="ArchCombo" Style="{StaticResource SiteComboBoxStyle}">
               <ComboBoxItem Content="64-bit (Recommended for most computers)" IsSelected="True"/>
               <ComboBoxItem Content="32-bit (For older systems)"/>
             </ComboBox>
           </Border>
         </StackPanel>
-        
-        <!-- Office Version -->
+
         <StackPanel Margin="0,0,0,24">
           <TextBlock Text="Office Version"
-                     FontSize="15" FontWeight="Bold"
-                     Foreground="{StaticResource FluentTextSecondaryBrush}"
-                     FontFamily="Segoe UI Variable"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
-          <Border Background="{StaticResource FluentCardBrush}" CornerRadius="12" Padding="20,16">
-            <ComboBox x:Name="EditionCombo" Style="{StaticResource FluentComboBoxStyle}">
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
+            <ComboBox x:Name="EditionCombo" Style="{StaticResource SiteComboBoxStyle}">
               <ComboBoxItem Content="Office 2024 Pro Plus (Latest features)" IsSelected="True"/>
               <ComboBoxItem Content="Office LTSC 2021 (Long-term support)"/>
               <ComboBoxItem Content="Microsoft 365 Apps (Cloud-connected)"/>
             </ComboBox>
           </Border>
         </StackPanel>
-        
-        <!-- Optional Components -->
+
         <StackPanel Margin="0,0,0,24">
           <TextBlock Text="Optional Components"
-                     FontSize="15" FontWeight="Bold"
-                     Foreground="{StaticResource FluentTextSecondaryBrush}"
-                     FontFamily="Segoe UI Variable"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
-          <Border Background="{StaticResource FluentCardBrush}" CornerRadius="12" Padding="20,16">
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
             <StackPanel>
-              <CheckBox x:Name="VisioCheck" Content="Include Visio Professional (for diagrams and flowcharts)"
-                        Foreground="{StaticResource FluentTextSecondaryBrush}"
-                        FontSize="13" FontFamily="Segoe UI Variable"
+              <CheckBox x:Name="VisioCheck" Style="{StaticResource SiteCheckBoxStyle}"
+                        Content="Include Visio Professional (for diagrams and flowcharts)"
                         Margin="0,0,0,12"/>
-              <CheckBox x:Name="ProjectCheck" Content="Include Project Professional (for project management)"
-                        Foreground="{StaticResource FluentTextSecondaryBrush}"
-                        FontSize="13" FontFamily="Segoe UI Variable"/>
+              <CheckBox x:Name="ProjectCheck" Style="{StaticResource SiteCheckBoxStyle}"
+                        Content="Include Project Professional (for project management)"/>
             </StackPanel>
           </Border>
         </StackPanel>
-        
-        <!-- Update Settings -->
+
         <StackPanel Margin="0,0,0,24">
           <TextBlock Text="Update Settings"
-                     FontSize="15" FontWeight="Bold"
-                     Foreground="{StaticResource FluentTextSecondaryBrush}"
-                     FontFamily="Segoe UI Variable"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
-          <Border Background="{StaticResource FluentCardBrush}" CornerRadius="12" Padding="20,16">
-            <ComboBox x:Name="ChannelCombo" Style="{StaticResource FluentComboBoxStyle}">
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
+            <ComboBox x:Name="ChannelCombo" Style="{StaticResource SiteComboBoxStyle}">
               <ComboBoxItem Content="Monthly updates (Recommended - latest features)" IsSelected="True"/>
               <ComboBoxItem Content="Less frequent updates (More stable)"/>
             </ComboBox>
           </Border>
         </StackPanel>
-        
-        <!-- Language -->
+
         <StackPanel Margin="0,0,0,24">
           <TextBlock Text="Language"
-                     FontSize="15" FontWeight="Bold"
-                     Foreground="{StaticResource FluentTextSecondaryBrush}"
-                     FontFamily="Segoe UI Variable"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
-          <Border Background="{StaticResource FluentCardBrush}" CornerRadius="12" Padding="20,16">
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
             <StackPanel>
-              <ComboBox x:Name="LangCombo" Style="{StaticResource FluentComboBoxStyle}" Margin="0,0,0,12">
+              <ComboBox x:Name="LangCombo" Style="{StaticResource SiteComboBoxStyle}" Margin="0,0,0,12">
                 <ComboBoxItem Content="English (United States)" IsSelected="True"/>
                 <ComboBoxItem Content="English (United Kingdom)"/>
                 <ComboBoxItem Content="French (France)"/>
@@ -499,53 +540,64 @@ $xaml = @"
               </ComboBox>
               <TextBlock Text="Configure your installation options above, then click 'Install Office' to begin."
                          FontSize="12"
-                         Foreground="{StaticResource FluentTextMutedBrush}"
-                         FontFamily="Segoe UI Variable"
+                         Foreground="{StaticResource SiteTextMutedBrush}"
+                         FontFamily="Inter, Segoe UI"
                          TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
         </StackPanel>
-        
-        <!-- Installation Display -->
+
         <StackPanel Margin="0,0,0,24">
           <TextBlock Text="Installation Display"
-                     FontSize="15" FontWeight="Bold"
-                     Foreground="{StaticResource FluentTextSecondaryBrush}"
-                     FontFamily="Segoe UI Variable"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
-          <Border Background="{StaticResource FluentCardBrush}" CornerRadius="12" Padding="20,16">
-            <ComboBox x:Name="UICombo" Style="{StaticResource FluentComboBoxStyle}">
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
+            <ComboBox x:Name="UICombo" Style="{StaticResource SiteComboBoxStyle}">
               <ComboBoxItem Content="Show installation progress (Recommended)" IsSelected="True"/>
               <ComboBoxItem Content="Install quietly in background"/>
             </ComboBox>
           </Border>
         </StackPanel>
-        
+
       </StackPanel>
     </ScrollViewer>
-    
-    <!-- Status Panel (Hidden by default) -->
-    <Border x:Name="StatusPanel" Grid.Row="1" 
-            Background="{StaticResource FluentBackgroundBrush}"
+
+    <Border x:Name="StatusPanel" Grid.Row="1"
+            Background="{StaticResource SitePanelBrush}"
             Visibility="Collapsed"
             VerticalAlignment="Bottom"
-            Margin="40,0,40,100">
-      <StackPanel Margin="0,15">
-        <ProgressBar x:Name="ProgressBar" Height="28" Margin="0,0,0,10"/>
-        <TextBlock x:Name="StatusLabel" 
-                   Foreground="{StaticResource FluentTextMutedBrush}"
-                   FontSize="12" FontFamily="Segoe UI Variable"/>
+            Margin="40,0,40,100"
+            BorderBrush="{StaticResource SiteBorderBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="0,12,0,0">
+      <StackPanel Margin="0,4">
+        <ProgressBar x:Name="ProgressBar" Style="{StaticResource SiteProgressBarStyle}" Margin="0,0,0,10"/>
+        <TextBlock x:Name="StatusLabel"
+                   Foreground="{StaticResource SiteTextMutedBrush}"
+                   FontSize="12"
+                   FontFamily="Inter, Segoe UI"/>
       </StackPanel>
     </Border>
-    
-    <!-- Install Button -->
-    <Button x:Name="InstallButton" Grid.Row="2"
-            Content="Install Office"
-            Style="{StaticResource FluentButtonStyle}"
-            Width="840" Height="50"
-            Margin="40,20,40,20"
-            HorizontalAlignment="Center"/>
-            
+
+    <Border Grid.Row="2"
+            Background="{StaticResource SiteHeaderBrush}"
+            BorderBrush="{StaticResource SiteBorderBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="0,20,0,20">
+      <Button x:Name="InstallButton"
+              Content="Install Office"
+              Style="{StaticResource SiteButtonStyle}"
+              Width="840"
+              Height="48"
+              HorizontalAlignment="Center"/>
+    </Border>
+
   </Grid>
 </Window>
 "@
