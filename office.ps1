@@ -53,7 +53,11 @@ $script:OaiConfigFiles = @(
     'O365Business.xml',
     'O365Business-VDI.xml',
     'O365ProPlusVisioProject.xml',
+    'O365ProPlusVisioProject-Retail.xml',
+    'O365ProPlusVisioProject-2024.xml',
     'O365ProPlusVisioProject-VDI.xml',
+    'O365ProPlusVisioProject-Retail-VDI.xml',
+    'O365ProPlusVisioProject-2024-VDI.xml',
     'Uninstall-Microsoft365Apps.xml'
 )
 

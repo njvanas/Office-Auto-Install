@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Microsoft 365 Apps + Visio + Project (volume) — persistent machines -->
+<!-- Microsoft 365 Apps + Visio LTSC 2021 + Project LTSC 2021 (volume) — persistent machines -->
 <Configuration ID="O365ProPlusVisioProject">
   <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="O365ProPlusRetail">

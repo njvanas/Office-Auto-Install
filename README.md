@@ -96,8 +96,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ".\Deploy-Microsoft365Apps.p
 | `O365ProPlus.xml` | Microsoft 365 Apps for enterprise, persistent machines |
 | `O365ProPlus-VDI.xml` | AVD / Windows 365 — shared computer licensing; Teams/OneDrive excluded (deploy separately if needed) |
 | `O365Business.xml` / `O365Business-VDI.xml` | Microsoft 365 Apps for business |
-| `O365ProPlusVisioProject.xml` / `-VDI` | Visio + Project (volume) |
+| `O365ProPlusVisioProject.xml` / `…-VDI` | M365 Apps + **Visio LTSC 2021** + **Project LTSC 2021** (volume licenses) |
+| `O365ProPlusVisioProject-Retail.xml` / `…-Retail-VDI` | M365 Apps + **VisioProRetail** + **ProjectProRetail** (Microsoft 365 subscription / Click-to-Run Retail — Visio Plan 2, Project Plan 3/5) |
+| `O365ProPlusVisioProject-2024.xml` / `…-2024-VDI` | M365 Apps + **Visio LTSC 2024** + **Project LTSC 2024** (volume) |
 | `Uninstall-Microsoft365Apps.xml` | Removal |
+
+**Visio / Project product IDs:** Microsoft’s ODT uses **`VisioProRetail`** / **`ProjectProRetail`** for subscription deployments alongside Microsoft 365 Apps, and **`VisioPro2024Volume`** / **`ProjectPro2024Volume`** (or **`*2024Retail`**) for Office LTSC 2024–aligned perpetual licenses. The older **`VisioPro2021Volume`** / **`ProjectPro2021Volume`** presets remain for LTSC 2021 volume agreements. See [supported product IDs](https://learn.microsoft.com/office365/troubleshoot/installation/product-ids-supported-office-deployment-click-to-run) and the [configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options) Product element.
 
 Default presets exclude **new Outlook** (`OutlookForWindows`); edit XML to include or switch exclusions per [Microsoft’s configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options).
 

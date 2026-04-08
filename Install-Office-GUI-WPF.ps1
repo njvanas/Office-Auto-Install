@@ -475,8 +475,12 @@ $xaml = @"
               <ComboBoxItem Content="Microsoft 365 Apps — enterprise (VDI / shared PC)"/>
               <ComboBoxItem Content="Microsoft 365 Apps — business (physical / desktop)"/>
               <ComboBoxItem Content="Microsoft 365 Apps — business (VDI / shared PC)"/>
-              <ComboBoxItem Content="M365 Apps enterprise + Visio &amp; Project (physical / desktop)"/>
-              <ComboBoxItem Content="M365 Apps enterprise + Visio &amp; Project (VDI / shared PC)"/>
+              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — LTSC 2021 volume (physical)"/>
+              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — subscription Retail (physical)"/>
+              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — LTSC 2024 volume (physical)"/>
+              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — LTSC 2021 volume (VDI)"/>
+              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — subscription Retail (VDI)"/>
+              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — LTSC 2024 volume (VDI)"/>
               <ComboBoxItem Content="Custom — Office 2024, LTSC 2021, or build-your-own M365"/>
             </ComboBox>
           </Border>
@@ -536,6 +540,20 @@ $xaml = @"
                         Margin="0,0,0,12"/>
               <CheckBox x:Name="ProjectCheck" Style="{StaticResource SiteCheckBoxStyle}"
                         Content="Include Project Professional (for project management)"/>
+              <StackPanel x:Name="VisioProjectLinePanel" Margin="0,16,0,0" Visibility="Collapsed">
+                <TextBlock Text="Visio / Project edition (when included)"
+                           FontSize="12"
+                           Foreground="{StaticResource SiteTextMutedBrush}"
+                           FontFamily="Inter, Segoe UI"
+                           Margin="0,0,0,8"
+                           TextWrapping="Wrap"/>
+                <ComboBox x:Name="VisioProjectLineCombo" Style="{StaticResource SiteComboBoxStyle}">
+                  <ComboBoxItem Content="Microsoft 365 subscription (Visio Plan 2 / Project)" Tag="M365Retail" IsSelected="True"/>
+                  <ComboBoxItem Content="Office LTSC 2021 (volume license)" Tag="LTSC2021Volume"/>
+                  <ComboBoxItem Content="Office LTSC 2024 (volume license)" Tag="LTSC2024Volume"/>
+                  <ComboBoxItem Content="Office 2024 (retail perpetual)" Tag="Office2024Retail"/>
+                </ComboBox>
+              </StackPanel>
             </StackPanel>
           </Border>
         </StackPanel>
@@ -715,6 +733,8 @@ try {
     $editionCombo = $window.FindName("EditionCombo")
     $visioCheck = $window.FindName("VisioCheck")
     $projectCheck = $window.FindName("ProjectCheck")
+    $visioProjectLinePanel = $window.FindName("VisioProjectLinePanel")
+    $visioProjectLineCombo = $window.FindName("VisioProjectLineCombo")
     $channelCombo = $window.FindName("ChannelCombo")
     $channelPresetDefaultItem = $window.FindName("ChannelPresetDefaultItem")
     $langCombo = $window.FindName("LangCombo")
@@ -777,12 +797,16 @@ function Get-EditionName {
 function Get-PresetNameFromProfileIndex {
     param([int]$index)
     $map = @{
-        0 = 'O365ProPlus'
-        1 = 'O365ProPlus-VDI'
-        2 = 'O365Business'
-        3 = 'O365Business-VDI'
-        4 = 'O365ProPlusVisioProject'
-        5 = 'O365ProPlusVisioProject-VDI'
+        0  = 'O365ProPlus'
+        1  = 'O365ProPlus-VDI'
+        2  = 'O365Business'
+        3  = 'O365Business-VDI'
+        4  = 'O365ProPlusVisioProject'
+        5  = 'O365ProPlusVisioProject-Retail'
+        6  = 'O365ProPlusVisioProject-2024'
+        7  = 'O365ProPlusVisioProject-VDI'
+        8  = 'O365ProPlusVisioProject-Retail-VDI'
+        9  = 'O365ProPlusVisioProject-2024-VDI'
     }
     if ($map.ContainsKey($index)) { return $map[$index] }
     return $null
@@ -795,8 +819,12 @@ function Get-ProfileSummaryLabel {
         'M365 Apps enterprise (VDI)'
         'M365 Apps business (physical)'
         'M365 Apps business (VDI)'
-        'M365 enterprise + Visio & Project (physical)'
-        'M365 enterprise + Visio & Project (VDI)'
+        'M365 + Visio & Project — LTSC 2021 vol (physical)'
+        'M365 + Visio & Project — subscription Retail (physical)'
+        'M365 + Visio & Project — LTSC 2024 vol (physical)'
+        'M365 + Visio & Project — LTSC 2021 vol (VDI)'
+        'M365 + Visio & Project — subscription Retail (VDI)'
+        'M365 + Visio & Project — LTSC 2024 vol (VDI)'
         'Custom (interactive XML)'
     )
     if ($index -ge 0 -and $index -lt $labels.Count) { return $labels[$index] }
@@ -829,7 +857,8 @@ function Sync-LanguageComboFromProfile {
         $preset = Get-PresetNameFromProfileIndex -index $profileCombo.SelectedIndex
         $incV = $false
         $incP = $false
-        if ($profileCombo.SelectedIndex -eq 6) {
+        $customIdx = $profileCombo.Items.Count - 1
+        if ($profileCombo.SelectedIndex -eq $customIdx) {
             $incV = [bool]$visioCheck.IsChecked
             $incP = [bool]$projectCheck.IsChecked
         }
@@ -867,13 +896,34 @@ function Sync-LanguageComboFromProfile {
     }
 }
 
+function Sync-VisioProjectLineComboDefault {
+    if ($null -eq $visioProjectLineCombo -or $null -eq $editionCombo) { return }
+    $editionId = Get-EditionID -index $editionCombo.SelectedIndex
+    $want = Get-M365AppsDefaultVisioProjectLine -ProductId $editionId
+    for ($i = 0; $i -lt $visioProjectLineCombo.Items.Count; $i++) {
+        $it = $visioProjectLineCombo.Items[$i]
+        if ([string]$it.Tag -eq $want) {
+            $visioProjectLineCombo.SelectedIndex = $i
+            return
+        }
+    }
+}
+
 function Update-ProfileDependentUI {
-    $custom = ($profileCombo.SelectedIndex -eq 6)
+    $customIdx = $profileCombo.Items.Count - 1
+    $custom = ($profileCombo.SelectedIndex -eq $customIdx)
     $editionSection.Visibility = if ($custom) { 'Visible' } else { 'Collapsed' }
     $optionalSection.Visibility = if ($custom) { 'Visible' } else { 'Collapsed' }
     $editionCombo.IsEnabled = $custom
     $visioCheck.IsEnabled = $custom
     $projectCheck.IsEnabled = $custom
+    if ($null -ne $visioProjectLineCombo) {
+        $visioProjectLineCombo.IsEnabled = $custom
+    }
+    if ($null -ne $visioProjectLinePanel) {
+        $showVp = $custom -and (($visioCheck.IsChecked -eq $true) -or ($projectCheck.IsChecked -eq $true))
+        $visioProjectLinePanel.Visibility = if ($showVp) { 'Visible' } else { 'Collapsed' }
+    }
     if ($channelPresetDefaultItem) {
         $channelPresetDefaultItem.IsEnabled = -not $custom
     }
@@ -1003,10 +1053,18 @@ function Generate-Config {
         Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $options.language `
             -CustomIncludeVisio:($options.visio -eq '1') -CustomIncludeProject:($options.project -eq '1')
         Log 'Generating config.xml (custom interactive)'
-        $xml = New-M365AppsInteractiveConfiguration -ProductId $options.edition -LanguageId $options.language `
-            -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
-            -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') -AutoActivate `
-            -ExcludeAppIds @($options.excludeAppIds)
+        if ($options.visioProjectLine) {
+            $xml = New-M365AppsInteractiveConfiguration -ProductId $options.edition -LanguageId $options.language `
+                -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
+                -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') `
+                -VisioProjectLine $options.visioProjectLine -AutoActivate `
+                -ExcludeAppIds @($options.excludeAppIds)
+        } else {
+            $xml = New-M365AppsInteractiveConfiguration -ProductId $options.edition -LanguageId $options.language `
+                -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
+                -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') -AutoActivate `
+                -ExcludeAppIds @($options.excludeAppIds)
+        }
         $enc = New-Object System.Text.UTF8Encoding($false)
         [System.IO.File]::WriteAllText($configPath, $xml, $enc)
     }
@@ -1070,10 +1128,12 @@ function Install-Office {
 # user interference and provides real-time progress updates.
 
 $profileCombo.Add_SelectionChanged({ Update-ProfileDependentUI })
+$editionCombo.Add_SelectionChanged({ Sync-VisioProjectLineComboDefault })
 $visioCheck.Add_Checked({ Update-ProfileDependentUI })
 $visioCheck.Add_Unchecked({ Update-ProfileDependentUI })
 $projectCheck.Add_Checked({ Update-ProfileDependentUI })
 $projectCheck.Add_Unchecked({ Update-ProfileDependentUI })
+Sync-VisioProjectLineComboDefault
 Update-ProfileDependentUI
 
 $installButton.Add_Click({
@@ -1083,6 +1143,7 @@ $installButton.Add_Click({
     $editionCombo.IsEnabled = $false
     $visioCheck.IsEnabled = $false
     $projectCheck.IsEnabled = $false
+    if ($null -ne $visioProjectLineCombo) { $visioProjectLineCombo.IsEnabled = $false }
     $channelCombo.IsEnabled = $false
     $langCombo.IsEnabled = $false
     $uiCombo.IsEnabled = $false
@@ -1121,6 +1182,10 @@ $installButton.Add_Click({
             $editionName = Get-EditionName -index $editionCombo.SelectedIndex
             $visio = if ($visioCheck.IsChecked) { "1" } else { "2" }
             $project = if ($projectCheck.IsChecked) { "1" } else { "2" }
+            $vpl = $null
+            if ($visio -eq '1' -or $project -eq '1') {
+                $vpl = [string]$visioProjectLineCombo.SelectedItem.Tag
+            }
             $channel = $channelOverride
             $summaryLine = "$editionName | $languageName | ${bit}-bit | custom"
             $options = @{
@@ -1129,6 +1194,7 @@ $installButton.Add_Click({
                 bit = $bit
                 visio = $visio
                 project = $project
+                visioProjectLine = $vpl
                 channel = $channel
                 language = $languageCode
                 languageName = $languageName

@@ -123,6 +123,16 @@ $script:M365AppsExcludeAppSuiteProductIds = @(
     'O365ProPlusRetail', 'O365BusinessRetail', 'ProPlus2024Retail', 'ProPlus2021Volume'
 )
 
+# Bundled presets that include Visio + Project — primary-language rules in Get/Assert-M365Apps*Visio*
+$script:M365AppsVisioProjectPresetNames = @(
+    'O365ProPlusVisioProject',
+    'O365ProPlusVisioProject-Retail',
+    'O365ProPlusVisioProject-2024',
+    'O365ProPlusVisioProject-VDI',
+    'O365ProPlusVisioProject-Retail-VDI',
+    'O365ProPlusVisioProject-2024-VDI'
+)
+
 function Get-M365AppsExcludeAppCatalog {
     <#
     .SYNOPSIS
@@ -166,6 +176,51 @@ function Resolve-M365AppsExcludeAppIdList {
         $seen[$m] = $true
     }
     return @($seen.Keys | Sort-Object)
+}
+
+function Get-M365AppsVisioProjectProductIds {
+    <#
+    .SYNOPSIS
+        Maps a Visio/Project line (subscription vs LTSC) to ODT Product IDs. See Microsoft Learn: product IDs for Click-to-Run.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('M365Retail', 'LTSC2021Volume', 'LTSC2024Volume', 'Office2024Retail')]
+        [string]$Line
+    )
+    switch ($Line) {
+        'M365Retail' {
+            return @{ Visio = 'VisioProRetail'; Project = 'ProjectProRetail' }
+        }
+        'LTSC2021Volume' {
+            return @{ Visio = 'VisioPro2021Volume'; Project = 'ProjectPro2021Volume' }
+        }
+        'LTSC2024Volume' {
+            return @{ Visio = 'VisioPro2024Volume'; Project = 'ProjectPro2024Volume' }
+        }
+        'Office2024Retail' {
+            return @{ Visio = 'VisioPro2024Retail'; Project = 'ProjectPro2024Retail' }
+        }
+    }
+}
+
+function Get-M365AppsDefaultVisioProjectLine {
+    <#
+    .SYNOPSIS
+        Suggested Visio/Project line for the main Office product in custom interactive XML.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ProductId
+    )
+    switch ($ProductId) {
+        'O365ProPlusRetail' { return 'M365Retail' }
+        'ProPlus2021Volume' { return 'LTSC2021Volume' }
+        'ProPlus2024Retail' { return 'Office2024Retail' }
+        default { return 'M365Retail' }
+    }
 }
 
 function Merge-M365AppsExcludeAppsIntoProducts {
@@ -244,7 +299,7 @@ function Get-M365AppsSupportedLanguages {
     )
     Initialize-M365AppsLanguageLookup
     $applyVpFilter =
-        ($Preset -in @('O365ProPlusVisioProject', 'O365ProPlusVisioProject-VDI')) -or
+        ($Preset -in $script:M365AppsVisioProjectPresetNames) -or
         ($IncludeVisio -or $IncludeProject)
     $rows = $script:M365AppsLanguageEntries | Sort-Object { $_.Display }
     if ($applyVpFilter) {
@@ -271,7 +326,7 @@ function Assert-M365AppsLanguageCompatibleWithDeployment {
     )
     $id = $LanguageId.ToLowerInvariant()
     $useVpRule =
-        ($Preset -in @('O365ProPlusVisioProject', 'O365ProPlusVisioProject-VDI')) -or
+        ($Preset -in $script:M365AppsVisioProjectPresetNames) -or
         ($CustomIncludeVisio -or $CustomIncludeProject)
     if (-not $useVpRule) { return }
     if ($script:M365AppsLanguageIdsExcludedWithVisioOrProjectVolume -contains $id) {
@@ -402,7 +457,11 @@ function Get-M365AppsPresetConfigurationPath {
             'O365Business',
             'O365Business-VDI',
             'O365ProPlusVisioProject',
-            'O365ProPlusVisioProject-VDI'
+            'O365ProPlusVisioProject-Retail',
+            'O365ProPlusVisioProject-2024',
+            'O365ProPlusVisioProject-VDI',
+            'O365ProPlusVisioProject-Retail-VDI',
+            'O365ProPlusVisioProject-2024-VDI'
         )]
         [string]$Preset
     )
@@ -544,6 +603,9 @@ function New-M365AppsInteractiveConfiguration {
         [string]$DisplayLevel = 'Full',
         [switch]$IncludeVisio,
         [switch]$IncludeProject,
+        [Parameter()]
+        [ValidateSet('M365Retail', 'LTSC2021Volume', 'LTSC2024Volume', 'Office2024Retail')]
+        [string]$VisioProjectLine,
         [switch]$AutoActivate,
         [string[]]$ExcludeAppIds
     )
@@ -560,11 +622,20 @@ function New-M365AppsInteractiveConfiguration {
     $excBlock = if ($excLines.Count) { "`n$($excLines -join "`n")" } else { '' }
     $products = @()
     $products += "<Product ID='$ProductId'>`n  <Language ID='$LanguageId' />$excBlock`n</Product>"
+    $vpIds = $null
+    if ($IncludeVisio -or $IncludeProject) {
+        $line = if ($PSBoundParameters.ContainsKey('VisioProjectLine')) {
+            $VisioProjectLine
+        } else {
+            Get-M365AppsDefaultVisioProjectLine -ProductId $ProductId
+        }
+        $vpIds = Get-M365AppsVisioProjectProductIds -Line $line
+    }
     if ($IncludeVisio) {
-        $products += "<Product ID='VisioPro2021Volume'>`n  <Language ID='$LanguageId' />`n</Product>"
+        $products += "<Product ID='$($vpIds.Visio)'>`n  <Language ID='$LanguageId' />`n</Product>"
     }
     if ($IncludeProject) {
-        $products += "<Product ID='ProjectPro2021Volume'>`n  <Language ID='$LanguageId' />`n</Product>"
+        $products += "<Product ID='$($vpIds.Project)'>`n  <Language ID='$LanguageId' />`n</Product>"
     }
 
     $props = @()

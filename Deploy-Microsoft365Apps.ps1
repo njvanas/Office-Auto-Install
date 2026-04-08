@@ -41,7 +41,11 @@ param(
         'O365Business',
         'O365Business-VDI',
         'O365ProPlusVisioProject',
-        'O365ProPlusVisioProject-VDI'
+        'O365ProPlusVisioProject-Retail',
+        'O365ProPlusVisioProject-2024',
+        'O365ProPlusVisioProject-VDI',
+        'O365ProPlusVisioProject-Retail-VDI',
+        'O365ProPlusVisioProject-2024-VDI'
     )]
     [string]$Preset = 'O365ProPlus',
 

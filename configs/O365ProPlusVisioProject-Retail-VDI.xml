@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Microsoft 365 Apps + Visio LTSC 2021 + Project LTSC 2021 (volume) — VDI / shared computer licensing -->
-<Configuration ID="O365ProPlusVisioProject-VDI">
+<!-- Microsoft 365 Apps + Visio + Project (subscription / Click-to-Run Retail) — VDI / shared computer licensing -->
+<Configuration ID="O365ProPlusVisioProject-Retail-VDI">
   <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="O365ProPlusRetail">
       <Language ID="en-us" />
@@ -10,10 +10,10 @@
       <ExcludeApp ID="Lync" />
       <ExcludeApp ID="OutlookForWindows" />
     </Product>
-    <Product ID="VisioPro2021Volume">
+    <Product ID="VisioProRetail">
       <Language ID="en-us" />
     </Product>
-    <Product ID="ProjectPro2021Volume">
+    <Product ID="ProjectProRetail">
       <Language ID="en-us" />
     </Product>
   </Add>
