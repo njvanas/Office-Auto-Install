@@ -475,13 +475,7 @@ $xaml = @"
               <ComboBoxItem Content="Microsoft 365 Apps — enterprise (VDI / shared PC)"/>
               <ComboBoxItem Content="Microsoft 365 Apps — business (physical / desktop)"/>
               <ComboBoxItem Content="Microsoft 365 Apps — business (VDI / shared PC)"/>
-              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — LTSC 2021 volume (physical)"/>
-              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — subscription Retail (physical)"/>
-              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — LTSC 2024 volume (physical)"/>
-              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — LTSC 2021 volume (VDI)"/>
-              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — subscription Retail (VDI)"/>
-              <ComboBoxItem Content="M365 enterprise + Visio &amp; Project — LTSC 2024 volume (VDI)"/>
-              <ComboBoxItem Content="Custom — Office 2024, LTSC 2021, or build-your-own M365"/>
+              <ComboBoxItem Content="Custom — Office 2024, LTSC 2021, M365, or Visio/Project only"/>
             </ComboBox>
           </Border>
         </StackPanel>
@@ -519,16 +513,23 @@ $xaml = @"
               <ComboBoxItem Content="Office 2024 Pro Plus (Latest features)" IsSelected="True"/>
               <ComboBoxItem Content="Office LTSC 2021 (Long-term support)"/>
               <ComboBoxItem Content="Microsoft 365 Apps (Cloud-connected)"/>
+              <ComboBoxItem Content="Visio and/or Project only (no Word/Excel suite)"/>
             </ComboBox>
           </Border>
         </StackPanel>
 
-        <StackPanel x:Name="OptionalSection" Margin="0,0,0,24" Visibility="Collapsed">
-          <TextBlock Text="Optional Components (custom only)"
+        <StackPanel x:Name="OptionalSection" Margin="0,0,0,24" Visibility="Visible">
+          <TextBlock Text="Optional: Visio / Project"
                      FontSize="15" FontWeight="SemiBold"
                      Foreground="{StaticResource SiteTextBrush}"
                      FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
+          <TextBlock Text="Add either, both, or neither. Edition below applies to any Visio/Project you include (not to the Office suite)."
+                     FontSize="12"
+                     Foreground="{StaticResource SiteTextMutedBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,10"
+                     TextWrapping="Wrap"/>
           <Border Background="{StaticResource SiteCardBrush}"
                   BorderBrush="{StaticResource SiteBorderBrush}"
                   BorderThickness="1"
@@ -541,7 +542,7 @@ $xaml = @"
               <CheckBox x:Name="ProjectCheck" Style="{StaticResource SiteCheckBoxStyle}"
                         Content="Include Project Professional (for project management)"/>
               <StackPanel x:Name="VisioProjectLinePanel" Margin="0,16,0,0" Visibility="Collapsed">
-                <TextBlock Text="Visio / Project edition (when included)"
+                <TextBlock Text="Visio / Project product line (when either is checked)"
                            FontSize="12"
                            Foreground="{StaticResource SiteTextMutedBrush}"
                            FontFamily="Inter, Segoe UI"
@@ -596,7 +597,7 @@ $xaml = @"
                   Padding="20,16">
             <StackPanel>
               <ComboBox x:Name="LangCombo" Style="{StaticResource SiteComboBoxStyle}" Margin="0,0,0,12" IsEditable="False"/>
-              <TextBlock Text="Languages are filtered by profile: Visio/Project bundles exclude combinations Microsoft does not support in one install (e.g. en-gb). Then click Install Office."
+              <TextBlock Text="Languages are filtered when you add Visio or Project: combinations Microsoft does not support in one install (e.g. en-gb) are hidden. Then click Install Office."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -716,7 +717,7 @@ try {
 # - ProfileCombo: Preset deployment profile (configs\ XML) or Custom advanced build
 # - ArchCombo: System architecture selection (32-bit/64-bit)
 # - EditionCombo: Office edition selection (custom path only)
-# - VisioCheck / ProjectCheck: Optional components (custom path only)
+# - VisioCheck / ProjectCheck: Optional Visio/Project (any profile; each independent)
 # - ChannelCombo: Preset default vs Current / Semi-annual override
 # - LangCombo: Language selection for Office installation
 # - UICombo: Installation display mode (Show progress / Quiet)
@@ -784,12 +785,14 @@ foreach ($item in Get-M365AppsExcludeAppCatalog) {
 
 function Get-EditionID {
     param([int]$index)
+    if ($index -eq 3) { return 'ADDONS_ONLY' }
     $editionMap = @{ 0 = "ProPlus2024Retail"; 1 = "ProPlus2021Volume"; 2 = "O365ProPlusRetail" }
     return $editionMap[$index]
 }
 
 function Get-EditionName {
     param([int]$index)
+    if ($index -eq 3) { return 'Visio/Project only' }
     $nameMap = @{ 0 = "Office 2024 Pro Plus"; 1 = "Office LTSC 2021"; 2 = "Microsoft 365 Apps" }
     return $nameMap[$index]
 }
@@ -797,16 +800,10 @@ function Get-EditionName {
 function Get-PresetNameFromProfileIndex {
     param([int]$index)
     $map = @{
-        0  = 'O365ProPlus'
-        1  = 'O365ProPlus-VDI'
-        2  = 'O365Business'
-        3  = 'O365Business-VDI'
-        4  = 'O365ProPlusVisioProject'
-        5  = 'O365ProPlusVisioProject-Retail'
-        6  = 'O365ProPlusVisioProject-2024'
-        7  = 'O365ProPlusVisioProject-VDI'
-        8  = 'O365ProPlusVisioProject-Retail-VDI'
-        9  = 'O365ProPlusVisioProject-2024-VDI'
+        0 = 'O365ProPlus'
+        1 = 'O365ProPlus-VDI'
+        2 = 'O365Business'
+        3 = 'O365Business-VDI'
     }
     if ($map.ContainsKey($index)) { return $map[$index] }
     return $null
@@ -819,12 +816,6 @@ function Get-ProfileSummaryLabel {
         'M365 Apps enterprise (VDI)'
         'M365 Apps business (physical)'
         'M365 Apps business (VDI)'
-        'M365 + Visio & Project — LTSC 2021 vol (physical)'
-        'M365 + Visio & Project — subscription Retail (physical)'
-        'M365 + Visio & Project — LTSC 2024 vol (physical)'
-        'M365 + Visio & Project — LTSC 2021 vol (VDI)'
-        'M365 + Visio & Project — subscription Retail (VDI)'
-        'M365 + Visio & Project — LTSC 2024 vol (VDI)'
         'Custom (interactive XML)'
     )
     if ($index -ge 0 -and $index -lt $labels.Count) { return $labels[$index] }
@@ -855,17 +846,12 @@ function Sync-LanguageComboFromProfile {
             $prevId = [string]$langCombo.SelectedItem.Tag
         }
         $preset = Get-PresetNameFromProfileIndex -index $profileCombo.SelectedIndex
-        $incV = $false
-        $incP = $false
-        $customIdx = $profileCombo.Items.Count - 1
-        if ($profileCombo.SelectedIndex -eq $customIdx) {
-            $incV = [bool]$visioCheck.IsChecked
-            $incP = [bool]$projectCheck.IsChecked
-        }
+        $incV = [bool]$visioCheck.IsChecked
+        $incP = [bool]$projectCheck.IsChecked
         $langs = if ($null -eq $preset) {
             Get-M365AppsSupportedLanguages -IncludeVisio:$incV -IncludeProject:$incP
         } else {
-            Get-M365AppsSupportedLanguages -Preset $preset
+            Get-M365AppsSupportedLanguages -Preset $preset -IncludeVisio:$incV -IncludeProject:$incP
         }
         $langCombo.Items.Clear()
         foreach ($lang in $langs) {
@@ -898,8 +884,12 @@ function Sync-LanguageComboFromProfile {
 
 function Sync-VisioProjectLineComboDefault {
     if ($null -eq $visioProjectLineCombo -or $null -eq $editionCombo) { return }
-    $editionId = Get-EditionID -index $editionCombo.SelectedIndex
-    $want = Get-M365AppsDefaultVisioProjectLine -ProductId $editionId
+    $edIdx = $editionCombo.SelectedIndex
+    $want = if ($edIdx -eq 3) {
+        'M365Retail'
+    } else {
+        Get-M365AppsDefaultVisioProjectLine -ProductId (Get-EditionID -index $edIdx)
+    }
     for ($i = 0; $i -lt $visioProjectLineCombo.Items.Count; $i++) {
         $it = $visioProjectLineCombo.Items[$i]
         if ([string]$it.Tag -eq $want) {
@@ -913,15 +903,17 @@ function Update-ProfileDependentUI {
     $customIdx = $profileCombo.Items.Count - 1
     $custom = ($profileCombo.SelectedIndex -eq $customIdx)
     $editionSection.Visibility = if ($custom) { 'Visible' } else { 'Collapsed' }
-    $optionalSection.Visibility = if ($custom) { 'Visible' } else { 'Collapsed' }
+    $optionalSection.Visibility = 'Visible'
     $editionCombo.IsEnabled = $custom
-    $visioCheck.IsEnabled = $custom
-    $projectCheck.IsEnabled = $custom
+    $visioCheck.IsEnabled = $true
+    $projectCheck.IsEnabled = $true
+    $addonsOnly = $custom -and ($editionCombo.SelectedIndex -eq 3)
+    Set-ExcludeAppsPanelEnabled -Enabled (-not $addonsOnly)
     if ($null -ne $visioProjectLineCombo) {
-        $visioProjectLineCombo.IsEnabled = $custom
+        $visioProjectLineCombo.IsEnabled = ($visioCheck.IsChecked -eq $true) -or ($projectCheck.IsChecked -eq $true)
     }
     if ($null -ne $visioProjectLinePanel) {
-        $showVp = $custom -and (($visioCheck.IsChecked -eq $true) -or ($projectCheck.IsChecked -eq $true))
+        $showVp = ($visioCheck.IsChecked -eq $true) -or ($projectCheck.IsChecked -eq $true)
         $visioProjectLinePanel.Visibility = if ($showVp) { 'Visible' } else { 'Collapsed' }
     }
     if ($channelPresetDefaultItem) {
@@ -1041,7 +1033,8 @@ function Generate-Config {
     Update-Status "Creating configuration..." 87
     $configPath = Join-Path $installerFolder 'config.xml'
     if ($options.presetName) {
-        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $options.language -Preset $options.presetName
+        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $options.language -Preset $options.presetName `
+            -CustomIncludeVisio:($options.visio -eq '1') -CustomIncludeProject:($options.project -eq '1')
         Log "Generating config.xml from preset $($options.presetName)"
         $src = Get-M365AppsPresetConfigurationPath -Preset $options.presetName
         $ch = $options.channelOverride
@@ -1049,24 +1042,37 @@ function Generate-Config {
             -OfficeClientEdition $options.bit -LanguageId $options.language -Channel $ch `
             -ExcludeAppIds @($options.excludeAppIds)
         Set-M365AppsConfigurationDisplayLevel -Path $configPath -Level $options.ui
+        if ($options.visio -eq '1' -or $options.project -eq '1') {
+            if (-not $options.visioProjectLine) { throw 'Internal error: visioProjectLine missing for optional Visio/Project.' }
+            Add-M365AppsOptionalVisioProjectProducts -Path $configPath -LanguageId $options.language `
+                -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') `
+                -VisioProjectLine $options.visioProjectLine
+        }
     } else {
         Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $options.language `
             -CustomIncludeVisio:($options.visio -eq '1') -CustomIncludeProject:($options.project -eq '1')
         Log 'Generating config.xml (custom interactive)'
-        if ($options.visioProjectLine) {
+        $enc = New-Object System.Text.UTF8Encoding($false)
+        if ($options.edition -eq 'ADDONS_ONLY') {
+            $vpl = if ($options.visioProjectLine) { $options.visioProjectLine } else { 'M365Retail' }
+            $xml = New-M365AppsInteractiveConfiguration -AddOnsOnly -LanguageId $options.language `
+                -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
+                -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') -VisioProjectLine $vpl
+            [System.IO.File]::WriteAllText($configPath, $xml, $enc)
+        } elseif ($options.visioProjectLine) {
             $xml = New-M365AppsInteractiveConfiguration -ProductId $options.edition -LanguageId $options.language `
                 -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
                 -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') `
                 -VisioProjectLine $options.visioProjectLine -AutoActivate `
                 -ExcludeAppIds @($options.excludeAppIds)
+            [System.IO.File]::WriteAllText($configPath, $xml, $enc)
         } else {
             $xml = New-M365AppsInteractiveConfiguration -ProductId $options.edition -LanguageId $options.language `
                 -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
                 -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') -AutoActivate `
                 -ExcludeAppIds @($options.excludeAppIds)
+            [System.IO.File]::WriteAllText($configPath, $xml, $enc)
         }
-        $enc = New-Object System.Text.UTF8Encoding($false)
-        [System.IO.File]::WriteAllText($configPath, $xml, $enc)
     }
     Log "config.xml -> $configPath"
     Update-Status "Configuration ready." 90
@@ -1128,7 +1134,7 @@ function Install-Office {
 # user interference and provides real-time progress updates.
 
 $profileCombo.Add_SelectionChanged({ Update-ProfileDependentUI })
-$editionCombo.Add_SelectionChanged({ Sync-VisioProjectLineComboDefault })
+$editionCombo.Add_SelectionChanged({ Sync-VisioProjectLineComboDefault; Update-ProfileDependentUI })
 $visioCheck.Add_Checked({ Update-ProfileDependentUI })
 $visioCheck.Add_Unchecked({ Update-ProfileDependentUI })
 $projectCheck.Add_Checked({ Update-ProfileDependentUI })
@@ -1176,18 +1182,55 @@ $installButton.Add_Click({
         $channelOverride = Resolve-ChannelParameter -IsCustomProfile $isCustom -ChannelSelectedIndex $channelCombo.SelectedIndex
         $profileLabel = Get-ProfileSummaryLabel -index $profileCombo.SelectedIndex
         $excludeIds = @(Get-SelectedExcludeAppIds)
-        
+        $visio = if ($visioCheck.IsChecked) { "1" } else { "2" }
+        $project = if ($projectCheck.IsChecked) { "1" } else { "2" }
+        $vpl = $null
+        if (($visio -eq '1' -or $project -eq '1') -and $null -ne $visioProjectLineCombo -and $visioProjectLineCombo.SelectedItem) {
+            $vpl = [string]$visioProjectLineCombo.SelectedItem.Tag
+        }
+
         if ($isCustom) {
             $editionID = Get-EditionID -index $editionCombo.SelectedIndex
             $editionName = Get-EditionName -index $editionCombo.SelectedIndex
-            $visio = if ($visioCheck.IsChecked) { "1" } else { "2" }
-            $project = if ($projectCheck.IsChecked) { "1" } else { "2" }
-            $vpl = $null
-            if ($visio -eq '1' -or $project -eq '1') {
-                $vpl = [string]$visioProjectLineCombo.SelectedItem.Tag
+            if ($editionID -eq 'ADDONS_ONLY' -and $visio -ne '1' -and $project -ne '1') {
+                [System.Windows.Forms.MessageBox]::Show(
+                    'For "Visio and/or Project only", check at least one of the optional Visio or Project boxes.',
+                    'Office Auto Install',
+                    [System.Windows.Forms.MessageBoxButtons]::OK,
+                    [System.Windows.Forms.MessageBoxIcon]::Warning
+                )
+                $installButton.IsEnabled = $true
+                $profileCombo.IsEnabled = $true
+                $archCombo.IsEnabled = $true
+                Update-ProfileDependentUI
+                $channelCombo.IsEnabled = $true
+                $langCombo.IsEnabled = $true
+                $uiCombo.IsEnabled = $true
+                Set-ExcludeAppsPanelEnabled -Enabled $true
+                $statusPanel.Visibility = "Collapsed"
+                return
+            }
+            if (($visio -eq '1' -or $project -eq '1') -and -not $vpl) {
+                [System.Windows.Forms.MessageBox]::Show(
+                    'Select a Visio/Project product line, or uncheck both optional apps.',
+                    'Office Auto Install',
+                    [System.Windows.Forms.MessageBoxButtons]::OK,
+                    [System.Windows.Forms.MessageBoxIcon]::Warning
+                )
+                $installButton.IsEnabled = $true
+                $profileCombo.IsEnabled = $true
+                $archCombo.IsEnabled = $true
+                Update-ProfileDependentUI
+                $channelCombo.IsEnabled = $true
+                $langCombo.IsEnabled = $true
+                $uiCombo.IsEnabled = $true
+                Set-ExcludeAppsPanelEnabled -Enabled $true
+                $statusPanel.Visibility = "Collapsed"
+                return
             }
             $channel = $channelOverride
             $summaryLine = "$editionName | $languageName | ${bit}-bit | custom"
+            $ex = if ($editionID -eq 'ADDONS_ONLY') { @() } else { $excludeIds }
             $options = @{
                 presetName = $null
                 channelOverride = $null
@@ -1203,14 +1246,35 @@ $installButton.Add_Click({
                 editionName = $editionName
                 profileLabel = $profileLabel
                 summaryLine = $summaryLine
-                excludeAppIds = $excludeIds
+                excludeAppIds = $ex
             }
         } else {
+            if (($visio -eq '1' -or $project -eq '1') -and -not $vpl) {
+                [System.Windows.Forms.MessageBox]::Show(
+                    'Select a Visio/Project product line, or uncheck both optional apps.',
+                    'Office Auto Install',
+                    [System.Windows.Forms.MessageBoxButtons]::OK,
+                    [System.Windows.Forms.MessageBoxIcon]::Warning
+                )
+                $installButton.IsEnabled = $true
+                $profileCombo.IsEnabled = $true
+                $archCombo.IsEnabled = $true
+                Update-ProfileDependentUI
+                $channelCombo.IsEnabled = $true
+                $langCombo.IsEnabled = $true
+                $uiCombo.IsEnabled = $true
+                Set-ExcludeAppsPanelEnabled -Enabled $true
+                $statusPanel.Visibility = "Collapsed"
+                return
+            }
             $summaryLine = "$profileLabel | $languageName | ${bit}-bit | preset $($presetName).xml"
             $options = @{
                 presetName = $presetName
                 channelOverride = $channelOverride
                 bit = $bit
+                visio = $visio
+                project = $project
+                visioProjectLine = $vpl
                 language = $languageCode
                 languageName = $languageName
                 ui = $uiLevel

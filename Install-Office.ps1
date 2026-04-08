@@ -47,19 +47,41 @@ function Read-Choice {
 function Get-PresetNameFromMenuChoice {
     param([string]$Choice)
     $map = @{
-        '1'  = 'O365ProPlus'
-        '2'  = 'O365ProPlus-VDI'
-        '3'  = 'O365Business'
-        '4'  = 'O365Business-VDI'
-        '5'  = 'O365ProPlusVisioProject'
-        '6'  = 'O365ProPlusVisioProject-Retail'
-        '7'  = 'O365ProPlusVisioProject-2024'
-        '8'  = 'O365ProPlusVisioProject-VDI'
-        '9'  = 'O365ProPlusVisioProject-Retail-VDI'
-        '10' = 'O365ProPlusVisioProject-2024-VDI'
+        '1' = 'O365ProPlus'
+        '2' = 'O365ProPlus-VDI'
+        '3' = 'O365Business'
+        '4' = 'O365Business-VDI'
     }
     if ($map.ContainsKey($Choice)) { return $map[$Choice] }
     return $null
+}
+
+function Read-VisioProjectOptionalAddOns {
+    <#
+    .SYNOPSIS
+        Prompts for optional Visio/Project (each independent) and shared product line when either is chosen.
+    #>
+    param([string]$DefaultLineMenuChoice)
+    Write-Host ''
+    $v = Read-Choice -Prompt 'Add Visio? 1=Yes 2=No' -Valid @('1', '2') -Default '2'
+    $p = Read-Choice -Prompt 'Add Project? 1=Yes 2=No' -Valid @('1', '2') -Default '2'
+    $vpl = $null
+    if ($v -eq '1' -or $p -eq '1') {
+        Write-Host ''
+        Write-Host ' Visio / Project product line (ODT Product IDs):' -ForegroundColor White
+        Write-Host '  [1] Microsoft 365 subscription — VisioProRetail + ProjectProRetail'
+        Write-Host '  [2] Office LTSC 2021 — volume'
+        Write-Host '  [3] Office LTSC 2024 — volume'
+        Write-Host '  [4] Office 2024 — retail perpetual'
+        $vplChoice = Read-Choice -Prompt 'Select' -Valid @('1', '2', '3', '4') -Default $DefaultLineMenuChoice
+        $vpl = switch ($vplChoice) {
+            '1' { 'M365Retail' }
+            '2' { 'LTSC2021Volume' }
+            '3' { 'LTSC2024Volume' }
+            '4' { 'Office2024Retail' }
+        }
+    }
+    return @{ Visio = $v; Project = $p; VisioProjectLine = $vpl }
 }
 
 function Resolve-ConsoleChannelOverride {
@@ -149,6 +171,11 @@ $bit = if ($arch -eq '2') { '32' } else { '64' }
 
 $presetName = $null
 $isCustom = $false
+$addonsOnly = $false
+$productId = $null
+$visio = '2'
+$project = '2'
+$visioProjectLine = $null
 
 if ($usePreset) {
     Write-Host ''
@@ -157,15 +184,14 @@ if ($usePreset) {
     Write-Host '  [2] Microsoft 365 Apps — enterprise (VDI / shared PC)'
     Write-Host '  [3] Microsoft 365 Apps — business (physical / desktop)'
     Write-Host '  [4] Microsoft 365 Apps — business (VDI / shared PC)'
-    Write-Host '  [5]  M365 enterprise + Visio & Project — LTSC 2021 volume (physical / desktop)'
-    Write-Host '  [6]  M365 enterprise + Visio & Project — subscription Retail (physical / desktop)'
-    Write-Host '  [7]  M365 enterprise + Visio & Project — LTSC 2024 volume (physical / desktop)'
-    Write-Host '  [8]  M365 enterprise + Visio & Project — LTSC 2021 volume (VDI / shared PC)'
-    Write-Host '  [9]  M365 enterprise + Visio & Project — subscription Retail (VDI / shared PC)'
-    Write-Host '  [10] M365 enterprise + Visio & Project — LTSC 2024 volume (VDI / shared PC)'
-    $prof = Read-Choice -Prompt 'Select' -Valid @('1', '2', '3', '4', '5', '6', '7', '8', '9', '10') -Default '1'
+    Write-Host ' Optional Visio/Project: you will be asked next (each is independent).' -ForegroundColor DarkGray
+    $prof = Read-Choice -Prompt 'Select' -Valid @('1', '2', '3', '4') -Default '1'
     $presetName = Get-PresetNameFromMenuChoice -Choice $prof
     $isCustom = $false
+    $vp = Read-VisioProjectOptionalAddOns -DefaultLineMenuChoice '1'
+    $visio = $vp.Visio
+    $project = $vp.Project
+    $visioProjectLine = $vp.VisioProjectLine
 } else {
     $isCustom = $true
     Write-Host ''
@@ -173,38 +199,34 @@ if ($usePreset) {
     Write-Host '  [1] Office 2024 Pro Plus (Retail)'
     Write-Host '  [2] Office LTSC 2021 (Volume)'
     Write-Host '  [3] Microsoft 365 Apps (Retail)'
-    $ed = Read-Choice -Prompt 'Select' -Valid @('1', '2', '3') -Default '3'
-    $editionMap = @{
-        '1' = 'ProPlus2024Retail'
-        '2' = 'ProPlus2021Volume'
-        '3' = 'O365ProPlusRetail'
+    Write-Host '  [4] Visio and/or Project only (no Word/Excel suite)'
+    $ed = Read-Choice -Prompt 'Select' -Valid @('1', '2', '3', '4') -Default '3'
+    $addonsOnly = ($ed -eq '4')
+    if (-not $addonsOnly) {
+        $editionMap = @{
+            '1' = 'ProPlus2024Retail'
+            '2' = 'ProPlus2021Volume'
+            '3' = 'O365ProPlusRetail'
+        }
+        $productId = $editionMap[$ed]
     }
-    $productId = $editionMap[$ed]
-
-    Write-Host ''
-    $visio = Read-Choice -Prompt 'Include Visio? 1=Yes 2=No' -Valid @('1', '2') -Default '2'
-    $project = Read-Choice -Prompt 'Include Project? 1=Yes 2=No' -Valid @('1', '2') -Default '2'
-    $visioProjectLine = $null
-    if ($visio -eq '1' -or $project -eq '1') {
-        Write-Host ''
-        Write-Host ' Visio / Project edition (must match your license):' -ForegroundColor White
-        Write-Host '  [1] Microsoft 365 subscription — VisioProRetail + ProjectProRetail'
-        Write-Host '  [2] Office LTSC 2021 — volume (VisioPro2021Volume + ProjectPro2021Volume)'
-        Write-Host '  [3] Office LTSC 2024 — volume (VisioPro2024Volume + ProjectPro2024Volume)'
-        Write-Host '  [4] Office 2024 — retail perpetual (VisioPro2024Retail + ProjectPro2024Retail)'
+    $defVpMenu = '1'
+    if (-not $addonsOnly) {
         $defVpMenu = switch ($ed) {
             '1' { '4' }
             '2' { '2' }
             '3' { '1' }
             default { '1' }
         }
-        $vpl = Read-Choice -Prompt 'Select' -Valid @('1', '2', '3', '4') -Default $defVpMenu
-        $visioProjectLine = switch ($vpl) {
-            '1' { 'M365Retail' }
-            '2' { 'LTSC2021Volume' }
-            '3' { 'LTSC2024Volume' }
-            '4' { 'Office2024Retail' }
-        }
+    }
+    $vp = Read-VisioProjectOptionalAddOns -DefaultLineMenuChoice $defVpMenu
+    $visio = $vp.Visio
+    $project = $vp.Project
+    $visioProjectLine = $vp.VisioProjectLine
+    if ($addonsOnly -and $visio -ne '1' -and $project -ne '1') {
+        Write-Host ' For Visio/Project-only, choose Yes for at least one of Visio or Project.' -ForegroundColor Red
+        Read-Host 'Press Enter to exit'
+        exit 1
     }
 }
 
@@ -221,7 +243,8 @@ $channelOverride = Resolve-ConsoleChannelOverride -IsCustomProfile $isCustom -Ch
 $languageId = Read-ValidatedLanguageId
 try {
     if ($usePreset) {
-        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $languageId -Preset $presetName
+        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $languageId -Preset $presetName `
+            -CustomIncludeVisio:($visio -eq '1') -CustomIncludeProject:($project -eq '1')
     } else {
         Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $languageId `
             -CustomIncludeVisio:($visio -eq '1') -CustomIncludeProject:($project -eq '1')
@@ -239,22 +262,25 @@ $ui = Read-Choice -Prompt 'Installer UI: 1=Show progress  2=Quiet' -Valid @('1',
 $displayLevel = if ($ui -eq '1') { 'Full' } else { 'None' }
 
 $autoActivate = $false
-if ($isCustom) {
+if ($isCustom -and -not $addonsOnly) {
     $aa = Read-Choice -Prompt 'Set AUTOACTIVATE=1 (typical for personal retail)? 1=Yes 2=No' -Valid @('1', '2') -Default '2'
     $autoActivate = ($aa -eq '1')
 }
 
-Write-Host ''
-Write-Host ' Exclude apps (optional): comma-separated, or Enter for none.' -ForegroundColor White
-$validExcludeHint = (Get-M365AppsExcludeAppCatalog | ForEach-Object { $_.Id }) -join ', '
-Write-Host " Valid: $validExcludeHint" -ForegroundColor DarkGray
-$excludeRaw = Read-Host ' ExcludeApp IDs'
-try {
-    $excludeAppIds = Resolve-M365AppsExcludeAppIdList -CommaSeparatedText $excludeRaw
-} catch {
-    Write-Host " $($_.Exception.Message)" -ForegroundColor Red
-    Read-Host 'Press Enter to exit'
-    exit 1
+$excludeAppIds = @()
+if (-not $addonsOnly) {
+    Write-Host ''
+    Write-Host ' Exclude apps (optional): comma-separated, or Enter for none.' -ForegroundColor White
+    $validExcludeHint = (Get-M365AppsExcludeAppCatalog | ForEach-Object { $_.Id }) -join ', '
+    Write-Host " Valid: $validExcludeHint" -ForegroundColor DarkGray
+    $excludeRaw = Read-Host ' ExcludeApp IDs'
+    try {
+        $excludeAppIds = Resolve-M365AppsExcludeAppIdList -CommaSeparatedText $excludeRaw
+    } catch {
+        Write-Host " $($_.Exception.Message)" -ForegroundColor Red
+        Read-Host 'Press Enter to exit'
+        exit 1
+    }
 }
 
 $configPath = Join-Path $installerFolder 'config.xml'
@@ -266,18 +292,29 @@ if ($usePreset) {
     Copy-M365AppsConfigurationWithOverrides -SourcePath $src -DestinationPath $configPath `
         -OfficeClientEdition $bit -LanguageId $languageId -Channel $channelOverride -ExcludeAppIds $excludeAppIds
     Set-M365AppsConfigurationDisplayLevel -Path $configPath -Level $displayLevel
+    if ($visio -eq '1' -or $project -eq '1') {
+        Add-M365AppsOptionalVisioProjectProducts -Path $configPath -LanguageId $languageId `
+            -IncludeVisio:($visio -eq '1') -IncludeProject:($project -eq '1') -VisioProjectLine $visioProjectLine
+    }
 } else {
-    if ($null -ne $visioProjectLine) {
+    if ($addonsOnly) {
+        $vpl = if ($visioProjectLine) { $visioProjectLine } else { 'M365Retail' }
+        $xml = New-M365AppsInteractiveConfiguration -AddOnsOnly -LanguageId $languageId -OfficeClientEdition $bit `
+            -Channel $channelOverride -DisplayLevel $displayLevel `
+            -IncludeVisio:($visio -eq '1') -IncludeProject:($project -eq '1') -VisioProjectLine $vpl
+        [System.IO.File]::WriteAllText($configPath, $xml, $utf8NoBom)
+    } elseif ($null -ne $visioProjectLine) {
         $xml = New-M365AppsInteractiveConfiguration -ProductId $productId -LanguageId $languageId -OfficeClientEdition $bit `
             -Channel $channelOverride -DisplayLevel $displayLevel `
             -IncludeVisio:($visio -eq '1') -IncludeProject:($project -eq '1') -VisioProjectLine $visioProjectLine `
             -AutoActivate:$autoActivate -ExcludeAppIds $excludeAppIds
+        [System.IO.File]::WriteAllText($configPath, $xml, $utf8NoBom)
     } else {
         $xml = New-M365AppsInteractiveConfiguration -ProductId $productId -LanguageId $languageId -OfficeClientEdition $bit `
             -Channel $channelOverride -DisplayLevel $displayLevel `
             -IncludeVisio:($visio -eq '1') -IncludeProject:($project -eq '1') -AutoActivate:$autoActivate -ExcludeAppIds $excludeAppIds
+        [System.IO.File]::WriteAllText($configPath, $xml, $utf8NoBom)
     }
-    [System.IO.File]::WriteAllText($configPath, $xml, $utf8NoBom)
 }
 Write-Log "Wrote configuration to $configPath"
 

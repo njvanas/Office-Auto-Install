@@ -560,6 +560,52 @@ function Copy-M365AppsConfigurationWithOverrides {
     }
 }
 
+function Add-M365AppsOptionalVisioProjectProducts {
+    <#
+    .SYNOPSIS
+        Appends Visio and/or Project Product elements to an existing ODT configuration (e.g. after copying a base preset).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        [Parameter(Mandatory)]
+        [string]$LanguageId,
+        [switch]$IncludeVisio,
+        [switch]$IncludeProject,
+        [Parameter(Mandatory)]
+        [ValidateSet('M365Retail', 'LTSC2021Volume', 'LTSC2024Volume', 'Office2024Retail')]
+        [string]$VisioProjectLine
+    )
+    if (-not $IncludeVisio -and -not $IncludeProject) { return }
+    $vp = Get-M365AppsVisioProjectProductIds -Line $VisioProjectLine
+    [xml]$doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    $add = $doc.Configuration.Add
+    if (-not $add) { throw 'Invalid ODT XML: Configuration/Add missing; cannot append Visio/Project.' }
+    $existing = @{}
+    foreach ($p in $add.SelectNodes('Product')) {
+        $id = $p.GetAttribute('ID')
+        if ($id) { $existing[$id.ToLowerInvariant()] = $true }
+    }
+    function New-ProductNode {
+        param([string]$ProductId)
+        $prod = $doc.CreateElement('Product')
+        $prod.SetAttribute('ID', $ProductId)
+        $lang = $doc.CreateElement('Language')
+        $lang.SetAttribute('ID', $LanguageId)
+        [void]$prod.AppendChild($lang)
+        return $prod
+    }
+    if ($IncludeVisio -and -not $existing.ContainsKey($vp.Visio.ToLowerInvariant())) {
+        [void]$add.AppendChild((New-ProductNode -ProductId $vp.Visio))
+    }
+    if ($IncludeProject -and -not $existing.ContainsKey($vp.Project.ToLowerInvariant())) {
+        [void]$add.AppendChild((New-ProductNode -ProductId $vp.Project))
+    }
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Resolve-Path -LiteralPath $Path).Path, $doc.OuterXml, $utf8NoBom)
+}
+
 function Start-M365AppsSetup {
     <#
     .SYNOPSIS
@@ -589,11 +635,15 @@ function New-M365AppsInteractiveConfiguration {
     <#
     .SYNOPSIS
         Builds a minimal ODT XML for interactive (GUI/console) flows — retail/volume IDs as selected.
+    .PARAMETER AddOnsOnly
+        Omit the primary Office suite; install only Visio and/or Project (at least one required).
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Suite')]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(ParameterSetName = 'Suite', Mandatory)]
         [string]$ProductId,
+        [Parameter(ParameterSetName = 'AddOnsOnly', Mandatory)]
+        [switch]$AddOnsOnly,
         [string]$LanguageId = 'en-us',
         [ValidateSet('32', '64')]
         [string]$OfficeClientEdition = '64',
@@ -609,9 +659,14 @@ function New-M365AppsInteractiveConfiguration {
         [switch]$AutoActivate,
         [string[]]$ExcludeAppIds
     )
+    if ($PSCmdlet.ParameterSetName -eq 'AddOnsOnly') {
+        if (-not $IncludeVisio -and -not $IncludeProject) {
+            throw 'AddOnsOnly requires -IncludeVisio and/or -IncludeProject.'
+        }
+    }
     $validEx = $script:M365AppsValidExcludeAppIds
     $excLines = @()
-    if ($ExcludeAppIds) {
+    if ($PSCmdlet.ParameterSetName -eq 'Suite' -and $ExcludeAppIds) {
         foreach ($x in $ExcludeAppIds) {
             if ([string]::IsNullOrWhiteSpace($x)) { continue }
             $m = $validEx | Where-Object { $_ -ieq $x.Trim() } | Select-Object -First 1
@@ -621,14 +676,19 @@ function New-M365AppsInteractiveConfiguration {
     }
     $excBlock = if ($excLines.Count) { "`n$($excLines -join "`n")" } else { '' }
     $products = @()
-    $products += "<Product ID='$ProductId'>`n  <Language ID='$LanguageId' />$excBlock`n</Product>"
+    if ($PSCmdlet.ParameterSetName -eq 'Suite') {
+        $products += "<Product ID='$ProductId'>`n  <Language ID='$LanguageId' />$excBlock`n</Product>"
+    }
     $vpIds = $null
     if ($IncludeVisio -or $IncludeProject) {
-        $line = if ($PSBoundParameters.ContainsKey('VisioProjectLine')) {
+        $line = if ($PSCmdlet.ParameterSetName -eq 'AddOnsOnly') {
+            if ($PSBoundParameters.ContainsKey('VisioProjectLine')) { $VisioProjectLine } else { 'M365Retail' }
+        } elseif ($PSBoundParameters.ContainsKey('VisioProjectLine')) {
             $VisioProjectLine
         } else {
             Get-M365AppsDefaultVisioProjectLine -ProductId $ProductId
         }
+        if (-not $line) { $line = 'M365Retail' }
         $vpIds = Get-M365AppsVisioProjectProductIds -Line $line
     }
     if ($IncludeVisio) {
@@ -639,7 +699,7 @@ function New-M365AppsInteractiveConfiguration {
     }
 
     $props = @()
-    if ($AutoActivate) {
+    if ($AutoActivate -and $PSCmdlet.ParameterSetName -eq 'Suite') {
         $props += '  <Property Name="AUTOACTIVATE" Value="1" />'
     }
     $propsBlock = if ($props.Count) { "`n$($props -join "`n")" } else { '' }
