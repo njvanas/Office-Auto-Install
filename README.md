@@ -56,6 +56,7 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 | `OFFICE_AUTO_INSTALL_WORKING_DIRECTORY` | Working folder for ODT/setup. |
 | `OFFICE_AUTO_INSTALL_SKIP_PREREQ` | `1` skips disk/network checks (testing). |
 | `OFFICE_AUTO_INSTALL_SKIP_ADMIN` | `1` skips admin check (testing only). |
+| `OFFICE_AUTO_INSTALL_EXCLUDE_APPS` | Comma-separated ODT `ExcludeApp` IDs (e.g. `Teams,OneDrive,Access`) merged into the suite product for preset or custom XML deploys. |
 
 **Forks:** `OFFICE_AUTO_INSTALL_REPO`, `OFFICE_AUTO_INSTALL_BRANCH`.
 
@@ -80,10 +81,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ".\Deploy-Microsoft365Apps.p
 .\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus-VDI -LanguageId en-us
 .\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus -Channel MonthlyEnterprise -LanguageId en-us
 .\Deploy-Microsoft365Apps.ps1 -ConfigurationFile 'D:\Deploy\company.xml'
+.\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus -LanguageId en-us -ExcludeApp Teams,OneDrive
 .\Deploy-Microsoft365Apps.ps1 -Uninstall
 ```
 
-**Parameters:** `-Preset`, `-ConfigurationFile`, `-Uninstall`, `-OfficeClientEdition`, `-Channel`, `-LanguageId`, `-WorkingDirectory`, `-SkipPrerequisiteTest`, `-SkipAdministratorCheck`.
+**Parameters:** `-Preset`, `-ConfigurationFile`, `-Uninstall`, `-OfficeClientEdition`, `-Channel`, `-LanguageId`, `-ExcludeApp`, `-WorkingDirectory`, `-SkipPrerequisiteTest`, `-SkipAdministratorCheck`.
+
+**Excluding apps:** The GUI and console installers offer optional exclusions. For automation, pass `-ExcludeApp` (repeatable or comma-separated) or set `OFFICE_AUTO_INSTALL_EXCLUDE_APPS`. IDs are the same as ODT `<ExcludeApp ID="…"/>` (for example `Access`, `Excel`, `Groove`, `Lync`, `OneDrive`, `OneNote`, `Outlook`, `OutlookForWindows`, `PowerPoint`, `Publisher`, `Teams`, `Word`). Merges apply to **suite** products in the XML; standalone Visio/Project products in multi-product presets are left unchanged. See [configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options).
 
 ### Presets (`configs\`)
 

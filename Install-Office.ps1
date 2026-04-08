@@ -214,6 +214,19 @@ if ($isCustom) {
     $autoActivate = ($aa -eq '1')
 }
 
+Write-Host ''
+Write-Host ' Exclude apps (optional): comma-separated, or Enter for none.' -ForegroundColor White
+$validExcludeHint = (Get-M365AppsExcludeAppCatalog | ForEach-Object { $_.Id }) -join ', '
+Write-Host " Valid: $validExcludeHint" -ForegroundColor DarkGray
+$excludeRaw = Read-Host ' ExcludeApp IDs'
+try {
+    $excludeAppIds = Resolve-M365AppsExcludeAppIdList -CommaSeparatedText $excludeRaw
+} catch {
+    Write-Host " $($_.Exception.Message)" -ForegroundColor Red
+    Read-Host 'Press Enter to exit'
+    exit 1
+}
+
 $configPath = Join-Path $installerFolder 'config.xml'
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
@@ -221,11 +234,12 @@ if ($usePreset) {
     Write-Log "Building config from preset $presetName"
     $src = Get-M365AppsPresetConfigurationPath -Preset $presetName
     Copy-M365AppsConfigurationWithOverrides -SourcePath $src -DestinationPath $configPath `
-        -OfficeClientEdition $bit -LanguageId $languageId -Channel $channelOverride
+        -OfficeClientEdition $bit -LanguageId $languageId -Channel $channelOverride -ExcludeAppIds $excludeAppIds
     Set-M365AppsConfigurationDisplayLevel -Path $configPath -Level $displayLevel
 } else {
     $xml = New-M365AppsInteractiveConfiguration -ProductId $productId -LanguageId $languageId -OfficeClientEdition $bit `
-        -Channel $channelOverride -DisplayLevel $displayLevel -IncludeVisio:($visio -eq '1') -IncludeProject:($project -eq '1') -AutoActivate:$autoActivate
+        -Channel $channelOverride -DisplayLevel $displayLevel -IncludeVisio:($visio -eq '1') -IncludeProject:($project -eq '1') -AutoActivate:$autoActivate `
+        -ExcludeAppIds $excludeAppIds
     [System.IO.File]::WriteAllText($configPath, $xml, $utf8NoBom)
 }
 Write-Log "Wrote configuration to $configPath"

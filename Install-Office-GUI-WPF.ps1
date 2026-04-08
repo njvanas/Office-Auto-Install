@@ -588,6 +588,27 @@ $xaml = @"
         </StackPanel>
 
         <StackPanel Margin="0,0,0,24">
+          <TextBlock Text="Exclude apps (optional)"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,12"/>
+          <TextBlock Text="Check apps you do not want installed with the Microsoft 365 Apps suite (ODT ExcludeApp). Preset XML may already exclude some apps; your choices are merged."
+                     FontSize="12"
+                     Foreground="{StaticResource SiteTextMutedBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,10"
+                     TextWrapping="Wrap"/>
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
+            <WrapPanel x:Name="ExcludeAppsPanel" />
+          </Border>
+        </StackPanel>
+
+        <StackPanel Margin="0,0,0,24">
           <TextBlock Text="Installation Display"
                      FontSize="15" FontWeight="SemiBold"
                      Foreground="{StaticResource SiteTextBrush}"
@@ -702,8 +723,9 @@ try {
     $statusPanel = $window.FindName("StatusPanel")
     $progressBar = $window.FindName("ProgressBar")
     $statusLabel = $window.FindName("StatusLabel")
+    $excludeAppsPanel = $window.FindName("ExcludeAppsPanel")
     
-    if ($null -eq $profileCombo -or $null -eq $archCombo -or $null -eq $editionCombo -or $null -eq $installButton) {
+    if ($null -eq $profileCombo -or $null -eq $archCombo -or $null -eq $editionCombo -or $null -eq $installButton -or $null -eq $excludeAppsPanel) {
         throw "Some UI controls could not be found. The XAML may be invalid."
     }
 } catch {
@@ -722,6 +744,17 @@ $script:window = $window
 $script:statusPanel = $statusPanel
 $script:statusLabel = $statusLabel
 $script:progressBar = $progressBar
+$script:excludeAppsPanel = $excludeAppsPanel
+
+$cbStyle = $window.FindResource('SiteCheckBoxStyle')
+foreach ($item in Get-M365AppsExcludeAppCatalog) {
+    $cb = New-Object System.Windows.Controls.CheckBox
+    $cb.Content = $item.Label
+    $cb.Tag = $item.Id
+    $cb.Margin = '0,4,16,4'
+    if ($cbStyle) { $cb.Style = $cbStyle }
+    [void]$excludeAppsPanel.Children.Add($cb)
+}
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -768,6 +801,23 @@ function Get-ProfileSummaryLabel {
     )
     if ($index -ge 0 -and $index -lt $labels.Count) { return $labels[$index] }
     return 'Custom'
+}
+
+function Get-SelectedExcludeAppIds {
+    $ids = @()
+    foreach ($c in $script:excludeAppsPanel.Children) {
+        if ($c -is [System.Windows.Controls.CheckBox] -and $c.IsChecked -eq $true -and $c.Tag) {
+            $ids += [string]$c.Tag
+        }
+    }
+    return ,$ids
+}
+
+function Set-ExcludeAppsPanelEnabled {
+    param([bool]$Enabled)
+    foreach ($c in $script:excludeAppsPanel.Children) {
+        if ($c -is [System.Windows.Controls.CheckBox]) { $c.IsEnabled = $Enabled }
+    }
 }
 
 function Sync-LanguageComboFromProfile {
@@ -946,7 +996,8 @@ function Generate-Config {
         $src = Get-M365AppsPresetConfigurationPath -Preset $options.presetName
         $ch = $options.channelOverride
         Copy-M365AppsConfigurationWithOverrides -SourcePath $src -DestinationPath $configPath `
-            -OfficeClientEdition $options.bit -LanguageId $options.language -Channel $ch
+            -OfficeClientEdition $options.bit -LanguageId $options.language -Channel $ch `
+            -ExcludeAppIds @($options.excludeAppIds)
         Set-M365AppsConfigurationDisplayLevel -Path $configPath -Level $options.ui
     } else {
         Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $options.language `
@@ -954,7 +1005,8 @@ function Generate-Config {
         Log 'Generating config.xml (custom interactive)'
         $xml = New-M365AppsInteractiveConfiguration -ProductId $options.edition -LanguageId $options.language `
             -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
-            -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') -AutoActivate
+            -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') -AutoActivate `
+            -ExcludeAppIds @($options.excludeAppIds)
         $enc = New-Object System.Text.UTF8Encoding($false)
         [System.IO.File]::WriteAllText($configPath, $xml, $enc)
     }
@@ -1034,6 +1086,7 @@ $installButton.Add_Click({
     $channelCombo.IsEnabled = $false
     $langCombo.IsEnabled = $false
     $uiCombo.IsEnabled = $false
+    Set-ExcludeAppsPanelEnabled -Enabled $false
     
     try {
         Log "=== Office Installer GUI Started ==="
@@ -1046,6 +1099,7 @@ $installButton.Add_Click({
             $channelCombo.IsEnabled = $true
             $langCombo.IsEnabled = $true
             $uiCombo.IsEnabled = $true
+            Set-ExcludeAppsPanelEnabled -Enabled $true
             $statusPanel.Visibility = "Collapsed"
             return
         }
@@ -1060,6 +1114,7 @@ $installButton.Add_Click({
         
         $channelOverride = Resolve-ChannelParameter -IsCustomProfile $isCustom -ChannelSelectedIndex $channelCombo.SelectedIndex
         $profileLabel = Get-ProfileSummaryLabel -index $profileCombo.SelectedIndex
+        $excludeIds = @(Get-SelectedExcludeAppIds)
         
         if ($isCustom) {
             $editionID = Get-EditionID -index $editionCombo.SelectedIndex
@@ -1082,6 +1137,7 @@ $installButton.Add_Click({
                 editionName = $editionName
                 profileLabel = $profileLabel
                 summaryLine = $summaryLine
+                excludeAppIds = $excludeIds
             }
         } else {
             $summaryLine = "$profileLabel | $languageName | ${bit}-bit | preset $($presetName).xml"
@@ -1094,6 +1150,7 @@ $installButton.Add_Click({
                 ui = $uiLevel
                 profileLabel = $profileLabel
                 summaryLine = $summaryLine
+                excludeAppIds = $excludeIds
             }
         }
         
@@ -1105,6 +1162,7 @@ $installButton.Add_Click({
             $channelCombo.IsEnabled = $true
             $langCombo.IsEnabled = $true
             $uiCombo.IsEnabled = $true
+            Set-ExcludeAppsPanelEnabled -Enabled $true
             $statusPanel.Visibility = "Collapsed"
             return
         }
@@ -1132,6 +1190,7 @@ $installButton.Add_Click({
         $channelCombo.IsEnabled = $true
         $langCombo.IsEnabled = $true
         $uiCombo.IsEnabled = $true
+        Set-ExcludeAppsPanelEnabled -Enabled $true
     }
 })
 

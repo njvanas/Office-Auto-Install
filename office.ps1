@@ -208,6 +208,12 @@ if ($env:OFFICE_AUTO_INSTALL_SKIP_ADMIN -eq '1') {
     $deployArgs.SkipAdministratorCheck = $true
 }
 
+$excludeAppsFromEnv = $null
+if ($env:OFFICE_AUTO_INSTALL_EXCLUDE_APPS) {
+    $ea = @($env:OFFICE_AUTO_INSTALL_EXCLUDE_APPS -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    if ($ea.Count -gt 0) { $excludeAppsFromEnv = $ea }
+}
+
 if ($uninstall) {
     Write-Host " Running uninstall (Microsoft 365 Apps removal)..." -ForegroundColor Yellow
     & $payloadPath @deployArgs -Uninstall
@@ -217,9 +223,11 @@ if ($uninstall) {
         Write-Host " ERROR: OFFICE_AUTO_INSTALL_CONFIGURATION_FILE not found: $cfg" -ForegroundColor Red
         exit 1
     }
+    if ($excludeAppsFromEnv) { $deployArgs.ExcludeApp = $excludeAppsFromEnv }
     & $payloadPath @deployArgs -ConfigurationFile $cfg
 } else {
     Write-Host " Preset: $preset  |  Language: $lang" -ForegroundColor Gray
+    if ($excludeAppsFromEnv) { $deployArgs.ExcludeApp = $excludeAppsFromEnv }
     & $payloadPath @deployArgs -Preset $preset
 }
 

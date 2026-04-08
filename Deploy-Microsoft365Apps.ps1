@@ -16,6 +16,10 @@
 .PARAMETER Uninstall
     Runs removal using configs\Uninstall-Microsoft365Apps.xml
 
+.PARAMETER ExcludeApp
+    One or more ODT ExcludeApp IDs (e.g. Teams, OneDrive, Access) merged into the suite product in preset or custom XML.
+    Valid IDs match Microsoft’s documentation (see M365AppsCore.ps1). Ignored when -Uninstall is used.
+
 .EXAMPLE
     .\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus-VDI -LanguageId en-us
 
@@ -24,6 +28,9 @@
 
 .EXAMPLE
     .\Deploy-Microsoft365Apps.ps1 -Uninstall
+
+.EXAMPLE
+    .\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus -LanguageId en-us -ExcludeApp Teams,OneDrive,Access
 #>
 [CmdletBinding(DefaultParameterSetName = 'Deploy')]
 param(
@@ -53,6 +60,9 @@ param(
 
     [string]$LanguageId = 'en-us',
 
+    [Parameter(ParameterSetName = 'Deploy')]
+    [string[]]$ExcludeApp = @(),
+
     [string]$WorkingDirectory,
 
     [switch]$SkipPrerequisiteTest,
@@ -80,6 +90,11 @@ if ($PSCmdlet.ParameterSetName -eq 'Deploy' -and -not $ConfigurationFile) {
     Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $LanguageId -Preset $Preset
 }
 
+$excludeNormalized = @()
+if ($PSCmdlet.ParameterSetName -eq 'Deploy' -and $ExcludeApp -and $ExcludeApp.Count -gt 0) {
+    $excludeNormalized = Resolve-M365AppsExcludeAppIdList -CommaSeparatedText ($ExcludeApp -join ',')
+}
+
 $work = if ($WorkingDirectory) {
     $WorkingDirectory
 } else {
@@ -96,11 +111,11 @@ if ($Uninstall) {
     $cfg = Get-M365AppsUninstallConfigurationPath
     Copy-Item -LiteralPath $cfg -Destination (Join-Path $work 'config.xml') -Force
 } elseif ($ConfigurationFile) {
-    Copy-M365AppsConfigurationWithOverrides -SourcePath $ConfigurationFile -DestinationPath (Join-Path $work 'config.xml') -OfficeClientEdition $OfficeClientEdition -Channel $Channel -LanguageId $LanguageId
+    Copy-M365AppsConfigurationWithOverrides -SourcePath $ConfigurationFile -DestinationPath (Join-Path $work 'config.xml') -OfficeClientEdition $OfficeClientEdition -Channel $Channel -LanguageId $LanguageId -ExcludeAppIds $excludeNormalized
 } else {
     $src = Get-M365AppsPresetConfigurationPath -Preset $Preset
     $ch = if ($Channel) { $Channel } else { $null }
-    Copy-M365AppsConfigurationWithOverrides -SourcePath $src -DestinationPath (Join-Path $work 'config.xml') -OfficeClientEdition $OfficeClientEdition -Channel $ch -LanguageId $LanguageId
+    Copy-M365AppsConfigurationWithOverrides -SourcePath $src -DestinationPath (Join-Path $work 'config.xml') -OfficeClientEdition $OfficeClientEdition -Channel $ch -LanguageId $LanguageId -ExcludeAppIds $excludeNormalized
 }
 
 $configPath = Join-Path $work 'config.xml'

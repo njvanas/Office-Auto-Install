@@ -114,6 +114,107 @@ $script:M365AppsLangByDisplayCi = $null
 # "Languages, culture codes, and companion proofing languages" footnote [1] (not in Project or Visio).
 $script:M365AppsLanguageIdsExcludedWithVisioOrProjectVolume = @('en-gb', 'fr-ca', 'es-mx')
 
+# ODT ExcludeApp ID — Microsoft Learn (Product element). Not used on Visio/Project standalone products here.
+$script:M365AppsValidExcludeAppIds = @(
+    'Access', 'Excel', 'Groove', 'Lync', 'OneDrive', 'OneNote', 'Outlook', 'OutlookForWindows',
+    'PowerPoint', 'Publisher', 'Teams', 'Word'
+)
+$script:M365AppsExcludeAppSuiteProductIds = @(
+    'O365ProPlusRetail', 'O365BusinessRetail', 'ProPlus2024Retail', 'ProPlus2021Volume'
+)
+
+function Get-M365AppsExcludeAppCatalog {
+    <#
+    .SYNOPSIS
+        Returns display metadata for optional ExcludeApp checkboxes (ODT).
+    #>
+    [CmdletBinding()]
+    param()
+    @(
+        @{ Id = 'Access'; Label = 'Access' }
+        @{ Id = 'Excel'; Label = 'Excel' }
+        @{ Id = 'Groove'; Label = 'Groove (legacy sync)' }
+        @{ Id = 'Lync'; Label = 'Skype for Business (Lync)' }
+        @{ Id = 'OneDrive'; Label = 'OneDrive' }
+        @{ Id = 'OneNote'; Label = 'OneNote (Win32)' }
+        @{ Id = 'Outlook'; Label = 'Outlook (classic)' }
+        @{ Id = 'OutlookForWindows'; Label = 'Outlook (new)' }
+        @{ Id = 'PowerPoint'; Label = 'PowerPoint' }
+        @{ Id = 'Publisher'; Label = 'Publisher' }
+        @{ Id = 'Teams'; Label = 'Microsoft Teams' }
+        @{ Id = 'Word'; Label = 'Word' }
+    )
+}
+
+function Resolve-M365AppsExcludeAppIdList {
+    <#
+    .SYNOPSIS
+        Parses a comma-separated list of ExcludeApp IDs (case-insensitive) and returns canonical IDs.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$CommaSeparatedText
+    )
+    if ([string]::IsNullOrWhiteSpace($CommaSeparatedText)) { return @() }
+    $valid = $script:M365AppsValidExcludeAppIds
+    $seen = @{}
+    foreach ($part in ($CommaSeparatedText -split ',')) {
+        $t = $part.Trim()
+        if (-not $t) { continue }
+        $m = $valid | Where-Object { $_ -ieq $t } | Select-Object -First 1
+        if (-not $m) { throw "Invalid ExcludeApp ID '$t'. Use: $($valid -join ', ')." }
+        $seen[$m] = $true
+    }
+    return @($seen.Keys | Sort-Object)
+}
+
+function Merge-M365AppsExcludeAppsIntoProducts {
+    <#
+    .SYNOPSIS
+        Merges ExcludeApp elements into Microsoft 365 / ProPlus suite products (union with existing excludes).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        [string[]]$ExcludeAppIds
+    )
+    if (-not $ExcludeAppIds -or $ExcludeAppIds.Count -eq 0) { return }
+    $valid = $script:M365AppsValidExcludeAppIds
+    $norm = @{}
+    foreach ($raw in $ExcludeAppIds) {
+        if ([string]::IsNullOrWhiteSpace($raw)) { continue }
+        $t = $raw.Trim()
+        $match = $valid | Where-Object { $_ -ieq $t } | Select-Object -First 1
+        if (-not $match) {
+            throw "Invalid ExcludeApp ID '$raw'. Use: $($valid -join ', ')."
+        }
+        $norm[$match] = $true
+    }
+    if ($norm.Count -eq 0) { return }
+
+    [xml]$doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    $suite = $script:M365AppsExcludeAppSuiteProductIds
+    foreach ($prod in $doc.SelectNodes('//Product')) {
+        $pid = $prod.GetAttribute('ID')
+        if ($suite -notcontains $pid) { continue }
+        $merged = @{}
+        foreach ($ex in $prod.SelectNodes('ExcludeApp')) {
+            $eid = $ex.GetAttribute('ID')
+            if ($eid) { $merged[$eid] = $true }
+        }
+        foreach ($k in $norm.Keys) { $merged[$k] = $true }
+        foreach ($ex in @($prod.SelectNodes('ExcludeApp'))) { [void]$prod.RemoveChild($ex) }
+        foreach ($id in ($merged.Keys | Sort-Object)) {
+            $el = $doc.CreateElement('ExcludeApp')
+            $el.SetAttribute('ID', $id)
+            [void]$prod.AppendChild($el)
+        }
+    }
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Resolve-Path -LiteralPath $Path).Path, $doc.OuterXml, $utf8NoBom)
+}
+
 function Initialize-M365AppsLanguageLookup {
     if ($null -ne $script:M365AppsLangById) { return }
     $script:M365AppsLangById = @{}
@@ -390,10 +491,14 @@ function Copy-M365AppsConfigurationWithOverrides {
         [ValidateSet('32', '64')]
         [string]$OfficeClientEdition = '64',
         [string]$Channel,
-        [string]$LanguageId = 'en-us'
+        [string]$LanguageId = 'en-us',
+        [string[]]$ExcludeAppIds
     )
     Copy-Item -LiteralPath $SourcePath -Destination $DestinationPath -Force
     Set-M365AppsConfigurationOverrides -Path $DestinationPath -OfficeClientEdition $OfficeClientEdition -Channel $Channel -LanguageId $LanguageId
+    if ($ExcludeAppIds -and $ExcludeAppIds.Count -gt 0) {
+        Merge-M365AppsExcludeAppsIntoProducts -Path $DestinationPath -ExcludeAppIds $ExcludeAppIds
+    }
 }
 
 function Start-M365AppsSetup {
@@ -439,10 +544,22 @@ function New-M365AppsInteractiveConfiguration {
         [string]$DisplayLevel = 'Full',
         [switch]$IncludeVisio,
         [switch]$IncludeProject,
-        [switch]$AutoActivate
+        [switch]$AutoActivate,
+        [string[]]$ExcludeAppIds
     )
+    $validEx = $script:M365AppsValidExcludeAppIds
+    $excLines = @()
+    if ($ExcludeAppIds) {
+        foreach ($x in $ExcludeAppIds) {
+            if ([string]::IsNullOrWhiteSpace($x)) { continue }
+            $m = $validEx | Where-Object { $_ -ieq $x.Trim() } | Select-Object -First 1
+            if (-not $m) { throw "Invalid ExcludeApp ID '$x'. Use: $($validEx -join ', ')." }
+            $excLines += "    <ExcludeApp ID=`"$m`" />"
+        }
+    }
+    $excBlock = if ($excLines.Count) { "`n$($excLines -join "`n")" } else { '' }
     $products = @()
-    $products += "<Product ID='$ProductId'>`n  <Language ID='$LanguageId' />`n</Product>"
+    $products += "<Product ID='$ProductId'>`n  <Language ID='$LanguageId' />$excBlock`n</Product>"
     if ($IncludeVisio) {
         $products += "<Product ID='VisioPro2021Volume'>`n  <Language ID='$LanguageId' />`n</Product>"
     }
