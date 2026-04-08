@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Microsoft 365 Apps + Visio + Project — VDI / shared computer licensing -->
+<Configuration ID="O365ProPlusVisioProject-VDI">
+  <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
+    <Product ID="O365ProPlusRetail">
+      <Language ID="en-us" />
+      <ExcludeApp ID="Groove" />
+      <ExcludeApp ID="OneDrive" />
+      <ExcludeApp ID="Teams" />
+      <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="OutlookForWindows" />
+    </Product>
+    <Product ID="VisioPro2021Volume">
+      <Language ID="en-us" />
+    </Product>
+    <Product ID="ProjectPro2021Volume">
+      <Language ID="en-us" />
+    </Product>
+  </Add>
+  <Property Name="SharedComputerLicensing" Value="1" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+  <Display Level="None" AcceptEULA="TRUE" />
+</Configuration>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Microsoft 365 Apps for enterprise — AVD / Windows 365 / shared VDI. Install Teams & OneDrive separately. -->
+<Configuration ID="O365ProPlus-VDI">
+  <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
+    <Product ID="O365ProPlusRetail">
+      <Language ID="en-us" />
+      <ExcludeApp ID="Groove" />
+      <ExcludeApp ID="OneDrive" />
+      <ExcludeApp ID="Teams" />
+      <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="OutlookForWindows" />
+    </Product>
+  </Add>
+  <Property Name="SharedComputerLicensing" Value="1" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+  <Display Level="None" AcceptEULA="TRUE" />
+</Configuration>

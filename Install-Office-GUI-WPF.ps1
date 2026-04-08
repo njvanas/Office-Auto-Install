@@ -12,7 +12,7 @@
     All options are pre-filled with recommended defaults for one-click installation.
     Fully self-contained - no external dependencies required.
 .NOTES
-    Version: 3.6 - WPF UI matched to website theme
+    Version: 3.7 - Deployment profiles (configs\ presets) + custom advanced path
     Author: Office Auto Installer Team
     Requires: .NET Framework 4.7.2+ (Windows PowerShell; WPF is not available in PowerShell 7+)
 #>
@@ -150,6 +150,8 @@ function Log {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     "$timestamp - $message" | Out-File -FilePath $logFile -Append -Encoding UTF8
 }
+
+Import-Module -Name (Join-Path $PSScriptRoot 'Microsoft365AppsDeployment.psm1') -Force
 
 # ============================================================================
 # TEMPORARY INSTALLATION FOLDER SETUP
@@ -442,6 +444,35 @@ $xaml = @"
       <StackPanel Margin="40,28,40,20">
 
         <StackPanel Margin="0,0,0,24">
+          <TextBlock Text="Deployment profile"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,12"/>
+          <TextBlock Text="Choose the scenario that matches your device (PC or VDI). Presets match the XML in configs\."
+                     FontSize="12"
+                     Foreground="{StaticResource SiteTextMutedBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,10"
+                     TextWrapping="Wrap"/>
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
+            <ComboBox x:Name="ProfileCombo" Style="{StaticResource SiteComboBoxStyle}">
+              <ComboBoxItem Content="Microsoft 365 Apps — enterprise (physical / desktop)" IsSelected="True"/>
+              <ComboBoxItem Content="Microsoft 365 Apps — enterprise (VDI / shared PC)"/>
+              <ComboBoxItem Content="Microsoft 365 Apps — business (physical / desktop)"/>
+              <ComboBoxItem Content="Microsoft 365 Apps — business (VDI / shared PC)"/>
+              <ComboBoxItem Content="M365 Apps enterprise + Visio &amp; Project (physical / desktop)"/>
+              <ComboBoxItem Content="M365 Apps enterprise + Visio &amp; Project (VDI / shared PC)"/>
+              <ComboBoxItem Content="Custom — Office 2024, LTSC 2021, or build-your-own M365"/>
+            </ComboBox>
+          </Border>
+        </StackPanel>
+
+        <StackPanel Margin="0,0,0,24">
           <TextBlock Text="System Configuration"
                      FontSize="15" FontWeight="SemiBold"
                      Foreground="{StaticResource SiteTextBrush}"
@@ -459,8 +490,8 @@ $xaml = @"
           </Border>
         </StackPanel>
 
-        <StackPanel Margin="0,0,0,24">
-          <TextBlock Text="Office Version"
+        <StackPanel x:Name="EditionSection" Margin="0,0,0,24" Visibility="Collapsed">
+          <TextBlock Text="Office Version (custom only)"
                      FontSize="15" FontWeight="SemiBold"
                      Foreground="{StaticResource SiteTextBrush}"
                      FontFamily="Inter, Segoe UI"
@@ -478,8 +509,8 @@ $xaml = @"
           </Border>
         </StackPanel>
 
-        <StackPanel Margin="0,0,0,24">
-          <TextBlock Text="Optional Components"
+        <StackPanel x:Name="OptionalSection" Margin="0,0,0,24" Visibility="Collapsed">
+          <TextBlock Text="Optional Components (custom only)"
                      FontSize="15" FontWeight="SemiBold"
                      Foreground="{StaticResource SiteTextBrush}"
                      FontFamily="Inter, Segoe UI"
@@ -500,19 +531,26 @@ $xaml = @"
         </StackPanel>
 
         <StackPanel Margin="0,0,0,24">
-          <TextBlock Text="Update Settings"
+          <TextBlock Text="Update channel"
                      FontSize="15" FontWeight="SemiBold"
                      Foreground="{StaticResource SiteTextBrush}"
                      FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
+          <TextBlock Text="Deployment profiles use the channel baked into the preset XML unless you override it below."
+                     FontSize="12"
+                     Foreground="{StaticResource SiteTextMutedBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,10"
+                     TextWrapping="Wrap"/>
           <Border Background="{StaticResource SiteCardBrush}"
                   BorderBrush="{StaticResource SiteBorderBrush}"
                   BorderThickness="1"
                   CornerRadius="12"
                   Padding="20,16">
             <ComboBox x:Name="ChannelCombo" Style="{StaticResource SiteComboBoxStyle}">
-              <ComboBoxItem Content="Monthly updates (Recommended - latest features)" IsSelected="True"/>
-              <ComboBoxItem Content="Less frequent updates (More stable)"/>
+              <ComboBoxItem x:Name="ChannelPresetDefaultItem" Content="Use preset default (from XML)" IsSelected="True"/>
+              <ComboBoxItem Content="Monthly / Current (override)"/>
+              <ComboBoxItem Content="Semi-annual Enterprise (override)"/>
             </ComboBox>
           </Border>
         </StackPanel>
@@ -634,11 +672,11 @@ try {
 # - Handle user interactions (Button Click events)
 #
 # Control Mapping:
+# - ProfileCombo: Preset deployment profile (configs\ XML) or Custom advanced build
 # - ArchCombo: System architecture selection (32-bit/64-bit)
-# - EditionCombo: Office edition selection (Pro Plus, LTSC, M365)
-# - VisioCheck: Optional Visio Professional component
-# - ProjectCheck: Optional Project Professional component
-# - ChannelCombo: Update channel selection (Monthly, Semi-Annual, etc.)
+# - EditionCombo: Office edition selection (custom path only)
+# - VisioCheck / ProjectCheck: Optional components (custom path only)
+# - ChannelCombo: Preset default vs Current / Semi-annual override
 # - LangCombo: Language selection for Office installation
 # - UICombo: Installation display mode (Show progress / Quiet)
 # - InstallButton: Primary action button to start installation
@@ -647,11 +685,15 @@ try {
 # - StatusLabel: Text status updates during installation
 
 try {
+    $profileCombo = $window.FindName("ProfileCombo")
+    $editionSection = $window.FindName("EditionSection")
+    $optionalSection = $window.FindName("OptionalSection")
     $archCombo = $window.FindName("ArchCombo")
     $editionCombo = $window.FindName("EditionCombo")
     $visioCheck = $window.FindName("VisioCheck")
     $projectCheck = $window.FindName("ProjectCheck")
     $channelCombo = $window.FindName("ChannelCombo")
+    $channelPresetDefaultItem = $window.FindName("ChannelPresetDefaultItem")
     $langCombo = $window.FindName("LangCombo")
     $uiCombo = $window.FindName("UICombo")
     $installButton = $window.FindName("InstallButton")
@@ -659,8 +701,7 @@ try {
     $progressBar = $window.FindName("ProgressBar")
     $statusLabel = $window.FindName("StatusLabel")
     
-    # Verify all controls were found
-    if ($null -eq $archCombo -or $null -eq $editionCombo -or $null -eq $installButton) {
+    if ($null -eq $profileCombo -or $null -eq $archCombo -or $null -eq $editionCombo -or $null -eq $installButton) {
         throw "Some UI controls could not be found. The XAML may be invalid."
     }
 } catch {
@@ -711,45 +752,77 @@ function Get-LanguageCode {
     return $langMap[$languageName]
 }
 
-<#
-.SYNOPSIS
-    Converts a ComboBox index to an Office edition product ID.
-.DESCRIPTION
-    Maps the selected ComboBox index to the corresponding Office Deployment
-    Tool product ID used in config.xml.
-.PARAMETER index
-    The zero-based index of the selected item in the EditionCombo.
-.OUTPUTS
-    String - The ODT product ID (e.g., "ProPlus2024Retail").
-#>
 function Get-EditionID {
     param([int]$index)
-    $editionMap = @{
-        0 = "ProPlus2024Retail"      # Office 2024 Pro Plus
-        1 = "ProPlus2021Volume"       # Office LTSC 2021
-        2 = "O365ProPlusRetail"       # Microsoft 365 Apps
-    }
+    $editionMap = @{ 0 = "ProPlus2024Retail"; 1 = "ProPlus2021Volume"; 2 = "O365ProPlusRetail" }
     return $editionMap[$index]
 }
 
-<#
-.SYNOPSIS
-    Converts a ComboBox index to a user-friendly edition name.
-.DESCRIPTION
-    Maps the selected ComboBox index to a display name for user messages.
-.PARAMETER index
-    The zero-based index of the selected item in the EditionCombo.
-.OUTPUTS
-    String - The edition display name (e.g., "Office 2024 Pro Plus").
-#>
 function Get-EditionName {
     param([int]$index)
-    $nameMap = @{
-        0 = "Office 2024 Pro Plus"
-        1 = "Office LTSC 2021"
-        2 = "Microsoft 365 Apps"
-    }
+    $nameMap = @{ 0 = "Office 2024 Pro Plus"; 1 = "Office LTSC 2021"; 2 = "Microsoft 365 Apps" }
     return $nameMap[$index]
+}
+
+function Get-PresetNameFromProfileIndex {
+    param([int]$index)
+    $map = @{
+        0 = 'O365ProPlus'
+        1 = 'O365ProPlus-VDI'
+        2 = 'O365Business'
+        3 = 'O365Business-VDI'
+        4 = 'O365ProPlusVisioProject'
+        5 = 'O365ProPlusVisioProject-VDI'
+    }
+    if ($map.ContainsKey($index)) { return $map[$index] }
+    return $null
+}
+
+function Get-ProfileSummaryLabel {
+    param([int]$index)
+    $labels = @(
+        'M365 Apps enterprise (physical)'
+        'M365 Apps enterprise (VDI)'
+        'M365 Apps business (physical)'
+        'M365 Apps business (VDI)'
+        'M365 enterprise + Visio & Project (physical)'
+        'M365 enterprise + Visio & Project (VDI)'
+        'Custom (interactive XML)'
+    )
+    if ($index -ge 0 -and $index -lt $labels.Count) { return $labels[$index] }
+    return 'Custom'
+}
+
+function Update-ProfileDependentUI {
+    $custom = ($profileCombo.SelectedIndex -eq 6)
+    $editionSection.Visibility = if ($custom) { 'Visible' } else { 'Collapsed' }
+    $optionalSection.Visibility = if ($custom) { 'Visible' } else { 'Collapsed' }
+    $editionCombo.IsEnabled = $custom
+    $visioCheck.IsEnabled = $custom
+    $projectCheck.IsEnabled = $custom
+    if ($channelPresetDefaultItem) {
+        $channelPresetDefaultItem.IsEnabled = -not $custom
+    }
+    if ($custom -and $channelCombo.SelectedIndex -eq 0) {
+        $channelCombo.SelectedIndex = 1
+    }
+}
+
+function Resolve-ChannelParameter {
+    param(
+        [bool]$IsCustomProfile,
+        [int]$ChannelSelectedIndex
+    )
+    if ($IsCustomProfile) {
+        if ($ChannelSelectedIndex -le 1) { return 'Current' }
+        return 'SemiAnnualEnterprise'
+    }
+    switch ($ChannelSelectedIndex) {
+        0 { return $null }
+        1 { return 'Current' }
+        2 { return 'SemiAnnualEnterprise' }
+        default { return $null }
+    }
 }
 
 <#
@@ -790,251 +863,114 @@ function Update-Status {
 #>
 function Test-SystemRequirements {
     Update-Status "Checking system requirements..." 5
-    
-    # Check available disk space on the system drive
-    $systemDrive = Get-WmiObject -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq $env:SystemDrive }
-    $freeSpaceGB = [math]::Round($systemDrive.FreeSpace / 1GB, 2)
-    
-    if ($freeSpaceGB -lt 4) {
-        [System.Windows.Forms.MessageBox]::Show(
-            "Error: At least 4GB of free space is required.`n`nAvailable: $freeSpaceGB GB`n`nPlease free up some disk space and try again.",
-            "Insufficient Disk Space",
-            [System.Windows.Forms.MessageBoxButtons]::OK,
-            [System.Windows.Forms.MessageBoxIcon]::Error
-        )
-        return $false
-    }
-    
-    # Test internet connectivity by attempting to reach Microsoft's website
-    Update-Status "Testing internet connection..." 10
     try {
-        $null = Invoke-WebRequest -Uri "https://www.microsoft.com" -UseBasicParsing -TimeoutSec 10
+        Test-M365AppsPrerequisites | Out-Null
     } catch {
         [System.Windows.Forms.MessageBox]::Show(
-            "No internet connection detected!`n`nPlease check your internet connection and try again.",
-            "No Internet Connection",
+            $_.Exception.Message,
+            "Prerequisites",
             [System.Windows.Forms.MessageBoxButtons]::OK,
             [System.Windows.Forms.MessageBoxIcon]::Error
         )
         return $false
     }
-    
     return $true
 }
 
-<#
-.SYNOPSIS
-    Downloads the Office Deployment Tool (ODT) from Microsoft's CDN.
-.DESCRIPTION
-    Downloads setup.exe (the Office Deployment Tool) from Microsoft's official
-    CDN. Shows real-time download progress in the UI and validates the
-    downloaded file size.
-.OUTPUTS
-    Boolean - $true if download succeeded, $false otherwise.
-.NOTES
-    The ODT is Microsoft's official tool for deploying Office. It's downloaded
-    fresh each time to ensure the latest version is used.
-#>
 function Download-ODT {
-    $url = "https://officecdn.microsoft.com/pr/wsus/setup.exe"
-    $output = "$installerFolder\setup.exe"
-    
-    Update-Status "Downloading Office installer from Microsoft..." 15
-    Log "Downloading Office Deployment Tool from $url..."
-    
+    $output = Join-Path $installerFolder 'setup.exe'
+    $odtUrl = 'https://officecdn.microsoft.com/pr/wsus/setup.exe'
+    Update-Status "Downloading Office Deployment Tool..." 15
+    Log "Downloading ODT from $odtUrl"
     try {
-        $webClient = New-Object System.Net.WebClient
-        
-        # Register event handler for download progress updates
-        # This allows real-time progress bar updates during download
-        $eventJob = Register-ObjectEvent -InputObject $webClient -EventName DownloadProgressChanged -Action {
-            $percent = $Event.SourceEventArgs.ProgressPercentage
-            # Update UI on the main thread (required for WPF)
+        $wc = New-Object System.Net.WebClient
+        $eventJob = Register-ObjectEvent -InputObject $wc -EventName DownloadProgressChanged -Action {
+            $pct = $Event.SourceEventArgs.ProgressPercentage
             $window.Dispatcher.Invoke([action]{
-                # Progress ranges from 15% (start) to 85% (complete)
-                $script:progressBar.Value = [Math]::Min(85, 15 + ($percent * 0.7))
-                $script:statusLabel.Text = "Downloading Office installer... $percent%"
+                $script:progressBar.Value = [Math]::Min(85, 15 + ($pct * 0.7))
+                $script:statusLabel.Text = "Downloading... $pct%"
             })
         }
-        
-        # Perform the download
-        $webClient.DownloadFile($url, $output)
-        $webClient.Dispose()
-        
-        # Clean up event handler
+        $wc.DownloadFile($odtUrl, $output)
+        $wc.Dispose()
         if ($eventJob) {
             Unregister-Event -SourceIdentifier $eventJob.Name -ErrorAction SilentlyContinue
             Remove-Job -Job $eventJob -ErrorAction SilentlyContinue
         }
-        
-        Update-Status "Download completed successfully!" 85
-        
-        # Validate downloaded file exists and has reasonable size (>100KB)
-        if (-Not (Test-Path $output) -or ((Get-Item $output).Length -lt 100000)) {
-            throw "Downloaded file appears to be corrupted or incomplete."
+        if (-not (Test-Path -LiteralPath $output) -or ((Get-Item -LiteralPath $output).Length -lt 100000)) {
+            throw 'Download incomplete.'
         }
-        
-        Log "Office Deployment Tool downloaded successfully."
+        Update-Status "Download completed." 85
+        Log 'ODT saved.'
         Start-Sleep -Seconds 1
         return $true
-        
     } catch {
         Log "Download failed: $_"
-        [System.Windows.Forms.MessageBox]::Show(
-            "Download failed!`n`nError: $_`n`nPlease check your internet connection and try again.",
-            "Download Error",
-            [System.Windows.Forms.MessageBoxButtons]::OK,
-            [System.Windows.Forms.MessageBoxIcon]::Error
-        )
+        [System.Windows.Forms.MessageBox]::Show("Download failed:`n$_", "Download Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
         return $false
     }
 }
 
-<#
-.SYNOPSIS
-    Generates the Office Deployment Tool configuration XML file.
-.DESCRIPTION
-    Creates config.xml based on user selections. This XML file tells the
-    Office Deployment Tool what to install, which language, update channel,
-    and display preferences.
-.PARAMETER options
-    Hashtable containing user selections:
-    - edition: Office edition product ID (e.g., "ProPlus2024Retail")
-    - language: Language code (e.g., "en-us")
-    - bit: Architecture ("32" or "64")
-    - channel: Update channel (e.g., "Monthly", "Broad")
-    - ui: Display level ("Full" or "None")
-    - visio: "1" if Visio should be installed, "0" otherwise
-    - project: "1" if Project should be installed, "0" otherwise
-.NOTES
-    The generated config.xml follows the Office Deployment Tool schema.
-    See: https://docs.microsoft.com/en-us/deployoffice/configuration-options-for-the-office-2016-deployment-tool
-#>
 function Generate-Config {
     param($options)
-    
-    Update-Status "Creating installation configuration..." 87
-    Log "Generating config.xml with selected options..."
-    
-    # Build product list - always includes the main Office edition
-    $products = @()
-    $products += "<Product ID='" + $options.edition + "'>`n  <Language ID='" + $options.language + "' />`n</Product>"
-    
-    # Add optional components if selected
-    if ($options.visio -eq "1") {
-        $products += "<Product ID='VisioPro2021Volume'>`n  <Language ID='" + $options.language + "' />`n</Product>"
+    Update-Status "Creating configuration..." 87
+    $configPath = Join-Path $installerFolder 'config.xml'
+    if ($options.presetName) {
+        Log "Generating config.xml from preset $($options.presetName)"
+        $src = Get-M365AppsPresetConfigurationPath -Preset $options.presetName
+        $ch = $options.channelOverride
+        Copy-M365AppsConfigurationWithOverrides -SourcePath $src -DestinationPath $configPath `
+            -OfficeClientEdition $options.bit -LanguageId $options.language -Channel $ch
+        Set-M365AppsConfigurationDisplayLevel -Path $configPath -Level $options.ui
+    } else {
+        Log 'Generating config.xml (custom interactive)'
+        $xml = New-M365AppsInteractiveConfiguration -ProductId $options.edition -LanguageId $options.language `
+            -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
+            -IncludeVisio:($options.visio -eq '1') -IncludeProject:($options.project -eq '1') -AutoActivate
+        $enc = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText($configPath, $xml, $enc)
     }
-    if ($options.project -eq "1") {
-        $products += "<Product ID='ProjectPro2021Volume'>`n  <Language ID='" + $options.language + "' />`n</Product>"
-    }
-    
-    # Generate the complete config.xml following ODT schema
-    $xmlContent = @"
-<Configuration>
-  <Add OfficeClientEdition="${($options.bit)}" Channel="${($options.channel)}">
-    $($products -join "`n    ")
-  </Add>
-  <Display Level="${($options.ui)}" AcceptEULA="TRUE" />
-  <Property Name="AUTOACTIVATE" Value="1" />
-</Configuration>
-"@
-    
-    # Write config.xml to the installer folder
-    $configPath = "$installerFolder\config.xml"
-    $xmlContent | Out-File -FilePath $configPath -Encoding UTF8
-    Log "config.xml generated at $configPath"
-    
-    Update-Status "Configuration created successfully!" 90
+    Log "config.xml -> $configPath"
+    Update-Status "Configuration ready." 90
     Start-Sleep -Seconds 1
 }
 
-<#
-.SYNOPSIS
-    Executes the Office installation using the Office Deployment Tool.
-.DESCRIPTION
-    Runs setup.exe with the generated config.xml to install Office.
-    Monitors the installation process and provides user feedback based on
-    the exit code.
-.PARAMETER options
-    Hashtable containing installation options (used for success message).
-.OUTPUTS
-    Boolean - $true if installation completed (even with warnings),
-              $false if installation failed.
-.NOTES
-    Installation typically takes 10-30 minutes depending on:
-    - Internet speed (if downloading Office)
-    - System performance
-    - Selected components
-    
-    Exit codes:
-    - 0: Success
-    - Non-zero: Warning or error (but Office may still be installed)
-#>
 function Install-Office {
     param($options)
-    
-    Update-Status "Starting Office installation... This may take 10-30 minutes." 92
-    Log "Starting Office installation..."
-    $setupExe = "$installerFolder\setup.exe"
-    
-    # Verify setup.exe exists before attempting installation
-    if (-Not (Test-Path $setupExe)) {
-        [System.Windows.Forms.MessageBox]::Show(
-            "Installation file missing!`n`nSomething went wrong with the download. Please restart the installer.",
-            "Installation Error",
-            [System.Windows.Forms.MessageBoxButtons]::OK,
-            [System.Windows.Forms.MessageBoxIcon]::Error
-        )
+    Update-Status "Installing Office (may take a long time)..." 92
+    Log 'Starting setup.exe /configure'
+    $setupExe = Join-Path $installerFolder 'setup.exe'
+    $configPath = Join-Path $installerFolder 'config.xml'
+    if (-not (Test-Path -LiteralPath $setupExe)) {
+        [System.Windows.Forms.MessageBox]::Show('setup.exe not found. Retry download.', 'Installation', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
         return $false
     }
-    
     try {
-        Log "Executing: $setupExe /configure config.xml"
-        Set-Location -Path $installerFolder
-        
-        # Execute Office Deployment Tool with config.xml
-        # -PassThru: Returns process object to check exit code
-        # -NoNewWindow: Runs in current window (shows progress if UI level is Full)
-        # -Wait: Blocks until installation completes
-        $process = Start-Process -FilePath $setupExe -ArgumentList "/configure config.xml" -PassThru -NoNewWindow -Wait
-        
-        $exitCode = $process.ExitCode
-        
+        Set-Location -LiteralPath $installerFolder
+        $exitCode = Start-M365AppsSetup -SetupExePath $setupExe -ConfigurationPath $configPath -Wait
         if ($exitCode -eq 0) {
-            # Success - Office installed without errors
-            Update-Status "Office installation completed successfully!" 100
-            Log "Office installation completed successfully with exit code: $exitCode"
-            
+            Update-Status "Installation completed." 100
+            Log "Exit code $exitCode"
             [System.Windows.Forms.MessageBox]::Show(
-                "Office installation completed successfully!`n`nYou can now find Office applications in your Start Menu.`n`nInstalled:`n• $($options.editionName)`n• Language: $($options.languageName)`n• Architecture: $($options.bit)-bit",
-                "Installation Complete",
+                "Installation finished (exit 0).`n`n$($options.summaryLine)",
+                "Complete",
                 [System.Windows.Forms.MessageBoxButtons]::OK,
                 [System.Windows.Forms.MessageBoxIcon]::Information
             )
             return $true
-        } else {
-            # Non-zero exit code - may indicate warning, but Office might still be installed
-            Log "Office installation completed with exit code: $exitCode"
-            Update-Status "Installation completed with warnings (Exit code: $exitCode)" 100
-            
-            [System.Windows.Forms.MessageBox]::Show(
-                "Office installation completed with exit code: $exitCode`n`nThis may indicate a warning or non-critical issue. Office may still be installed correctly.`n`nPlease check if Office applications are available in your Start Menu.",
-                "Installation Warning",
-                [System.Windows.Forms.MessageBoxButtons]::OK,
-                [System.Windows.Forms.MessageBoxIcon]::Warning
-            )
-            return $true
         }
-        
-    } catch {
-        # Installation process failed to start or crashed
-        Log "Installation failed: $_"
+        Log "Exit code $exitCode"
+        Update-Status "Finished with exit code $exitCode" 100
         [System.Windows.Forms.MessageBox]::Show(
-            "Installation encountered an error!`n`nError: $_`n`nYou can try running the installer again.",
-            "Installation Error",
+            "Setup exit code: $exitCode. Verify apps in the Start menu.",
+            "Setup",
             [System.Windows.Forms.MessageBoxButtons]::OK,
-            [System.Windows.Forms.MessageBoxIcon]::Error
+            [System.Windows.Forms.MessageBoxIcon]::Warning
         )
+        return $true
+    } catch {
+        Log $_
+        [System.Windows.Forms.MessageBox]::Show("$_", "Installation", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
         return $false
     }
 }
@@ -1053,9 +989,12 @@ function Install-Office {
 # The handler disables UI controls during installation to prevent
 # user interference and provides real-time progress updates.
 
+$profileCombo.Add_SelectionChanged({ Update-ProfileDependentUI })
+Update-ProfileDependentUI
+
 $installButton.Add_Click({
-    # Disable UI controls to prevent changes during installation
     $installButton.IsEnabled = $false
+    $profileCombo.IsEnabled = $false
     $archCombo.IsEnabled = $false
     $editionCombo.IsEnabled = $false
     $visioCheck.IsEnabled = $false
@@ -1069,10 +1008,9 @@ $installButton.Add_Click({
         
         if (-not (Test-SystemRequirements)) {
             $installButton.IsEnabled = $true
+            $profileCombo.IsEnabled = $true
             $archCombo.IsEnabled = $true
-            $editionCombo.IsEnabled = $true
-            $visioCheck.IsEnabled = $true
-            $projectCheck.IsEnabled = $true
+            Update-ProfileDependentUI
             $channelCombo.IsEnabled = $true
             $langCombo.IsEnabled = $true
             $uiCombo.IsEnabled = $true
@@ -1080,37 +1018,57 @@ $installButton.Add_Click({
             return
         }
         
-        # Collect user selections from UI controls
-        # Convert ComboBox indices and CheckBox states to ODT configuration values
         $bit = if ($archCombo.SelectedIndex -eq 0) { "64" } else { "32" }
-        $editionID = Get-EditionID -index $editionCombo.SelectedIndex
-        $editionName = Get-EditionName -index $editionCombo.SelectedIndex
-        $visio = if ($visioCheck.IsChecked) { "1" } else { "2" }
-        $project = if ($projectCheck.IsChecked) { "1" } else { "2" }
-        $channel = if ($channelCombo.SelectedIndex -eq 0) { "Current" } else { "Broad" }
         $languageCode = Get-LanguageCode -languageName ($langCombo.SelectedItem.Content)
         $languageName = $langCombo.SelectedItem.Content
         $uiLevel = if ($uiCombo.SelectedIndex -eq 0) { "Full" } else { "None" }
+        $presetName = Get-PresetNameFromProfileIndex -index $profileCombo.SelectedIndex
+        $isCustom = ($null -eq $presetName)
         
-        # Build options hashtable to pass to installation functions
-        $options = @{
-            bit = $bit
-            visio = $visio
-            project = $project
-            channel = $channel
-            language = $languageCode
-            languageName = $languageName
-            ui = $uiLevel
-            edition = $editionID
-            editionName = $editionName
+        $channelOverride = Resolve-ChannelParameter -IsCustomProfile $isCustom -ChannelSelectedIndex $channelCombo.SelectedIndex
+        $profileLabel = Get-ProfileSummaryLabel -index $profileCombo.SelectedIndex
+        
+        if ($isCustom) {
+            $editionID = Get-EditionID -index $editionCombo.SelectedIndex
+            $editionName = Get-EditionName -index $editionCombo.SelectedIndex
+            $visio = if ($visioCheck.IsChecked) { "1" } else { "2" }
+            $project = if ($projectCheck.IsChecked) { "1" } else { "2" }
+            $channel = $channelOverride
+            $summaryLine = "$editionName | $languageName | ${bit}-bit | custom"
+            $options = @{
+                presetName = $null
+                channelOverride = $null
+                bit = $bit
+                visio = $visio
+                project = $project
+                channel = $channel
+                language = $languageCode
+                languageName = $languageName
+                ui = $uiLevel
+                edition = $editionID
+                editionName = $editionName
+                profileLabel = $profileLabel
+                summaryLine = $summaryLine
+            }
+        } else {
+            $summaryLine = "$profileLabel | $languageName | ${bit}-bit | preset $($presetName).xml"
+            $options = @{
+                presetName = $presetName
+                channelOverride = $channelOverride
+                bit = $bit
+                language = $languageCode
+                languageName = $languageName
+                ui = $uiLevel
+                profileLabel = $profileLabel
+                summaryLine = $summaryLine
+            }
         }
         
         if (-not (Download-ODT)) {
             $installButton.IsEnabled = $true
+            $profileCombo.IsEnabled = $true
             $archCombo.IsEnabled = $true
-            $editionCombo.IsEnabled = $true
-            $visioCheck.IsEnabled = $true
-            $projectCheck.IsEnabled = $true
+            Update-ProfileDependentUI
             $channelCombo.IsEnabled = $true
             $langCombo.IsEnabled = $true
             $uiCombo.IsEnabled = $true
@@ -1135,10 +1093,9 @@ $installButton.Add_Click({
         )
     } finally {
         $installButton.IsEnabled = $true
+        $profileCombo.IsEnabled = $true
         $archCombo.IsEnabled = $true
-        $editionCombo.IsEnabled = $true
-        $visioCheck.IsEnabled = $true
-        $projectCheck.IsEnabled = $true
+        Update-ProfileDependentUI
         $channelCombo.IsEnabled = $true
         $langCombo.IsEnabled = $true
         $uiCombo.IsEnabled = $true

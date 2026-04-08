@@ -1,79 +1,135 @@
-# Office Auto Installer
+# Office Auto Install
 
-Install Microsoft Office (2024 / 2021 / Microsoft 365) using **Microsoft’s official deployment tools**.  
-**Typical use:** open **PowerShell as Administrator**, **paste one command**, press **Enter**. The website shows the same steps with a simple visual: [GitHub Pages site](https://njvanas.github.io/Office-Auto-Install/).
+**Office-Auto-Install** is a PowerShell automation layer for deploying **Microsoft 365 Apps** using **Microsoft’s supported tools**. The **Office Deployment Tool (`setup.exe`)** is downloaded at install time from **Microsoft’s official Office CDN** (this repo does not ship Microsoft binaries). We provide **presets** in `configs\`, a shared **module**, and **one-command** entry points for end users and IT.
 
-## What you do
+## One command (recommended)
 
-1. **Copy** the command below (or use the **Copy** button on the site).
-2. **Open** Windows PowerShell or Terminal **as Administrator** (e.g. Win → type *PowerShell* → Ctrl+Shift+Enter).
-3. **Paste** into the window (right-click often pastes), then press **Enter**.
-4. Stay **online** until setup finishes (often **10–30 minutes**). You need a **valid Office license**.
-
-## Command (recommended)
+**Graphical installer** — open **PowerShell as Administrator**, paste, Enter:
 
 ```powershell
 irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 ```
 
-Only run `irm … | iex` from URLs you trust.
+That fetches **`Microsoft365AppsDeployment.psm1`** and the GUI script to `%TEMP%`, then starts the installer.
 
-### If that URL is blocked
+### Modes (`office.ps1`)
+
+Set **`OFFICE_AUTO_INSTALL_MODE`** before `irm ... | iex` (or use defaults):
+
+| Who | Mode | What happens |
+|-----|------|----------------|
+| **Standard user** | `gui` (default) | WPF installer. |
+| **Terminal prompts** | `console` | `Install-Office.ps1`. |
+| **IT automation** | `deploy` | Downloads **`Deploy-Microsoft365Apps.ps1`** + **`configs\`**, then silent ODT install. **Elevated** PowerShell required. |
+
+**Examples:**
 
 ```powershell
-irm "https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/office.ps1" | iex
-```
-
-### Text-only prompts (everything in the terminal)
-
-```powershell
-$env:OFFICE_AUTO_INSTALL_USE_CONSOLE = "1"
+$env:OFFICE_AUTO_INSTALL_MODE = "gui"
 irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 ```
 
-### Forks
-
-Before `irm`, set:
-
 ```powershell
-$env:OFFICE_AUTO_INSTALL_REPO = "yourname/Office-Auto-Install"
+$env:OFFICE_AUTO_INSTALL_MODE = "console"
+irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 ```
 
-Optional: `OFFICE_AUTO_INSTALL_BRANCH` for a non-default branch.
+```powershell
+$env:OFFICE_AUTO_INSTALL_MODE = "deploy"
+$env:OFFICE_AUTO_INSTALL_PRESET = "O365ProPlus-VDI"
+$env:OFFICE_AUTO_INSTALL_LANGUAGE = "en-us"
+irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
+```
 
-## If something fails
+**Backward compatibility:** `OFFICE_AUTO_INSTALL_USE_CONSOLE=1` selects **console** if `MODE` is unset.
 
-- Run **PowerShell as Administrator** and try again.
-- **`irm` / `iex` errors:** `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (once), then retry.
-- **Network:** the bootstrap uses GitHub; Office setup uses Microsoft. Both must be reachable.
-- **More help:** [Issues](https://github.com/njvanas/Office-Auto-Install/issues) · [Releases](https://github.com/njvanas/Office-Auto-Install/releases/latest)
+**Deploy mode — optional environment variables**
 
-## Repository (for contributors / offline)
+| Variable | Purpose |
+|----------|---------|
+| `OFFICE_AUTO_INSTALL_PRESET` | Preset name (default `O365ProPlus`). |
+| `OFFICE_AUTO_INSTALL_LANGUAGE` / `OFFICE_AUTO_INSTALL_LANGUAGEID` | e.g. `en-us`. |
+| `OFFICE_AUTO_INSTALL_CHANNEL` | e.g. `MonthlyEnterprise`, `Current`. |
+| `OFFICE_AUTO_INSTALL_ARCH` | `32` or `64`. |
+| `OFFICE_AUTO_INSTALL_UNINSTALL` | `1` removes Microsoft 365 Apps (Click-to-Run). |
+| `OFFICE_AUTO_INSTALL_CONFIGURATION_FILE` | Path to your own ODT XML. |
+| `OFFICE_AUTO_INSTALL_WORKING_DIRECTORY` | Working folder for ODT/setup. |
+| `OFFICE_AUTO_INSTALL_SKIP_PREREQ` | `1` skips disk/network checks (testing). |
+| `OFFICE_AUTO_INSTALL_SKIP_ADMIN` | `1` skips admin check (testing only). |
 
-| File | Role |
+**Forks:** `OFFICE_AUTO_INSTALL_REPO`, `OFFICE_AUTO_INSTALL_BRANCH`.
+
+**Raw GitHub** (if Pages is blocked):  
+`irm "https://raw.githubusercontent.com/njvanas/Office-Auto-Install/main/office.ps1" | iex`
+
+---
+
+## Offline / cloned repository
+
+```text
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\Install-Office-GUI-WPF.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\Install-Office.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\Deploy-Microsoft365Apps.ps1" -Preset O365ProPlus-VDI -LanguageId en-us
+```
+
+## Automation (direct script use)
+
+```powershell
+.\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus-VDI -LanguageId en-us
+.\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus -Channel MonthlyEnterprise -LanguageId en-us
+.\Deploy-Microsoft365Apps.ps1 -ConfigurationFile 'D:\Deploy\company.xml'
+.\Deploy-Microsoft365Apps.ps1 -Uninstall
+```
+
+**Parameters:** `-Preset`, `-ConfigurationFile`, `-Uninstall`, `-OfficeClientEdition`, `-Channel`, `-LanguageId`, `-WorkingDirectory`, `-SkipPrerequisiteTest`, `-SkipAdministratorCheck`.
+
+### Presets (`configs\`)
+
+| File | Use case |
+|------|-----------|
+| `O365ProPlus.xml` | Microsoft 365 Apps for enterprise, persistent machines |
+| `O365ProPlus-VDI.xml` | AVD / Windows 365 — shared computer licensing; Teams/OneDrive excluded (deploy separately if needed) |
+| `O365Business.xml` / `O365Business-VDI.xml` | Microsoft 365 Apps for business |
+| `O365ProPlusVisioProject.xml` / `-VDI` | Visio + Project (volume) |
+| `Uninstall-Microsoft365Apps.xml` | Removal |
+
+Default presets exclude **new Outlook** (`OutlookForWindows`); edit XML to include or switch exclusions per [Microsoft’s configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options).
+
+### PowerShell module
+
+`Microsoft365AppsDeployment.psm1` provides helpers such as `Save-M365AppsOfficeDeploymentTool` (official CDN), `Start-M365AppsSetup`, and configuration helpers.
+
+### Official Microsoft references
+
+| Topic | Link |
+|-------|------|
+| Office Deployment Tool (download) | https://www.microsoft.com/download/details.aspx?id=49117 |
+| ODT overview | https://learn.microsoft.com/microsoft-365-apps/deploy/overview-office-deployment-tool |
+| Configuration options | https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options |
+| Win32 app packaging for Intune (optional) | https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool |
+| Microsoft license terms | https://www.microsoft.com/licensing/terms |
+
+## Files
+
+| Path | Role |
 |------|------|
-| [`office.ps1`](./office.ps1) | Small bootstrap; downloads the payload script from GitHub and runs it. |
-| `Install-Office-GUI-WPF.ps1` | Default payload (installer UI). |
-| `Install-Office.ps1` | Payload when `OFFICE_AUTO_INSTALL_USE_CONSOLE=1`. |
+| `office.ps1` | Bootstrap: module + GUI, console, or deploy script from GitHub. |
+| `Install-Office-GUI-WPF.ps1` | Graphical installer (Windows PowerShell 5.1). |
+| `Install-Office.ps1` | Console wizard. |
+| `Deploy-Microsoft365Apps.ps1` | Silent / automation entry. |
+| `Microsoft365AppsDeployment.psm1` | Shared functions. |
+| `configs\` | ODT XML presets. |
+| `NOTICES.md` | License notices. |
 
-**Offline (files on disk):** open **PowerShell as Administrator**, `cd` to the folder, then:
+## Requirements
 
-`powershell -NoProfile -ExecutionPolicy Bypass -File ".\Install-Office-GUI-WPF.ps1"`  
-(or `Install-Office.ps1` for text-only prompts).
-
-Clone: `git clone https://github.com/njvanas/Office-Auto-Install.git`
+- Valid **Microsoft 365 / Office license** for what you install.  
+- **Administrator** rights to install or remove Office.  
+- Network access to **Microsoft** endpoints for ODT and Office content.
 
 ## Safety
 
-Uses **official Microsoft** Office Deployment Tool and CDN. **No** licensing bypass or cracks. **You** are responsible for license compliance.
-
-## Disclaimer
-
-This tool only automates installation through Microsoft’s supported mechanisms. **Use at your own risk.**
-
-## Technical note
-
-[`office.ps1`](./office.ps1) fetches the payload over HTTPS from `raw.githubusercontent.com` and executes it with `Invoke-Expression`. ODT and Office bits come from Microsoft.
+Uses **Microsoft’s** supported installation mechanisms only. **No** licensing bypass. **Use at your own risk.**
 
 ## License
 
