@@ -578,7 +578,7 @@ $xaml = @"
                   Padding="20,16">
             <StackPanel>
               <ComboBox x:Name="LangCombo" Style="{StaticResource SiteComboBoxStyle}" Margin="0,0,0,12" IsEditable="False"/>
-              <TextBlock Text="All Microsoft 365 Apps primary languages (ODT). Configure options above, then click Install Office."
+              <TextBlock Text="Languages are filtered by profile: Visio/Project bundles exclude combinations Microsoft does not support in one install (e.g. en-gb). Then click Install Office."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -723,29 +723,6 @@ $script:statusPanel = $statusPanel
 $script:statusLabel = $statusLabel
 $script:progressBar = $progressBar
 
-try {
-    foreach ($lang in Get-M365AppsSupportedLanguages) {
-        $item = New-Object System.Windows.Controls.ComboBoxItem
-        $item.Content = $lang.Display
-        $item.Tag = $lang.Id
-        [void]$langCombo.Items.Add($item)
-    }
-    for ($i = 0; $i -lt $langCombo.Items.Count; $i++) {
-        if ([string]$langCombo.Items[$i].Content -eq 'English (United States)') {
-            $langCombo.SelectedIndex = $i
-            break
-        }
-    }
-} catch {
-    [System.Windows.Forms.MessageBox]::Show(
-        "Failed to load language list (M365AppsCore.ps1).`n`n$_",
-        "Language list",
-        [System.Windows.Forms.MessageBoxButtons]::OK,
-        [System.Windows.Forms.MessageBoxIcon]::Error
-    )
-    exit 1
-}
-
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
@@ -793,6 +770,53 @@ function Get-ProfileSummaryLabel {
     return 'Custom'
 }
 
+function Sync-LanguageComboFromProfile {
+    try {
+        $prevId = $null
+        if ($langCombo.SelectedItem -and $null -ne $langCombo.SelectedItem.Tag) {
+            $prevId = [string]$langCombo.SelectedItem.Tag
+        }
+        $preset = Get-PresetNameFromProfileIndex -index $profileCombo.SelectedIndex
+        $incV = $false
+        $incP = $false
+        if ($profileCombo.SelectedIndex -eq 6) {
+            $incV = [bool]$visioCheck.IsChecked
+            $incP = [bool]$projectCheck.IsChecked
+        }
+        $langs = if ($null -eq $preset) {
+            Get-M365AppsSupportedLanguages -IncludeVisio:$incV -IncludeProject:$incP
+        } else {
+            Get-M365AppsSupportedLanguages -Preset $preset
+        }
+        $langCombo.Items.Clear()
+        foreach ($lang in $langs) {
+            $item = New-Object System.Windows.Controls.ComboBoxItem
+            $item.Content = $lang.Display
+            $item.Tag = $lang.Id
+            [void]$langCombo.Items.Add($item)
+        }
+        $pick = 'en-us'
+        if ($prevId -and ($langs.Id -contains $prevId)) {
+            $pick = $prevId
+        }
+        for ($i = 0; $i -lt $langCombo.Items.Count; $i++) {
+            if ([string]$langCombo.Items[$i].Tag -eq $pick) {
+                $langCombo.SelectedIndex = $i
+                return
+            }
+        }
+        if ($langCombo.Items.Count -gt 0) { $langCombo.SelectedIndex = 0 }
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Failed to build language list.`n`n$_",
+            "Office Auto Install",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        )
+        exit 1
+    }
+}
+
 function Update-ProfileDependentUI {
     $custom = ($profileCombo.SelectedIndex -eq 6)
     $editionSection.Visibility = if ($custom) { 'Visible' } else { 'Collapsed' }
@@ -806,6 +830,7 @@ function Update-ProfileDependentUI {
     if ($custom -and $channelCombo.SelectedIndex -eq 0) {
         $channelCombo.SelectedIndex = 1
     }
+    Sync-LanguageComboFromProfile
 }
 
 function Resolve-ChannelParameter {
@@ -916,6 +941,7 @@ function Generate-Config {
     Update-Status "Creating configuration..." 87
     $configPath = Join-Path $installerFolder 'config.xml'
     if ($options.presetName) {
+        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $options.language -Preset $options.presetName
         Log "Generating config.xml from preset $($options.presetName)"
         $src = Get-M365AppsPresetConfigurationPath -Preset $options.presetName
         $ch = $options.channelOverride
@@ -923,6 +949,8 @@ function Generate-Config {
             -OfficeClientEdition $options.bit -LanguageId $options.language -Channel $ch
         Set-M365AppsConfigurationDisplayLevel -Path $configPath -Level $options.ui
     } else {
+        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $options.language `
+            -CustomIncludeVisio:($options.visio -eq '1') -CustomIncludeProject:($options.project -eq '1')
         Log 'Generating config.xml (custom interactive)'
         $xml = New-M365AppsInteractiveConfiguration -ProductId $options.edition -LanguageId $options.language `
             -OfficeClientEdition $options.bit -Channel $options.channel -DisplayLevel $options.ui `
@@ -990,6 +1018,10 @@ function Install-Office {
 # user interference and provides real-time progress updates.
 
 $profileCombo.Add_SelectionChanged({ Update-ProfileDependentUI })
+$visioCheck.Add_Checked({ Update-ProfileDependentUI })
+$visioCheck.Add_Unchecked({ Update-ProfileDependentUI })
+$projectCheck.Add_Checked({ Update-ProfileDependentUI })
+$projectCheck.Add_Unchecked({ Update-ProfileDependentUI })
 Update-ProfileDependentUI
 
 $installButton.Add_Click({

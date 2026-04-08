@@ -110,6 +110,10 @@ $script:M365AppsLanguageEntries = @(
 $script:M365AppsLangById = $null
 $script:M365AppsLangByDisplayCi = $null
 
+# Same deployment cannot use these as primary when Visio and/or Project (volume) are installed — Microsoft Learn
+# "Languages, culture codes, and companion proofing languages" footnote [1] (not in Project or Visio).
+$script:M365AppsLanguageIdsExcludedWithVisioOrProjectVolume = @('en-gb', 'fr-ca', 'es-mx')
+
 function Initialize-M365AppsLanguageLookup {
     if ($null -ne $script:M365AppsLangById) { return }
     $script:M365AppsLangById = @{}
@@ -124,13 +128,53 @@ function Initialize-M365AppsLanguageLookup {
 function Get-M365AppsSupportedLanguages {
     <#
     .SYNOPSIS
-        Lists all primary language packs supported for Microsoft 365 Apps (culture ID for ODT), sorted by display name.
+        Lists primary language packs for ODT, sorted by display name.
+    .PARAMETER Preset
+        When set to a Visio+Project preset, excludes languages that Microsoft does not ship for those apps in the same install.
+    .PARAMETER IncludeVisio
+    .PARAMETER IncludeProject
+        For custom deployments: if either is set, applies the same Visio/Project language exclusions.
     #>
     [CmdletBinding()]
-    param()
+    param(
+        [string]$Preset = '',
+        [switch]$IncludeVisio,
+        [switch]$IncludeProject
+    )
     Initialize-M365AppsLanguageLookup
-    $script:M365AppsLanguageEntries | Sort-Object { $_.Display } | ForEach-Object {
+    $applyVpFilter =
+        ($Preset -in @('O365ProPlusVisioProject', 'O365ProPlusVisioProject-VDI')) -or
+        ($IncludeVisio -or $IncludeProject)
+    $rows = $script:M365AppsLanguageEntries | Sort-Object { $_.Display }
+    if ($applyVpFilter) {
+        $ex = $script:M365AppsLanguageIdsExcludedWithVisioOrProjectVolume
+        $rows = $rows | Where-Object { $ex -notcontains ($_.Id.ToLowerInvariant()) }
+    }
+    $rows | ForEach-Object {
         [pscustomobject]@{ Display = $_.Display; Id = $_.Id.ToLowerInvariant() }
+    }
+}
+
+function Assert-M365AppsLanguageCompatibleWithDeployment {
+    <#
+    .SYNOPSIS
+        Ensures the primary language is allowed for the chosen preset (Visio/Project rules per Microsoft documentation).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$LanguageId,
+        [string]$Preset = '',
+        [switch]$CustomIncludeVisio,
+        [switch]$CustomIncludeProject
+    )
+    $id = $LanguageId.ToLowerInvariant()
+    $useVpRule =
+        ($Preset -in @('O365ProPlusVisioProject', 'O365ProPlusVisioProject-VDI')) -or
+        ($CustomIncludeVisio -or $CustomIncludeProject)
+    if (-not $useVpRule) { return }
+    if ($script:M365AppsLanguageIdsExcludedWithVisioOrProjectVolume -contains $id) {
+        throw "Primary language '$LanguageId' is not valid together with Visio and/or Project in one deployment (Microsoft does not offer this combination for those apps: en-gb, fr-ca, es-mx). Choose English (United States) or another listed language, or use a profile without Visio/Project."
     }
 }
 
@@ -138,6 +182,10 @@ function Resolve-M365AppsLanguageId {
     <#
     .SYNOPSIS
         Resolves a display name or ll-cc culture ID to the canonical lowercase ID used in ODT XML.
+    .NOTES
+        The bundled list follows Microsoft’s published primary languages. Office setup.exe may still report
+        that a language is “not available” for a specific product/channel (e.g. Business vs ProPlus, or Visio/Project).
+        Unknown-but-valid-looking culture tags (e.g. new IDs before we update the list) are passed through.
     #>
     [CmdletBinding()]
     param(
@@ -151,7 +199,12 @@ function Resolve-M365AppsLanguageId {
     $tl = $t.ToLowerInvariant()
     if ($script:M365AppsLangById.ContainsKey($tl)) { return $tl }
     if ($script:M365AppsLangByDisplayCi.ContainsKey($tl)) { return $script:M365AppsLangByDisplayCi[$tl] }
-    throw "Unknown Office language: '$Text'. Use Get-M365AppsSupportedLanguages or a valid ll-cc ID (see Microsoft Learn, deploying languages for Microsoft 365 Apps)."
+    # Pass through ODT-style tags (e.g. sr-latn-rs, ca-es-valencia) so we do not block IDs Microsoft adds later.
+    if ($tl -match '^[a-z]{2}(-[a-z0-9]+)+$') {
+        Write-Warning "Language '$tl' is not in the built-in catalog; using it as-is. If setup says the language is unavailable, try another language or check that your product/channel supports it."
+        return $tl
+    }
+    throw "Unknown Office language: '$Text'. Enter a culture like en-us or de-de, or pick a name from Get-M365AppsSupportedLanguages."
 }
 
 function Get-M365AppsOfficialOfficeDeploymentToolUri {

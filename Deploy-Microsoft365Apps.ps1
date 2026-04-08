@@ -76,6 +76,10 @@ if (-not $SkipPrerequisiteTest) {
     Test-M365AppsPrerequisites
 }
 
+if ($PSCmdlet.ParameterSetName -eq 'Deploy' -and -not $ConfigurationFile) {
+    Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $LanguageId -Preset $Preset
+}
+
 $work = if ($WorkingDirectory) {
     $WorkingDirectory
 } else {

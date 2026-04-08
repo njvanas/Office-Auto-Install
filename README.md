@@ -129,6 +129,18 @@ Dot-sourced by the installers (not run directly). Provides `Save-M365AppsOfficeD
 - **Administrator** rights to install or remove Office.  
 - Network access to **Microsoft** endpoints for ODT and Office content.
 
+## Language compatibility (built-in rules)
+
+Deployments that include **Visio and/or Project** (volume) cannot use **en-gb**, **fr-ca**, or **es-mx** as the **primary** language in the same install — this matches Microsoft’s documented limitation for those apps. The GUI language list is **filtered** for Visio/Project profiles; `Assert-M365AppsLanguageCompatibleWithDeployment` in **`M365AppsCore.ps1`** blocks invalid combos in console and deploy (not for custom `-ConfigurationFile`).
+
+## Troubleshooting: “language is not available”
+
+1. **Blocked by this project** — Incompatible Visio/Project + language pairs fail early with a clear error (see above).
+
+2. **Unknown / free-form culture** — **Unknown Office language** means the string was not recognized. Use a culture such as `en-us`, or pick from the GUI. Valid-looking `xx-yy` tags not yet in the catalog may pass through with a warning, then **Assert** still applies for Visio/Project.
+
+3. **Microsoft setup (`setup.exe`)** — Other “language not available” messages come from **Microsoft’s CDN** for your **product/channel** combo. See [Overview of deploying languages for Microsoft 365 Apps](https://learn.microsoft.com/deployoffice/overview-deploying-languages-microsoft-365-apps).
+
 ## Safety
 
 Uses **Microsoft’s** supported installation mechanisms only. **No** licensing bypass. **Use at your own risk.**

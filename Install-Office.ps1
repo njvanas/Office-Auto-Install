@@ -189,6 +189,18 @@ if ($usePreset) {
 $channelOverride = Resolve-ConsoleChannelOverride -IsCustomProfile $isCustom -Choice $ch
 
 $languageId = Read-ValidatedLanguageId
+try {
+    if ($usePreset) {
+        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $languageId -Preset $presetName
+    } else {
+        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $languageId `
+            -CustomIncludeVisio:($visio -eq '1') -CustomIncludeProject:($project -eq '1')
+    }
+} catch {
+    Write-Host " $($_.Exception.Message)" -ForegroundColor Red
+    Read-Host 'Press Enter to exit'
+    exit 1
+}
 $languageLabel = (Get-M365AppsSupportedLanguages | Where-Object { $_.Id -eq $languageId } | Select-Object -First 1 -ExpandProperty Display)
 if (-not $languageLabel) { $languageLabel = $languageId }
 
