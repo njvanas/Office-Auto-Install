@@ -1,6 +1,6 @@
 # Office Auto Install
 
-**Office-Auto-Install** is a PowerShell automation layer for deploying **Microsoft 365 Apps** using **Microsoft’s supported tools**. The **Office Deployment Tool (`setup.exe`)** is downloaded at install time from **Microsoft’s official Office CDN** (this repo does not ship Microsoft binaries). We provide **presets** in `configs\`, a shared **module**, and **one-command** entry points for end users and IT.
+**Office-Auto-Install** is a PowerShell automation layer for deploying **Microsoft 365 Apps** using **Microsoft’s supported tools**. The **Office Deployment Tool (`setup.exe`)** is downloaded at install time from **Microsoft’s official Office CDN** (this repo does not ship Microsoft binaries). We provide **presets** in `configs\`, a single shared **`M365AppsCore.ps1`** (ODT helpers + full language list), and **one-command** bootstrap plus separate **GUI** and **console** installers.
 
 ## One command (recommended)
 
@@ -10,7 +10,7 @@
 irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 ```
 
-That fetches **`Microsoft365AppsDeployment.psm1`** and the GUI script to `%TEMP%`, then starts the installer.
+That fetches **`M365AppsCore.ps1`**, the chosen installer script, and **`configs\`**, into `%TEMP%`, then starts the installer.
 
 ### Modes (`office.ps1`)
 
@@ -66,6 +66,8 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 
 ## Offline / cloned repository
 
+Primary languages match **Microsoft 365 Apps** (ODT culture IDs). After dot-sourcing **`M365AppsCore.ps1`**, run `Get-M365AppsSupportedLanguages`.
+
 ```text
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\Install-Office-GUI-WPF.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\Install-Office.ps1"
@@ -95,9 +97,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ".\Deploy-Microsoft365Apps.p
 
 Default presets exclude **new Outlook** (`OutlookForWindows`); edit XML to include or switch exclusions per [Microsoft’s configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options).
 
-### PowerShell module
+### Shared engine (`M365AppsCore.ps1`)
 
-`Microsoft365AppsDeployment.psm1` provides helpers such as `Save-M365AppsOfficeDeploymentTool` (official CDN), `Start-M365AppsSetup`, and configuration helpers.
+Dot-sourced by the installers (not run directly). Provides `Save-M365AppsOfficeDeploymentTool` (official CDN), `Start-M365AppsSetup`, `Get-M365AppsSupportedLanguages`, and configuration helpers.
 
 ### Official Microsoft references
 
@@ -113,11 +115,11 @@ Default presets exclude **new Outlook** (`OutlookForWindows`); edit XML to inclu
 
 | Path | Role |
 |------|------|
-| `office.ps1` | Bootstrap: module + GUI, console, or deploy script from GitHub. |
+| `office.ps1` | Bootstrap (`irm \| iex`): downloads core + installer + `configs\`. |
+| `M365AppsCore.ps1` | Shared engine (languages + ODT helpers); dot-sourced by other scripts. |
 | `Install-Office-GUI-WPF.ps1` | Graphical installer (Windows PowerShell 5.1). |
 | `Install-Office.ps1` | Console wizard. |
 | `Deploy-Microsoft365Apps.ps1` | Silent / automation entry. |
-| `Microsoft365AppsDeployment.psm1` | Shared functions. |
 | `configs\` | ODT XML presets. |
 | `NOTICES.md` | License notices. |
 

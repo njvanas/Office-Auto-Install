@@ -1,9 +1,158 @@
-# Microsoft365AppsDeployment.psm1
-# Office-Auto-Install: automation for Microsoft 365 Apps deployment using official Microsoft tooling (ODT).
+# M365AppsCore.ps1
+# Office-Auto-Install: shared ODT engine (Microsoft 365 Apps languages + helpers).
+# Dot-source from installer scripts: . (Join-Path $PSScriptRoot 'M365AppsCore.ps1')
+# Not intended as a standalone entry point.
 
-# Office Deployment Tool (setup.exe) — retrieved from Microsoft's Office CDN (same delivery channel Microsoft documents for ODT).
 $script:OdtSetupExeUrl = 'https://officecdn.microsoft.com/pr/wsus/setup.exe'
+if (-not $PSScriptRoot) {
+    throw 'M365AppsCore.ps1 must be saved on disk and dot-sourced so $PSScriptRoot resolves.'
+}
 $script:ModuleRoot = $PSScriptRoot
+
+# Culture IDs — Microsoft Learn: overview-deploying-languages-microsoft-365-apps
+$script:M365AppsLanguageEntries = @(
+    @{ Display = 'Afrikaans'; Id = 'af-za' },
+    @{ Display = 'Albanian'; Id = 'sq-al' },
+    @{ Display = 'Arabic'; Id = 'ar-sa' },
+    @{ Display = 'Armenian'; Id = 'hy-am' },
+    @{ Display = 'Assamese'; Id = 'as-in' },
+    @{ Display = 'Azerbaijani (Latin)'; Id = 'az-latn-az' },
+    @{ Display = 'Bangla (Bangladesh)'; Id = 'bn-bd' },
+    @{ Display = 'Bangla (India)'; Id = 'bn-in' },
+    @{ Display = 'Basque'; Id = 'eu-es' },
+    @{ Display = 'Bosnian (Latin)'; Id = 'bs-latn-ba' },
+    @{ Display = 'Bulgarian'; Id = 'bg-bg' },
+    @{ Display = 'Catalan'; Id = 'ca-es' },
+    @{ Display = 'Catalan (Valencia)'; Id = 'ca-es-valencia' },
+    @{ Display = 'Chinese (Simplified)'; Id = 'zh-cn' },
+    @{ Display = 'Chinese (Traditional)'; Id = 'zh-tw' },
+    @{ Display = 'Croatian'; Id = 'hr-hr' },
+    @{ Display = 'Czech'; Id = 'cs-cz' },
+    @{ Display = 'Danish'; Id = 'da-dk' },
+    @{ Display = 'Dutch'; Id = 'nl-nl' },
+    @{ Display = 'English (United Kingdom)'; Id = 'en-gb' },
+    @{ Display = 'English (United States)'; Id = 'en-us' },
+    @{ Display = 'Estonian'; Id = 'et-ee' },
+    @{ Display = 'Finnish'; Id = 'fi-fi' },
+    @{ Display = 'French (Canada)'; Id = 'fr-ca' },
+    @{ Display = 'French (France)'; Id = 'fr-fr' },
+    @{ Display = 'Galician'; Id = 'gl-es' },
+    @{ Display = 'Georgian'; Id = 'ka-ge' },
+    @{ Display = 'German'; Id = 'de-de' },
+    @{ Display = 'Greek'; Id = 'el-gr' },
+    @{ Display = 'Gujarati'; Id = 'gu-in' },
+    @{ Display = 'Hausa (Latin)'; Id = 'ha-latn-ng' },
+    @{ Display = 'Hebrew'; Id = 'he-il' },
+    @{ Display = 'Hindi'; Id = 'hi-in' },
+    @{ Display = 'Hungarian'; Id = 'hu-hu' },
+    @{ Display = 'Icelandic'; Id = 'is-is' },
+    @{ Display = 'Igbo'; Id = 'ig-ng' },
+    @{ Display = 'Indonesian'; Id = 'id-id' },
+    @{ Display = 'Irish'; Id = 'ga-ie' },
+    @{ Display = 'isiXhosa'; Id = 'xh-za' },
+    @{ Display = 'isiZulu'; Id = 'zu-za' },
+    @{ Display = 'Italian'; Id = 'it-it' },
+    @{ Display = 'Japanese'; Id = 'ja-jp' },
+    @{ Display = 'Kannada'; Id = 'kn-in' },
+    @{ Display = 'Kazakh'; Id = 'kk-kz' },
+    @{ Display = 'Kinyarwanda'; Id = 'rw-rw' },
+    @{ Display = 'Kiswahili'; Id = 'sw-ke' },
+    @{ Display = 'Konkani'; Id = 'kok-in' },
+    @{ Display = 'Korean'; Id = 'ko-kr' },
+    @{ Display = 'Kyrgyz'; Id = 'ky-kg' },
+    @{ Display = 'Latvian'; Id = 'lv-lv' },
+    @{ Display = 'Lithuanian'; Id = 'lt-lt' },
+    @{ Display = 'Luxembourgish'; Id = 'lb-lu' },
+    @{ Display = 'Macedonian (North Macedonia)'; Id = 'mk-mk' },
+    @{ Display = 'Malay (Latin)'; Id = 'ms-my' },
+    @{ Display = 'Malayalam'; Id = 'ml-in' },
+    @{ Display = 'Maltese'; Id = 'mt-mt' },
+    @{ Display = 'Maori'; Id = 'mi-nz' },
+    @{ Display = 'Marathi'; Id = 'mr-in' },
+    @{ Display = 'Nepali'; Id = 'ne-np' },
+    @{ Display = 'Norwegian Bokmal'; Id = 'nb-no' },
+    @{ Display = 'Norwegian Nynorsk'; Id = 'nn-no' },
+    @{ Display = 'Odia'; Id = 'or-in' },
+    @{ Display = 'Pashto'; Id = 'ps-af' },
+    @{ Display = 'Persian'; Id = 'fa-ir' },
+    @{ Display = 'Polish'; Id = 'pl-pl' },
+    @{ Display = 'Portuguese (Brazil)'; Id = 'pt-br' },
+    @{ Display = 'Portuguese (Portugal)'; Id = 'pt-pt' },
+    @{ Display = 'Punjabi (Gurmukhi)'; Id = 'pa-in' },
+    @{ Display = 'Romanian'; Id = 'ro-ro' },
+    @{ Display = 'Romansh'; Id = 'rm-ch' },
+    @{ Display = 'Russian'; Id = 'ru-ru' },
+    @{ Display = 'Scottish Gaelic'; Id = 'gd-gb' },
+    @{ Display = 'Serbian (Cyrillic, Bosnia and Herzegovina)'; Id = 'sr-cyrl-ba' },
+    @{ Display = 'Serbian (Cyrillic, Serbia)'; Id = 'sr-cyrl-rs' },
+    @{ Display = 'Serbian (Latin, Serbia)'; Id = 'sr-latn-rs' },
+    @{ Display = 'Sesotho sa Leboa'; Id = 'nso-za' },
+    @{ Display = 'Setswana'; Id = 'tn-za' },
+    @{ Display = 'Sinhala'; Id = 'si-lk' },
+    @{ Display = 'Slovak'; Id = 'sk-sk' },
+    @{ Display = 'Slovenian'; Id = 'sl-si' },
+    @{ Display = 'Spanish (Mexico)'; Id = 'es-mx' },
+    @{ Display = 'Spanish (Spain)'; Id = 'es-es' },
+    @{ Display = 'Swedish'; Id = 'sv-se' },
+    @{ Display = 'Tamil'; Id = 'ta-in' },
+    @{ Display = 'Tatar (Cyrillic)'; Id = 'tt-ru' },
+    @{ Display = 'Telugu'; Id = 'te-in' },
+    @{ Display = 'Thai'; Id = 'th-th' },
+    @{ Display = 'Turkish'; Id = 'tr-tr' },
+    @{ Display = 'Ukrainian'; Id = 'uk-ua' },
+    @{ Display = 'Urdu'; Id = 'ur-pk' },
+    @{ Display = 'Uzbek (Latin)'; Id = 'uz-latn-uz' },
+    @{ Display = 'Vietnamese'; Id = 'vi-vn' },
+    @{ Display = 'Welsh'; Id = 'cy-gb' },
+    @{ Display = 'Wolof'; Id = 'wo-sn' },
+    @{ Display = 'Yoruba'; Id = 'yo-ng' }
+)
+$script:M365AppsLangById = $null
+$script:M365AppsLangByDisplayCi = $null
+
+function Initialize-M365AppsLanguageLookup {
+    if ($null -ne $script:M365AppsLangById) { return }
+    $script:M365AppsLangById = @{}
+    $script:M365AppsLangByDisplayCi = @{}
+    foreach ($e in $script:M365AppsLanguageEntries) {
+        $id = $e.Id.ToLowerInvariant()
+        $script:M365AppsLangById[$id] = $true
+        $script:M365AppsLangByDisplayCi[$e.Display.ToLowerInvariant()] = $id
+    }
+}
+
+function Get-M365AppsSupportedLanguages {
+    <#
+    .SYNOPSIS
+        Lists all primary language packs supported for Microsoft 365 Apps (culture ID for ODT), sorted by display name.
+    #>
+    [CmdletBinding()]
+    param()
+    Initialize-M365AppsLanguageLookup
+    $script:M365AppsLanguageEntries | Sort-Object { $_.Display } | ForEach-Object {
+        [pscustomobject]@{ Display = $_.Display; Id = $_.Id.ToLowerInvariant() }
+    }
+}
+
+function Resolve-M365AppsLanguageId {
+    <#
+    .SYNOPSIS
+        Resolves a display name or ll-cc culture ID to the canonical lowercase ID used in ODT XML.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]$Text
+    )
+    Initialize-M365AppsLanguageLookup
+    $t = $Text.Trim()
+    if ([string]::IsNullOrWhiteSpace($t)) { return 'en-us' }
+    $tl = $t.ToLowerInvariant()
+    if ($script:M365AppsLangById.ContainsKey($tl)) { return $tl }
+    if ($script:M365AppsLangByDisplayCi.ContainsKey($tl)) { return $script:M365AppsLangByDisplayCi[$tl] }
+    throw "Unknown Office language: '$Text'. Use Get-M365AppsSupportedLanguages or a valid ll-cc ID (see Microsoft Learn, deploying languages for Microsoft 365 Apps)."
+}
 
 function Get-M365AppsOfficialOfficeDeploymentToolUri {
     <#
@@ -263,18 +412,3 @@ function New-M365AppsInteractiveConfiguration {
 </Configuration>
 "@
 }
-
-Export-ModuleMember -Function @(
-    'Get-M365AppsOfficialOfficeDeploymentToolUri',
-    'Get-M365AppsConfigDirectory',
-    'Set-M365AppsConfigurationDisplayLevel',
-    'Test-M365AppsAdministrator',
-    'Test-M365AppsPrerequisites',
-    'Save-M365AppsOfficeDeploymentTool',
-    'Get-M365AppsUninstallConfigurationPath',
-    'Get-M365AppsPresetConfigurationPath',
-    'Set-M365AppsConfigurationOverrides',
-    'Copy-M365AppsConfigurationWithOverrides',
-    'Start-M365AppsSetup',
-    'New-M365AppsInteractiveConfiguration'
-)

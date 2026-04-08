@@ -19,7 +19,7 @@ jobs:
           Copy-Item "Install-Office-GUI-WPF.ps1" -Destination "release/"
           Copy-Item "Install-Office.ps1" -Destination "release/"
           Copy-Item "Deploy-Microsoft365Apps.ps1" -Destination "release/"
-          Copy-Item "Microsoft365AppsDeployment.psm1" -Destination "release/"
+          Copy-Item "M365AppsCore.ps1" -Destination "release/"
           Copy-Item "configs" -Destination "release/configs" -Recurse
           Copy-Item "README.md" -Destination "release/"
           Copy-Item "LICENSE" -Destination "release/"

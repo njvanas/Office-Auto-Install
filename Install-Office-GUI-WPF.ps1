@@ -151,7 +151,17 @@ function Log {
     "$timestamp - $message" | Out-File -FilePath $logFile -Append -Encoding UTF8
 }
 
-Import-Module -Name (Join-Path $PSScriptRoot 'Microsoft365AppsDeployment.psm1') -Force
+$corePath = Join-Path $PSScriptRoot 'M365AppsCore.ps1'
+if (-not (Test-Path -LiteralPath $corePath)) {
+    [System.Windows.Forms.MessageBox]::Show(
+        "Missing M365AppsCore.ps1 (expected next to this script):`n$corePath",
+        "Office Auto Install",
+        [System.Windows.Forms.MessageBoxButtons]::OK,
+        [System.Windows.Forms.MessageBoxIcon]::Error
+    )
+    exit 1
+}
+. $corePath
 
 # ============================================================================
 # TEMPORARY INSTALLATION FOLDER SETUP
@@ -567,16 +577,8 @@ $xaml = @"
                   CornerRadius="12"
                   Padding="20,16">
             <StackPanel>
-              <ComboBox x:Name="LangCombo" Style="{StaticResource SiteComboBoxStyle}" Margin="0,0,0,12">
-                <ComboBoxItem Content="English (United States)" IsSelected="True"/>
-                <ComboBoxItem Content="English (United Kingdom)"/>
-                <ComboBoxItem Content="French (France)"/>
-                <ComboBoxItem Content="German (Germany)"/>
-                <ComboBoxItem Content="Dutch (Netherlands)"/>
-                <ComboBoxItem Content="Spanish (Spain)"/>
-                <ComboBoxItem Content="Portuguese (Brazil)"/>
-              </ComboBox>
-              <TextBlock Text="Configure your installation options above, then click 'Install Office' to begin."
+              <ComboBox x:Name="LangCombo" Style="{StaticResource SiteComboBoxStyle}" Margin="0,0,0,12" IsEditable="False"/>
+              <TextBlock Text="All Microsoft 365 Apps primary languages (ODT). Configure options above, then click Install Office."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -721,36 +723,34 @@ $script:statusPanel = $statusPanel
 $script:statusLabel = $statusLabel
 $script:progressBar = $progressBar
 
+try {
+    foreach ($lang in Get-M365AppsSupportedLanguages) {
+        $item = New-Object System.Windows.Controls.ComboBoxItem
+        $item.Content = $lang.Display
+        $item.Tag = $lang.Id
+        [void]$langCombo.Items.Add($item)
+    }
+    for ($i = 0; $i -lt $langCombo.Items.Count; $i++) {
+        if ([string]$langCombo.Items[$i].Content -eq 'English (United States)') {
+            $langCombo.SelectedIndex = $i
+            break
+        }
+    }
+} catch {
+    [System.Windows.Forms.MessageBox]::Show(
+        "Failed to load language list (M365AppsCore.ps1).`n`n$_",
+        "Language list",
+        [System.Windows.Forms.MessageBoxButtons]::OK,
+        [System.Windows.Forms.MessageBoxIcon]::Error
+    )
+    exit 1
+}
+
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
-# These utility functions convert user-friendly display names to Office
+# These utility functions convert user selections to Office
 # Deployment Tool (ODT) configuration values.
-
-<#
-.SYNOPSIS
-    Converts a language display name to its ODT language code.
-.DESCRIPTION
-    Maps user-friendly language names (e.g., "English (United States)")
-    to Office Deployment Tool language codes (e.g., "en-us").
-.PARAMETER languageName
-    The display name of the language as shown in the ComboBox.
-.OUTPUTS
-    String - The ODT language code (e.g., "en-us", "fr-fr").
-#>
-function Get-LanguageCode {
-    param([string]$languageName)
-    $langMap = @{
-        "English (United States)" = "en-us"
-        "English (United Kingdom)" = "en-gb"
-        "French (France)" = "fr-fr"
-        "German (Germany)" = "de-de"
-        "Dutch (Netherlands)" = "nl-nl"
-        "Spanish (Spain)" = "es-es"
-        "Portuguese (Brazil)" = "pt-br"
-    }
-    return $langMap[$languageName]
-}
 
 function Get-EditionID {
     param([int]$index)
@@ -1019,8 +1019,9 @@ $installButton.Add_Click({
         }
         
         $bit = if ($archCombo.SelectedIndex -eq 0) { "64" } else { "32" }
-        $languageCode = Get-LanguageCode -languageName ($langCombo.SelectedItem.Content)
-        $languageName = $langCombo.SelectedItem.Content
+        $selLang = $langCombo.SelectedItem
+        $languageName = [string]$selLang.Content
+        $languageCode = if ($selLang.Tag) { [string]$selLang.Tag } else { Resolve-M365AppsLanguageId -Text $languageName }
         $uiLevel = if ($uiCombo.SelectedIndex -eq 0) { "Full" } else { "None" }
         $presetName = Get-PresetNameFromProfileIndex -index $profileCombo.SelectedIndex
         $isCustom = ($null -eq $presetName)

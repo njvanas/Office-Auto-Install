@@ -7,7 +7,7 @@
     One liner for everyone:
     - Default: graphical installer for home and business users (same experience as always).
     - Optional: text-only wizard, or IT silent deploy using presets from configs\ (AVD, physical, uninstall).
-      Office Deployment Tool (setup.exe) is fetched from Microsoft's official CDN when install runs — not stored in git.
+      Downloads M365AppsCore.ps1 (shared engine) + your chosen installer + configs\. ODT (setup.exe) comes from Microsoft at install time.
 
     Set OFFICE_AUTO_INSTALL_MODE before irm | iex:
       gui     — WPF installer (default)
@@ -91,7 +91,7 @@ $safeRepo = ($repo -replace '/', '_')
 $stage = Join-Path $env:TEMP "OfficeAutoInstall\$safeRepo\$branch"
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
-$modulePath = Join-Path $stage "Microsoft365AppsDeployment.psm1"
+$corePath = Join-Path $stage 'M365AppsCore.ps1'
 $payloadPath = Join-Path $stage $scriptFile
 
 Write-Host ""
@@ -133,7 +133,7 @@ function Get-OaiWebFile {
 }
 
 try {
-    Get-OaiWebFile -Uri "$base/Microsoft365AppsDeployment.psm1" -OutFile $modulePath
+    Get-OaiWebFile -Uri "$base/M365AppsCore.ps1" -OutFile $corePath
 
     if ($mode -in 'gui', 'console') {
         Get-OaiWebFile -Uri "$base/$scriptFile" -OutFile $payloadPath
@@ -161,7 +161,7 @@ try {
     exit 1
 }
 
-if (-not (Test-Path -LiteralPath $modulePath) -or -not (Test-Path -LiteralPath $payloadPath)) {
+if (-not (Test-Path -LiteralPath $corePath) -or -not (Test-Path -LiteralPath $payloadPath)) {
     Write-Host " ERROR: Required files are missing after download." -ForegroundColor Red
     exit 1
 }

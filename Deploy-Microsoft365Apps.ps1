@@ -62,8 +62,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$modulePath = Join-Path $PSScriptRoot 'Microsoft365AppsDeployment.psm1'
-Import-Module -Name $modulePath -Force
+$corePath = Join-Path $PSScriptRoot 'M365AppsCore.ps1'
+if (-not (Test-Path -LiteralPath $corePath)) {
+    throw "Missing M365AppsCore.ps1 (expected next to this script): $corePath"
+}
+. $corePath
 
 if (-not $SkipAdministratorCheck -and -not (Test-M365AppsAdministrator)) {
     throw 'Run this script from an elevated PowerShell session (Run as Administrator).'
