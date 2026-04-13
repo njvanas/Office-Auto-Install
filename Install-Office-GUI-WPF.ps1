@@ -641,10 +641,14 @@ $xaml = @"
                            Margin="0,0,0,8"
                            TextWrapping="Wrap"/>
                 <ComboBox x:Name="VisioProjectLineCombo" Style="{StaticResource SiteComboBoxStyle}">
-                  <ComboBoxItem Content="Microsoft 365 subscription (Visio Plan 2 / Project)" Tag="M365Retail" IsSelected="True"/>
-                  <ComboBoxItem Content="Office LTSC 2021 (volume license)" Tag="LTSC2021Volume"/>
-                  <ComboBoxItem Content="Office LTSC 2024 (volume license)" Tag="LTSC2024Volume"/>
-                  <ComboBoxItem Content="Office 2024 (retail perpetual)" Tag="Office2024Retail"/>
+                  <ComboBoxItem Content="Microsoft 365 — Visio Plan 2 / Project (Pro)" Tag="M365Retail" IsSelected="True"/>
+                  <ComboBoxItem Content="Microsoft 365 — Visio Plan 1 / Project (Standard)" Tag="M365RetailStd"/>
+                  <ComboBoxItem Content="Office LTSC 2021 volume (Pro)" Tag="LTSC2021Volume"/>
+                  <ComboBoxItem Content="Office LTSC 2021 volume (Standard)" Tag="LTSC2021VolumeStd"/>
+                  <ComboBoxItem Content="Office LTSC 2024 volume (Pro)" Tag="LTSC2024Volume"/>
+                  <ComboBoxItem Content="Office LTSC 2024 volume (Standard)" Tag="LTSC2024VolumeStd"/>
+                  <ComboBoxItem Content="Office 2024 retail perpetual (Pro)" Tag="Office2024Retail"/>
+                  <ComboBoxItem Content="Office 2024 retail perpetual (Standard)" Tag="Office2024RetailStd"/>
                 </ComboBox>
               </StackPanel>
             </StackPanel>
@@ -716,14 +720,49 @@ $xaml = @"
                       Padding="12,12">
                 <ListBox x:Name="AdditionalLangList"
                          SelectionMode="Extended"
-                         MinHeight="260"
-                         MaxHeight="360"
+                         MinHeight="200"
+                         MaxHeight="280"
                          Background="{StaticResource SiteControlBrush}"
                          BorderBrush="{StaticResource SiteBorderBrush}"
                          Foreground="{StaticResource SiteTextBodyBrush}"
                          FontFamily="Inter, Segoe UI"
                          FontSize="13"/>
               </Border>
+              <TextBlock Text="Proofing tools only (optional)"
+                         FontSize="15" FontWeight="SemiBold"
+                         Foreground="{StaticResource SiteTextBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,20,0,12"/>
+              <TextBlock Text="Spell-check and grammar for languages without installing the full UI language pack. Emits a separate ODT Product ID=&quot;ProofingTools&quot; (same as Microsoft deployment settings)."
+                         FontSize="12"
+                         Foreground="{StaticResource SiteTextMutedBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,0,0,10"
+                         TextWrapping="Wrap"/>
+              <Border Background="{StaticResource SiteCardBrush}"
+                      BorderBrush="{StaticResource SiteBorderBrush}"
+                      BorderThickness="1"
+                      CornerRadius="12"
+                      Padding="12,12">
+                <ListBox x:Name="ProofingLangList"
+                         SelectionMode="Extended"
+                         MinHeight="160"
+                         MaxHeight="240"
+                         Background="{StaticResource SiteControlBrush}"
+                         BorderBrush="{StaticResource SiteBorderBrush}"
+                         Foreground="{StaticResource SiteTextBodyBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         FontSize="13"/>
+              </Border>
+              <CheckBox x:Name="AllowCdnFallbackCheck"
+                        Style="{StaticResource SiteCheckBoxStyle}"
+                        IsChecked="True"
+                        Margin="0,16,0,0">
+                <TextBlock Text="Allow CDN fallback for language packs (recommended when adding languages or proofing tools)"
+                           TextWrapping="Wrap"
+                           FontFamily="Inter, Segoe UI"
+                           FontSize="13"/>
+              </CheckBox>
             </StackPanel>
           </ScrollViewer>
         </TabItem>
@@ -933,7 +972,7 @@ try {
 # - ArchCombo: 32/64-bit; EditionCombo: custom products only
 # - VisioCheck / ProjectCheck, VisioProjectLineCombo: optional add-ons
 # - ChannelCombo, Updates* controls: update channel and ODT Updates element
-# - LangCombo + AdditionalLangList: primary and additional languages
+# - LangCombo + AdditionalLangList + ProofingLangList: primary, full LP, proofing-only; AllowCdnFallbackCheck
 # - SharedComputerCustomCheck: VDI licensing on custom M365 Apps path only
 # - UICombo: setup display level
 # - InstallButton: Primary action button to start installation
@@ -958,6 +997,8 @@ try {
     $channelProfileDefaultItem = $window.FindName("ChannelProfileDefaultItem")
     $langCombo = $window.FindName("LangCombo")
     $additionalLangList = $window.FindName("AdditionalLangList")
+    $proofingLangList = $window.FindName("ProofingLangList")
+    $allowCdnFallbackCheck = $window.FindName("AllowCdnFallbackCheck")
     $updatesEnabledCheck = $window.FindName("UpdatesEnabledCheck")
     $updatesTargetVersionBox = $window.FindName("UpdatesTargetVersionBox")
     $updatesDeadlineBox = $window.FindName("UpdatesDeadlineBox")
@@ -1112,16 +1153,25 @@ function Sync-LanguageComboFromProfile {
 }
 
 function Initialize-AdditionalLanguagesList {
-    if ($null -eq $additionalLangList) { return }
+    if ($null -eq $additionalLangList -and $null -eq $proofingLangList) { return }
     try {
-        $additionalLangList.Items.Clear()
+        if ($null -ne $additionalLangList) { $additionalLangList.Items.Clear() }
+        if ($null -ne $proofingLangList) { $proofingLangList.Items.Clear() }
         $incV = [bool]$visioCheck.IsChecked
         $incP = [bool]$projectCheck.IsChecked
         foreach ($lang in Get-M365AppsSupportedLanguages -IncludeVisio:$incV -IncludeProject:$incP) {
-            $item = New-Object System.Windows.Controls.ListBoxItem
-            $item.Content = $lang.Display
-            $item.Tag = $lang.Id
-            [void]$additionalLangList.Items.Add($item)
+            if ($null -ne $additionalLangList) {
+                $item = New-Object System.Windows.Controls.ListBoxItem
+                $item.Content = $lang.Display
+                $item.Tag = $lang.Id
+                [void]$additionalLangList.Items.Add($item)
+            }
+            if ($null -ne $proofingLangList) {
+                $itemP = New-Object System.Windows.Controls.ListBoxItem
+                $itemP.Content = $lang.Display
+                $itemP.Tag = $lang.Id
+                [void]$proofingLangList.Items.Add($itemP)
+            }
         }
     } catch {
         [System.Windows.Forms.MessageBox]::Show(
@@ -1139,6 +1189,22 @@ function Get-SelectedAdditionalLanguageIds {
     $primary = if ($PrimaryId) { $PrimaryId.ToLowerInvariant() } else { '' }
     $ids = New-Object System.Collections.Generic.List[string]
     foreach ($o in $additionalLangList.SelectedItems) {
+        if ($null -eq $o) { continue }
+        $id = [string]$o.Tag
+        if ([string]::IsNullOrWhiteSpace($id)) { continue }
+        $lc = $id.ToLowerInvariant()
+        if ($lc -eq $primary) { continue }
+        if (-not $ids.Contains($lc)) { [void]$ids.Add($lc) }
+    }
+    return ,$ids.ToArray()
+}
+
+function Get-SelectedProofingLanguageIds {
+    param([string]$PrimaryId)
+    if ($null -eq $proofingLangList) { return @() }
+    $primary = if ($PrimaryId) { $PrimaryId.ToLowerInvariant() } else { '' }
+    $ids = New-Object System.Collections.Generic.List[string]
+    foreach ($o in $proofingLangList.SelectedItems) {
         if ($null -eq $o) { continue }
         $id = [string]$o.Tag
         if ([string]::IsNullOrWhiteSpace($id)) { continue }
@@ -1270,6 +1336,25 @@ function Test-SystemRequirements {
     return $true
 }
 
+function Invoke-OdtPostWriteProofingAndCdn {
+    param(
+        [Parameter(Mandatory)]
+        [string]$DestinationPath,
+        [Parameter(Mandatory)]
+        [hashtable]$Options
+    )
+    $proof = @()
+    if ($Options.ContainsKey('proofingToolsLanguageIds') -and $null -ne $Options.proofingToolsLanguageIds) {
+        $proof = @($Options.proofingToolsLanguageIds)
+    }
+    $cdn = $false
+    if ($Options.ContainsKey('allowCdnFallback')) {
+        $cdn = [bool]$Options.allowCdnFallback
+    }
+    Add-M365AppsProofingToolsProductAndCdnToConfigurationFile -Path $DestinationPath `
+        -ProofingToolsLanguageIds $proof -AllowCdnFallback $cdn
+}
+
 function Export-OdtConfigFromOptionsToPath {
     <#
     .SYNOPSIS
@@ -1299,6 +1384,7 @@ function Export-OdtConfigFromOptionsToPath {
                 -IncludeVisio:($Options.visio -eq '1') -IncludeProject:($Options.project -eq '1') `
                 -VisioProjectLine $Options.visioProjectLine -AdditionalLanguageIds @($Options.additionalLanguageIds)
         }
+        Invoke-OdtPostWriteProofingAndCdn -DestinationPath $DestinationPath -Options $Options
         return
     }
     Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $Options.language `
@@ -1314,6 +1400,7 @@ function Export-OdtConfigFromOptionsToPath {
             -IncludeVisio:($Options.visio -eq '1') -IncludeProject:($Options.project -eq '1') -VisioProjectLine $vpl `
             -AdditionalLanguageIds $addLangs -UpdatesEnabled:$updEn -UpdatesTargetVersion $updTv -UpdatesDeadline $updDl
         [System.IO.File]::WriteAllText($DestinationPath, $xml, $enc)
+        Invoke-OdtPostWriteProofingAndCdn -DestinationPath $DestinationPath -Options $Options
         return
     }
     $sc = ($Options.sharedComputerCustom -eq $true)
@@ -1326,6 +1413,7 @@ function Export-OdtConfigFromOptionsToPath {
             -UpdatesEnabled:$updEn -UpdatesTargetVersion $updTv -UpdatesDeadline $updDl `
             -SharedComputerLicensing:$sc
         [System.IO.File]::WriteAllText($DestinationPath, $xml, $enc)
+        Invoke-OdtPostWriteProofingAndCdn -DestinationPath $DestinationPath -Options $Options
         return
     }
     $xml = New-M365AppsInteractiveConfiguration -ProductId $Options.edition -LanguageId $Options.language `
@@ -1335,6 +1423,7 @@ function Export-OdtConfigFromOptionsToPath {
         -UpdatesEnabled:$updEn -UpdatesTargetVersion $updTv -UpdatesDeadline $updDl `
         -SharedComputerLicensing:$sc
     [System.IO.File]::WriteAllText($DestinationPath, $xml, $enc)
+    Invoke-OdtPostWriteProofingAndCdn -DestinationPath $DestinationPath -Options $Options
 }
 
 function Build-UiInstallOptionsHashtable {
@@ -1363,6 +1452,8 @@ function Build-UiInstallOptionsHashtable {
         $vpl = [string]$visioProjectLineCombo.SelectedItem.Tag
     }
     $moreLangs = @(Get-SelectedAdditionalLanguageIds -PrimaryId $languageCode)
+    $proofLangs = @(Get-SelectedProofingLanguageIds -PrimaryId $languageCode)
+    $allowCdn = ($null -eq $allowCdnFallbackCheck) -or ($allowCdnFallbackCheck.IsChecked -eq $true)
     $updEn = ($null -eq $updatesEnabledCheck) -or ($updatesEnabledCheck.IsChecked -eq $true)
     $updTv = if ($updatesTargetVersionBox) { [string]$updatesTargetVersionBox.Text.Trim() } else { '' }
     $updDl = if ($updatesDeadlineBox) { [string]$updatesDeadlineBox.Text.Trim() } else { '' }
@@ -1416,6 +1507,8 @@ function Build-UiInstallOptionsHashtable {
             summaryLine = $summaryLine
             excludeAppIds = $ex
             additionalLanguageIds = $moreLangs
+            proofingToolsLanguageIds = $proofLangs
+            allowCdnFallback = $allowCdn
             updatesEnabled = $updEn
             updatesTargetVersion = $updTv
             updatesDeadline = $updDl
@@ -1446,6 +1539,8 @@ function Build-UiInstallOptionsHashtable {
         summaryLine = $summaryLine
         excludeAppIds = $excludeIds
         additionalLanguageIds = $moreLangs
+        proofingToolsLanguageIds = $proofLangs
+        allowCdnFallback = $allowCdn
         updatesEnabled = $updEn
         updatesTargetVersion = $updTv
         updatesDeadline = $updDl
@@ -1569,6 +1664,8 @@ function Restore-FullInstallUi {
     $channelCombo.IsEnabled = $true
     $langCombo.IsEnabled = $true
     if ($null -ne $additionalLangList) { $additionalLangList.IsEnabled = $true }
+    if ($null -ne $proofingLangList) { $proofingLangList.IsEnabled = $true }
+    if ($null -ne $allowCdnFallbackCheck) { $allowCdnFallbackCheck.IsEnabled = $true }
     if ($null -ne $updatesEnabledCheck) { $updatesEnabledCheck.IsEnabled = $true }
     if ($null -ne $updatesTargetVersionBox) { $updatesTargetVersionBox.IsEnabled = $true }
     if ($null -ne $updatesDeadlineBox) { $updatesDeadlineBox.IsEnabled = $true }
@@ -1602,6 +1699,8 @@ $installButton.Add_Click({
     $channelCombo.IsEnabled = $false
     $langCombo.IsEnabled = $false
     if ($null -ne $additionalLangList) { $additionalLangList.IsEnabled = $false }
+    if ($null -ne $proofingLangList) { $proofingLangList.IsEnabled = $false }
+    if ($null -ne $allowCdnFallbackCheck) { $allowCdnFallbackCheck.IsEnabled = $false }
     if ($null -ne $updatesEnabledCheck) { $updatesEnabledCheck.IsEnabled = $false }
     if ($null -ne $updatesTargetVersionBox) { $updatesTargetVersionBox.IsEnabled = $false }
     if ($null -ne $updatesDeadlineBox) { $updatesDeadlineBox.IsEnabled = $false }

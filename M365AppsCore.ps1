@@ -205,21 +205,38 @@ function Get-M365AppsVisioProjectProductIds {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('M365Retail', 'LTSC2021Volume', 'LTSC2024Volume', 'Office2024Retail')]
+        [ValidateSet(
+            'M365Retail', 'M365RetailStd',
+            'LTSC2021Volume', 'LTSC2021VolumeStd',
+            'LTSC2024Volume', 'LTSC2024VolumeStd',
+            'Office2024Retail', 'Office2024RetailStd'
+        )]
         [string]$Line
     )
     switch ($Line) {
         'M365Retail' {
             return @{ Visio = 'VisioProRetail'; Project = 'ProjectProRetail' }
         }
+        'M365RetailStd' {
+            return @{ Visio = 'VisioStdRetail'; Project = 'ProjectStdRetail' }
+        }
         'LTSC2021Volume' {
             return @{ Visio = 'VisioPro2021Volume'; Project = 'ProjectPro2021Volume' }
+        }
+        'LTSC2021VolumeStd' {
+            return @{ Visio = 'VisioStd2021Volume'; Project = 'ProjectStd2021Volume' }
         }
         'LTSC2024Volume' {
             return @{ Visio = 'VisioPro2024Volume'; Project = 'ProjectPro2024Volume' }
         }
+        'LTSC2024VolumeStd' {
+            return @{ Visio = 'VisioStd2024Volume'; Project = 'ProjectStd2024Volume' }
+        }
         'Office2024Retail' {
             return @{ Visio = 'VisioPro2024Retail'; Project = 'ProjectPro2024Retail' }
+        }
+        'Office2024RetailStd' {
+            return @{ Visio = 'VisioStd2024Retail'; Project = 'ProjectStd2024Retail' }
         }
     }
 }
@@ -545,6 +562,63 @@ function Merge-M365AppsLanguageIdList {
     return ,$list.ToArray()
 }
 
+function Add-M365AppsProofingToolsProductAndCdnToConfigurationFile {
+    <#
+    .SYNOPSIS
+        Adds optional ODT Product ID="ProofingTools" and/or AllowCdnFallback on Add (Microsoft Learn: proofing tools deployment).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        [string[]]$ProofingToolsLanguageIds,
+        [bool]$AllowCdnFallback = $false
+    )
+    $norm = New-Object System.Collections.Generic.List[string]
+    if ($ProofingToolsLanguageIds) {
+        $seen = @{}
+        foreach ($raw in $ProofingToolsLanguageIds) {
+            if ([string]::IsNullOrWhiteSpace($raw)) { continue }
+            $x = $raw.Trim().ToLowerInvariant()
+            if (-not $seen.ContainsKey($x)) {
+                $seen[$x] = $true
+                [void]$norm.Add($x)
+            }
+        }
+    }
+    $hasProofing = $norm.Count -gt 0
+    if (-not $AllowCdnFallback -and -not $hasProofing) { return }
+
+    [xml]$doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    $cfg = $doc.Configuration
+    if (-not $cfg) { throw 'Invalid ODT XML: missing Configuration root.' }
+    $add = $cfg.Add
+    if (-not $add) { throw 'Invalid ODT XML: Configuration/Add missing; cannot add proofing tools or CDN fallback.' }
+
+    if ($AllowCdnFallback) {
+        $add.SetAttribute('AllowCdnFallback', 'TRUE')
+    }
+
+    if ($hasProofing) {
+        foreach ($p in @($add.SelectNodes('Product'))) {
+            if ($p.GetAttribute('ID') -eq 'ProofingTools') {
+                [void]$add.RemoveChild($p)
+            }
+        }
+        $prod = $doc.CreateElement('Product')
+        $prod.SetAttribute('ID', 'ProofingTools')
+        foreach ($lid in ($norm | Sort-Object)) {
+            $lang = $doc.CreateElement('Language')
+            $lang.SetAttribute('ID', $lid)
+            [void]$prod.AppendChild($lang)
+        }
+        [void]$add.AppendChild($prod)
+    }
+
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Resolve-Path -LiteralPath $Path).Path, $doc.OuterXml, $utf8NoBom)
+}
+
 function New-M365AppsUninstallConfigurationXml {
     <#
     .SYNOPSIS
@@ -752,7 +826,12 @@ function Add-M365AppsOptionalVisioProjectProducts {
         [switch]$IncludeVisio,
         [switch]$IncludeProject,
         [Parameter(Mandatory)]
-        [ValidateSet('M365Retail', 'LTSC2021Volume', 'LTSC2024Volume', 'Office2024Retail')]
+        [ValidateSet(
+            'M365Retail', 'M365RetailStd',
+            'LTSC2021Volume', 'LTSC2021VolumeStd',
+            'LTSC2024Volume', 'LTSC2024VolumeStd',
+            'Office2024Retail', 'Office2024RetailStd'
+        )]
         [string]$VisioProjectLine,
         [string[]]$AdditionalLanguageIds = @()
     )
@@ -835,7 +914,12 @@ function New-M365AppsInteractiveConfiguration {
         [switch]$IncludeVisio,
         [switch]$IncludeProject,
         [Parameter()]
-        [ValidateSet('M365Retail', 'LTSC2021Volume', 'LTSC2024Volume', 'Office2024Retail')]
+        [ValidateSet(
+            'M365Retail', 'M365RetailStd',
+            'LTSC2021Volume', 'LTSC2021VolumeStd',
+            'LTSC2024Volume', 'LTSC2024VolumeStd',
+            'Office2024Retail', 'Office2024RetailStd'
+        )]
         [string]$VisioProjectLine,
         [switch]$AutoActivate,
         [string[]]$ExcludeAppIds,
