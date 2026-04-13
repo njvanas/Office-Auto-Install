@@ -541,6 +541,7 @@ $xaml = @"
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
     <!-- Header (site nav: logo tile + title) -->
@@ -622,7 +623,7 @@ $xaml = @"
                      Foreground="{StaticResource SiteTextBrush}"
                      FontFamily="Inter, Segoe UI"
                      Margin="0,0,0,12"/>
-          <TextBlock Text="Maps to the ODT &lt;Add Channel=&quot;…&quot;&gt; attribute. Optional Version pins a build."
+          <TextBlock Text="Maps to the ODT &lt;Add Channel=&quot;...&quot;&gt; attribute. Optional Version pins a build."
                      FontSize="12"
                      Foreground="{StaticResource SiteTextMutedBrush}"
                      FontFamily="Inter, Segoe UI"
@@ -674,7 +675,7 @@ $xaml = @"
               <ComboBox x:Name="ProductSuiteCombo" Style="{StaticResource SiteComboBoxStyle}">
                 <ComboBoxItem Content="Microsoft 365 Apps for enterprise" IsSelected="True"/>
                 <ComboBoxItem Content="Microsoft 365 Apps for business"/>
-                <ComboBoxItem Content="Other products (Office 2024, LTSC, Visio/Project only, …)"/>
+                <ComboBoxItem Content="Other products (Office 2024, LTSC, Visio/Project only, ...)"/>
               </ComboBox>
               <StackPanel x:Name="DeploymentTargetPanel" Margin="0,16,0,0">
                 <TextBlock Text="How will this installation be used?"
@@ -1151,14 +1152,13 @@ $xaml = @"
       </TabControl>
     </ScrollViewer>
 
-    <Border x:Name="StatusPanel" Grid.Row="1"
+    <Border x:Name="StatusPanel" Grid.Row="2"
             Background="{StaticResource SitePanelBrush}"
             Visibility="Collapsed"
-            VerticalAlignment="Bottom"
-            Margin="40,0,40,100"
+            Margin="28,0,28,0"
             BorderBrush="{StaticResource SiteBorderBrush}"
             BorderThickness="0,1,0,0"
-            Padding="0,12,0,0">
+            Padding="0,12,0,12">
       <StackPanel Margin="0,4">
         <ProgressBar x:Name="ProgressBar" Style="{StaticResource SiteProgressBarStyle}" Margin="0,0,0,10"/>
         <TextBlock x:Name="StatusLabel"
@@ -1168,7 +1168,7 @@ $xaml = @"
       </StackPanel>
     </Border>
 
-    <Border Grid.Row="2"
+    <Border Grid.Row="3"
             Background="{StaticResource SiteHeaderBrush}"
             BorderBrush="{StaticResource SiteBorderBrush}"
             BorderThickness="0,1,0,0"
@@ -1452,10 +1452,10 @@ function Get-PortalDeploymentSummaryLabel {
     )
     if ($RetailProfile) {
         switch ($RetailProfile) {
-            'EnterprisePhysical' { return 'Microsoft 365 Apps for enterprise · this device' }
-            'EnterpriseVDI' { return 'Microsoft 365 Apps for enterprise · shared computer / VDI' }
-            'BusinessPhysical' { return 'Microsoft 365 Apps for business · this device' }
-            'BusinessVDI' { return 'Microsoft 365 Apps for business · shared computer / VDI' }
+            'EnterprisePhysical' { return 'Microsoft 365 Apps for enterprise - this device' }
+            'EnterpriseVDI' { return 'Microsoft 365 Apps for enterprise - shared computer / VDI' }
+            'BusinessPhysical' { return 'Microsoft 365 Apps for business - this device' }
+            'BusinessVDI' { return 'Microsoft 365 Apps for business - shared computer / VDI' }
         }
     }
     return "Other products: $EditionName"
@@ -2173,6 +2173,10 @@ function Install-Office {
 
 function Restore-FullInstallUi {
     $installButton.IsEnabled = $true
+    if ($null -ne $statusPanel) {
+        $statusPanel.Visibility = 'Collapsed'
+        if ($null -ne $progressBar) { $progressBar.Value = 0 }
+    }
     if ($null -ne $mainTabControl) { $mainTabControl.IsEnabled = $true }
     $productSuiteCombo.IsEnabled = $true
     if ($null -ne $deploymentTargetCombo) { $deploymentTargetCombo.IsEnabled = $true }
