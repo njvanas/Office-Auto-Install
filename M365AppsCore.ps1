@@ -361,6 +361,7 @@ function Assert-M365AppsLanguageCompatibleWithDeployment {
         [switch]$CustomIncludeProject
     )
     $id = $LanguageId.ToLowerInvariant()
+    if ($id -eq 'matchos') { return }
     $useVpRule =
         ($Preset -in $script:M365AppsVisioProjectPresetNames) -or
         ($CustomIncludeVisio -or $CustomIncludeProject)
@@ -551,12 +552,21 @@ function Merge-M365AppsLanguageIdList {
         [string[]]$AdditionalLanguageIds
     )
     $list = New-Object System.Collections.Generic.List[string]
-    [void]$list.Add($PrimaryLanguageId.Trim().ToLowerInvariant())
+    $p = $PrimaryLanguageId.Trim()
+    if ($p -match '(?i)^matchos$') {
+        [void]$list.Add('MatchOS')
+    } else {
+        [void]$list.Add($p.ToLowerInvariant())
+    }
     if ($AdditionalLanguageIds) {
         foreach ($a in $AdditionalLanguageIds) {
             if ([string]::IsNullOrWhiteSpace($a)) { continue }
             $x = $a.Trim().ToLowerInvariant()
-            if (-not $list.Contains($x)) { [void]$list.Add($x) }
+            if ($x -eq 'matchos') { $x = 'MatchOS' }
+            if (-not $list.Contains($x)) {
+                if ($x -eq 'MatchOS') { [void]$list.Add('MatchOS') }
+                else { [void]$list.Add($x) }
+            }
         }
     }
     return ,$list.ToArray()
@@ -615,6 +625,78 @@ function Add-M365AppsProofingToolsProductAndCdnToConfigurationFile {
         [void]$add.AppendChild($prod)
     }
 
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Resolve-Path -LiteralPath $Path).Path, $doc.OuterXml, $utf8NoBom)
+}
+
+function Add-M365AppsLanguagePackProductToConfigurationFile {
+    <#
+    .SYNOPSIS
+        Adds ODT Product ID="LanguagePack" for partial/add-on language packs (portal "Partial" languages).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        [string[]]$LanguagePackLanguageIds
+    )
+    $norm = New-Object System.Collections.Generic.List[string]
+    if ($LanguagePackLanguageIds) {
+        $seen = @{}
+        foreach ($raw in $LanguagePackLanguageIds) {
+            if ([string]::IsNullOrWhiteSpace($raw)) { continue }
+            $x = $raw.Trim().ToLowerInvariant()
+            if ($x -eq 'matchos') { continue }
+            if (-not $seen.ContainsKey($x)) {
+                $seen[$x] = $true
+                [void]$norm.Add($x)
+            }
+        }
+    }
+    if ($norm.Count -eq 0) { return }
+
+    [xml]$doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    $add = $doc.Configuration.Add
+    if (-not $add) { throw 'Invalid ODT XML: Configuration/Add missing; cannot add LanguagePack product.' }
+    foreach ($p in @($add.SelectNodes('Product'))) {
+        if ($p.GetAttribute('ID') -eq 'LanguagePack') {
+            [void]$add.RemoveChild($p)
+        }
+    }
+    $prod = $doc.CreateElement('Product')
+    $prod.SetAttribute('ID', 'LanguagePack')
+    foreach ($lid in ($norm | Sort-Object)) {
+        $lang = $doc.CreateElement('Language')
+        $lang.SetAttribute('ID', $lid)
+        [void]$prod.AppendChild($lang)
+    }
+    [void]$add.AppendChild($prod)
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Resolve-Path -LiteralPath $Path).Path, $doc.OuterXml, $utf8NoBom)
+}
+
+function Set-M365AppsConfigurationAddExtendedAttributes {
+    <#
+    .SYNOPSIS
+        Sets optional Add attributes (Version, SourcePath) on an ODT configuration file.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        [string]$Version,
+        [string]$SourcePath
+    )
+    if (-not $Version -and -not $SourcePath) { return }
+    [xml]$doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    $add = $doc.Configuration.Add
+    if (-not $add) { throw 'Invalid ODT XML: Configuration/Add missing.' }
+    if ($Version -and $Version.Trim()) {
+        $add.SetAttribute('Version', $Version.Trim())
+    }
+    if ($null -ne $SourcePath -and $SourcePath.Trim()) {
+        $add.SetAttribute('SourcePath', $SourcePath.Trim())
+    }
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText((Resolve-Path -LiteralPath $Path).Path, $doc.OuterXml, $utf8NoBom)
 }
@@ -927,7 +1009,10 @@ function New-M365AppsInteractiveConfiguration {
         [bool]$UpdatesEnabled = $true,
         [string]$UpdatesTargetVersion,
         [string]$UpdatesDeadline,
-        [switch]$SharedComputerLicensing
+        [switch]$SharedComputerLicensing,
+        [bool]$ForceAppShutdown = $true,
+        [ValidateSet('TRUE', 'FALSE')]
+        [string]$AcceptEULA = 'TRUE'
     )
     if ($PSCmdlet.ParameterSetName -eq 'AddOnsOnly') {
         if (-not $IncludeVisio -and -not $IncludeProject) {
@@ -988,7 +1073,9 @@ function New-M365AppsInteractiveConfiguration {
 
     $props = @()
     if ($PSCmdlet.ParameterSetName -eq 'Suite') {
-        $props += '  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />'
+        if ($ForceAppShutdown) {
+            $props += '  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />'
+        }
         if ($SharedComputerLicensing) {
             $props += '  <Property Name="SharedComputerLicensing" Value="1" />'
         }
@@ -1005,7 +1092,7 @@ function New-M365AppsInteractiveConfiguration {
     $($products -join "`n    ")
   </Add>
 $updatesLine
-  <Display Level="$DisplayLevel" AcceptEULA="TRUE" />$propsBlock
+  <Display Level="$DisplayLevel" AcceptEULA="$AcceptEULA" />$propsBlock
 </Configuration>
 "@
 }
@@ -1051,7 +1138,11 @@ function New-M365AppsO365Configuration {
         [string[]]$AdditionalExcludeAppIds,
         [bool]$UpdatesEnabled = $true,
         [string]$UpdatesTargetVersion,
-        [string]$UpdatesDeadline
+        [string]$UpdatesDeadline,
+        [bool]$ForceAppShutdown = $true,
+        [ValidateSet('TRUE', 'FALSE')]
+        [string]$AcceptEULA = 'TRUE',
+        [switch]$AutoActivate
     )
     $productId = if ($O365Sku -eq 'Enterprise') { 'O365ProPlusRetail' } else { 'O365BusinessRetail' }
     $resolvedChannel = $Channel
@@ -1083,6 +1174,7 @@ function New-M365AppsO365Configuration {
     }
     $excBlock = if ($excLines.Count) { "`n$($excLines -join "`n")" } else { '' }
     $vdiProps = if ($Vdi) { "`n  <Property Name=`"SharedComputerLicensing`" Value=`"1`" />" } else { '' }
+    $autoActProp = if ($AutoActivate) { "`n  <Property Name=`"AUTOACTIVATE`" Value=`"1`" />" } else { '' }
     $langIds = Merge-M365AppsLanguageIdList -PrimaryLanguageId $LanguageId -AdditionalLanguageIds $AdditionalLanguageIds
     $langLines = @()
     foreach ($lid in $langIds) {
@@ -1099,8 +1191,8 @@ $langBlock$excBlock
     </Product>
   </Add>
 $updatesLine
-  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />$vdiProps
-  <Display Level="$DisplayLevel" AcceptEULA="TRUE" />
+$(if ($ForceAppShutdown) { '  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />' } else { '' })$vdiProps$autoActProp
+  <Display Level="$DisplayLevel" AcceptEULA="$AcceptEULA" />
 </Configuration>
 "@
 }
@@ -1125,7 +1217,11 @@ function New-M365AppsO365ConfigurationForRetailProfile {
         [string[]]$AdditionalExcludeAppIds,
         [bool]$UpdatesEnabled = $true,
         [string]$UpdatesTargetVersion,
-        [string]$UpdatesDeadline
+        [string]$UpdatesDeadline,
+        [bool]$ForceAppShutdown = $true,
+        [ValidateSet('TRUE', 'FALSE')]
+        [string]$AcceptEULA = 'TRUE',
+        [switch]$AutoActivate
     )
     $sku = 'Enterprise'
     $vdi = $false
@@ -1138,7 +1234,8 @@ function New-M365AppsO365ConfigurationForRetailProfile {
     New-M365AppsO365Configuration -O365Sku $sku -Vdi:$vdi -OfficeClientEdition $OfficeClientEdition `
         -Channel $Channel -LanguageId $LanguageId -AdditionalLanguageIds $AdditionalLanguageIds -DisplayLevel $DisplayLevel `
         -AdditionalExcludeAppIds $AdditionalExcludeAppIds -UpdatesEnabled:$UpdatesEnabled `
-        -UpdatesTargetVersion $UpdatesTargetVersion -UpdatesDeadline $UpdatesDeadline
+        -UpdatesTargetVersion $UpdatesTargetVersion -UpdatesDeadline $UpdatesDeadline `
+        -ForceAppShutdown:$ForceAppShutdown -AcceptEULA $AcceptEULA -AutoActivate:$AutoActivate
 }
 
 function Resolve-M365AppsLegacyO365PresetNameToRetailProfile {

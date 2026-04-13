@@ -198,9 +198,9 @@ $xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Office Auto Installer"
-        Width="920" Height="1120"
+        Width="960" MinWidth="880" Height="1100" MinHeight="760"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize">
+        ResizeMode="CanResize">
   <Window.Background>
     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
       <GradientStop Color="#0F172A" Offset="0"/>
@@ -530,7 +530,7 @@ $xaml = @"
                      FontWeight="Bold"
                      Foreground="{StaticResource SiteAccentBrush}"
                      FontFamily="Inter, Segoe UI"/>
-          <TextBlock Text="Offline deployment settings (like Microsoft 365 admin center) — generates ODT XML and installs with setup.exe"
+          <TextBlock Text="Local Office Customization Tool — same configuration sections as config.office.com (no Import); generates ODT XML for setup.exe"
                      FontSize="12"
                      Foreground="{StaticResource SiteTextMutedBrush}"
                      FontFamily="Inter, Segoe UI"
@@ -547,9 +547,70 @@ $xaml = @"
                   Background="Transparent"
                   BorderThickness="0"
                   ItemContainerStyle="{StaticResource SiteTabItemStyle}">
-        <TabItem Header="Products &amp; apps">
+        <TabItem Header="Products &amp; releases">
           <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,8,0">
             <StackPanel Margin="12,4,12,20">
+
+        <StackPanel Margin="0,0,0,20">
+          <TextBlock Text="Architecture"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,12"/>
+          <TextBlock Text="32-bit or 64-bit Office (ODT OfficeClientEdition)."
+                     FontSize="12"
+                     Foreground="{StaticResource SiteTextMutedBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,10"
+                     TextWrapping="Wrap"/>
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
+            <ComboBox x:Name="ArchCombo" Style="{StaticResource SiteComboBoxStyle}">
+              <ComboBoxItem Content="64-bit (recommended)" IsSelected="True"/>
+              <ComboBoxItem Content="32-bit (older systems)"/>
+            </ComboBox>
+          </Border>
+        </StackPanel>
+
+        <StackPanel Margin="0,0,0,20">
+          <TextBlock Text="Update channel &amp; version"
+                     FontSize="15" FontWeight="SemiBold"
+                     Foreground="{StaticResource SiteTextBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,12"/>
+          <TextBlock Text="Maps to the ODT &lt;Add Channel=&quot;…&quot;&gt; attribute. Optional Version pins a build."
+                     FontSize="12"
+                     Foreground="{StaticResource SiteTextMutedBrush}"
+                     FontFamily="Inter, Segoe UI"
+                     Margin="0,0,0,10"
+                     TextWrapping="Wrap"/>
+          <Border Background="{StaticResource SiteCardBrush}"
+                  BorderBrush="{StaticResource SiteBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="20,16">
+            <StackPanel>
+              <ComboBox x:Name="ChannelCombo" Style="{StaticResource SiteComboBoxStyle}" Margin="0,0,0,14"/>
+              <TextBlock Text="Version to deploy (optional, ODT Add Version=)"
+                         FontSize="12"
+                         Foreground="{StaticResource SiteTextMutedBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,0,0,6"/>
+              <TextBox x:Name="DeployVersionBox"
+                       MinHeight="36"
+                       Padding="10,8"
+                       FontFamily="Consolas, Segoe UI"
+                       FontSize="12"
+                       Background="{StaticResource SiteControlBrush}"
+                       Foreground="{StaticResource SiteTextBodyBrush}"
+                       BorderBrush="{StaticResource SiteBorderBrush}"
+                       BorderThickness="1"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
 
         <StackPanel Margin="0,0,0,20">
           <TextBlock Text="Products"
@@ -702,12 +763,12 @@ $xaml = @"
                              TextWrapping="Wrap"/>
                 </StackPanel>
               </Border>
-              <TextBlock Text="Additional languages (optional)"
+              <TextBlock Text="Additional languages — full (optional)"
                          FontSize="15" FontWeight="SemiBold"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
                          Margin="0,20,0,12"/>
-              <TextBlock Text="Ctrl+click to multi-select. Added as extra Language elements in the ODT configuration."
+              <TextBlock Text="Ctrl+click to multi-select. Full UI language packs: extra &lt;Language&gt; on the suite (portal &quot;Full&quot; column)."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -722,6 +783,32 @@ $xaml = @"
                          SelectionMode="Extended"
                          MinHeight="200"
                          MaxHeight="280"
+                         Background="{StaticResource SiteControlBrush}"
+                         BorderBrush="{StaticResource SiteBorderBrush}"
+                         Foreground="{StaticResource SiteTextBodyBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         FontSize="13"/>
+              </Border>
+              <TextBlock Text="Additional languages — partial (optional)"
+                         FontSize="15" FontWeight="SemiBold"
+                         Foreground="{StaticResource SiteTextBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,20,0,12"/>
+              <TextBlock Text="Partial language UI packs use ODT Product ID=&quot;LanguagePack&quot; (portal &quot;Partial&quot;)."
+                         FontSize="12"
+                         Foreground="{StaticResource SiteTextMutedBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,0,0,10"
+                         TextWrapping="Wrap"/>
+              <Border Background="{StaticResource SiteCardBrush}"
+                      BorderBrush="{StaticResource SiteBorderBrush}"
+                      BorderThickness="1"
+                      CornerRadius="12"
+                      Padding="12,12">
+                <ListBox x:Name="PartialLangList"
+                         SelectionMode="Extended"
+                         MinHeight="140"
+                         MaxHeight="220"
                          Background="{StaticResource SiteControlBrush}"
                          BorderBrush="{StaticResource SiteBorderBrush}"
                          Foreground="{StaticResource SiteTextBodyBrush}"
@@ -754,44 +841,13 @@ $xaml = @"
                          FontFamily="Inter, Segoe UI"
                          FontSize="13"/>
               </Border>
-              <CheckBox x:Name="AllowCdnFallbackCheck"
-                        Style="{StaticResource SiteCheckBoxStyle}"
-                        IsChecked="True"
-                        Margin="0,16,0,0">
-                <TextBlock Text="Allow CDN fallback for language packs (recommended when adding languages or proofing tools)"
-                           TextWrapping="Wrap"
-                           FontFamily="Inter, Segoe UI"
-                           FontSize="13"/>
-              </CheckBox>
             </StackPanel>
           </ScrollViewer>
         </TabItem>
 
-        <TabItem Header="Updates">
+        <TabItem Header="Update &amp; upgrade">
           <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,8,0">
             <StackPanel Margin="12,4,12,20">
-              <TextBlock Text="Update channel"
-                         FontSize="15" FontWeight="SemiBold"
-                         Foreground="{StaticResource SiteTextBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         Margin="0,0,0,12"/>
-              <TextBlock Text="Microsoft 365 Apps for enterprise/business can follow the recommended channel for your selection, or use an override."
-                         FontSize="12"
-                         Foreground="{StaticResource SiteTextMutedBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         Margin="0,0,0,10"
-                         TextWrapping="Wrap"/>
-              <Border Background="{StaticResource SiteCardBrush}"
-                      BorderBrush="{StaticResource SiteBorderBrush}"
-                      BorderThickness="1"
-                      CornerRadius="12"
-                      Padding="20,16">
-                <ComboBox x:Name="ChannelCombo" Style="{StaticResource SiteComboBoxStyle}">
-                  <ComboBoxItem x:Name="ChannelProfileDefaultItem" Content="Use recommended default channel for this product" IsSelected="True"/>
-                  <ComboBoxItem Content="Monthly / Current (override)"/>
-                  <ComboBoxItem Content="Semi-annual Enterprise (override)"/>
-                </ComboBox>
-              </Border>
               <TextBlock Text="Microsoft apps updates"
                          FontSize="15" FontWeight="SemiBold"
                          Foreground="{StaticResource SiteTextBrush}"
@@ -845,21 +901,45 @@ $xaml = @"
         <TabItem Header="Installation">
           <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,8,0">
             <StackPanel Margin="12,4,12,20">
-              <TextBlock Text="Architecture"
+              <TextBlock Text="Install source"
                          FontSize="15" FontWeight="SemiBold"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
                          Margin="0,0,0,12"/>
+              <TextBlock Text="Office CDN (default) or a local/network path for staged bits (ODT SourcePath)."
+                         FontSize="12"
+                         Foreground="{StaticResource SiteTextMutedBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,0,0,10"
+                         TextWrapping="Wrap"/>
               <Border Background="{StaticResource SiteCardBrush}"
                       BorderBrush="{StaticResource SiteBorderBrush}"
                       BorderThickness="1"
                       CornerRadius="12"
                       Padding="20,16">
-                <ComboBox x:Name="ArchCombo" Style="{StaticResource SiteComboBoxStyle}">
-                  <ComboBoxItem Content="64-bit (recommended)" IsSelected="True"/>
-                  <ComboBoxItem Content="32-bit (older systems)"/>
-                </ComboBox>
+                <StackPanel>
+                  <RadioButton x:Name="InstallSourceCdnRadio" GroupName="InstallSource" Content="Office Content Delivery Network (CDN)" IsChecked="True" Margin="0,0,0,10" Foreground="{StaticResource SiteTextBodyBrush}" FontFamily="Inter, Segoe UI"/>
+                  <RadioButton x:Name="InstallSourceLocalRadio" GroupName="InstallSource" Content="Local or network source" Margin="0,0,0,10" Foreground="{StaticResource SiteTextBodyBrush}" FontFamily="Inter, Segoe UI"/>
+                  <TextBox x:Name="InstallSourcePathBox"
+                           MinHeight="36"
+                           Padding="10,8"
+                           FontFamily="Consolas, Segoe UI"
+                           FontSize="12"
+                           IsEnabled="False"
+                           Background="{StaticResource SiteControlBrush}"
+                           Foreground="{StaticResource SiteTextBodyBrush}"
+                           BorderBrush="{StaticResource SiteBorderBrush}"
+                           BorderThickness="1"/>
+                </StackPanel>
               </Border>
+              <CheckBox x:Name="AllowCdnFallbackCheck" Style="{StaticResource SiteCheckBoxStyle}" IsChecked="True" Margin="0,16,0,0">
+                <TextBlock Text="Fallback to the CDN for missing languages (ODT AllowCdnFallback)"
+                           TextWrapping="Wrap" FontFamily="Inter, Segoe UI" FontSize="13"/>
+              </CheckBox>
+              <CheckBox x:Name="ForceShutdownCheck" Style="{StaticResource SiteCheckBoxStyle}" IsChecked="True" Margin="0,12,0,0">
+                <TextBlock Text="Shut down running Office applications (FORCEAPPSHUTDOWN)"
+                           TextWrapping="Wrap" FontFamily="Inter, Segoe UI" FontSize="13"/>
+              </CheckBox>
               <StackPanel x:Name="SharedComputerCustomPanel" Margin="0,20,0,0" Visibility="Collapsed">
                 <TextBlock Text="Licensing (custom path: Microsoft 365 Apps only)"
                            FontSize="15" FontWeight="SemiBold"
@@ -894,6 +974,96 @@ $xaml = @"
                   <ComboBoxItem Content="Show installation progress (recommended)" IsSelected="True"/>
                   <ComboBoxItem Content="Install quietly in the background"/>
                 </ComboBox>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Licensing &amp; activation">
+          <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,8,0">
+            <StackPanel Margin="12,4,12,20">
+              <TextBlock Text="Activation &amp; license terms"
+                         FontSize="15" FontWeight="SemiBold"
+                         Foreground="{StaticResource SiteTextBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,0,0,12"/>
+              <TextBlock Text="Maps to ODT Property elements (AUTOACTIVATE, Display AcceptEULA). Shared computer licensing for Microsoft 365 Apps is also under Products (custom path) or deployment target (retail)."
+                         FontSize="12"
+                         Foreground="{StaticResource SiteTextMutedBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,0,0,10"
+                         TextWrapping="Wrap"/>
+              <Border Background="{StaticResource SiteCardBrush}"
+                      BorderBrush="{StaticResource SiteBorderBrush}"
+                      BorderThickness="1"
+                      CornerRadius="12"
+                      Padding="20,16">
+                <StackPanel>
+                  <CheckBox x:Name="AutoActivateCheck" Style="{StaticResource SiteCheckBoxStyle}" IsChecked="True" Margin="0,0,0,12">
+                    <TextBlock Text="Automatically activate (AUTOACTIVATE)" TextWrapping="Wrap" FontFamily="Inter, Segoe UI" FontSize="13"/>
+                  </CheckBox>
+                  <CheckBox x:Name="AcceptEulaCheck" Style="{StaticResource SiteCheckBoxStyle}" IsChecked="True">
+                    <TextBlock Text="Accept the Microsoft Software License Terms (Display AcceptEULA)" TextWrapping="Wrap" FontFamily="Inter, Segoe UI" FontSize="13"/>
+                  </CheckBox>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="General">
+          <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,8,0">
+            <StackPanel Margin="12,4,12,20">
+              <TextBlock Text="Documentation"
+                         FontSize="15" FontWeight="SemiBold"
+                         Foreground="{StaticResource SiteTextBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,0,0,12"/>
+              <TextBlock Text="Optional labels for your records (not required for setup.exe). You can describe this deployment in your own change management."
+                         FontSize="12"
+                         Foreground="{StaticResource SiteTextMutedBrush}"
+                         FontFamily="Inter, Segoe UI"
+                         Margin="0,0,0,10"
+                         TextWrapping="Wrap"/>
+              <Border Background="{StaticResource SiteCardBrush}"
+                      BorderBrush="{StaticResource SiteBorderBrush}"
+                      BorderThickness="1"
+                      CornerRadius="12"
+                      Padding="20,16">
+                <StackPanel>
+                  <TextBlock Text="Organization / project label (optional)"
+                             FontSize="12"
+                             Foreground="{StaticResource SiteTextMutedBrush}"
+                             FontFamily="Inter, Segoe UI"
+                             Margin="0,0,0,6"/>
+                  <TextBox x:Name="GeneralOrgBox"
+                           MinHeight="36"
+                           Padding="10,8"
+                           FontFamily="Inter, Segoe UI"
+                           FontSize="13"
+                           Background="{StaticResource SiteControlBrush}"
+                           Foreground="{StaticResource SiteTextBodyBrush}"
+                           BorderBrush="{StaticResource SiteBorderBrush}"
+                           BorderThickness="1"
+                           Margin="0,0,0,14"/>
+                  <TextBlock Text="Description (optional)"
+                             FontSize="12"
+                             Foreground="{StaticResource SiteTextMutedBrush}"
+                             FontFamily="Inter, Segoe UI"
+                             Margin="0,0,0,6"/>
+                  <TextBox x:Name="GeneralDescriptionBox"
+                           MinHeight="72"
+                           Padding="10,8"
+                           TextWrapping="Wrap"
+                           AcceptsReturn="True"
+                           VerticalScrollBarVisibility="Auto"
+                           FontFamily="Inter, Segoe UI"
+                           FontSize="13"
+                           Background="{StaticResource SiteControlBrush}"
+                           Foreground="{StaticResource SiteTextBodyBrush}"
+                           BorderBrush="{StaticResource SiteBorderBrush}"
+                           BorderThickness="1"/>
+                </StackPanel>
               </Border>
             </StackPanel>
           </ScrollViewer>
@@ -994,10 +1164,19 @@ try {
     $visioProjectLinePanel = $window.FindName("VisioProjectLinePanel")
     $visioProjectLineCombo = $window.FindName("VisioProjectLineCombo")
     $channelCombo = $window.FindName("ChannelCombo")
-    $channelProfileDefaultItem = $window.FindName("ChannelProfileDefaultItem")
     $langCombo = $window.FindName("LangCombo")
     $additionalLangList = $window.FindName("AdditionalLangList")
     $proofingLangList = $window.FindName("ProofingLangList")
+    $partialLangList = $window.FindName("PartialLangList")
+    $deployVersionBox = $window.FindName("DeployVersionBox")
+    $installSourceCdnRadio = $window.FindName("InstallSourceCdnRadio")
+    $installSourceLocalRadio = $window.FindName("InstallSourceLocalRadio")
+    $installSourcePathBox = $window.FindName("InstallSourcePathBox")
+    $forceShutdownCheck = $window.FindName("ForceShutdownCheck")
+    $autoActivateCheck = $window.FindName("AutoActivateCheck")
+    $acceptEulaCheck = $window.FindName("AcceptEulaCheck")
+    $generalOrgBox = $window.FindName("GeneralOrgBox")
+    $generalDescriptionBox = $window.FindName("GeneralDescriptionBox")
     $allowCdnFallbackCheck = $window.FindName("AllowCdnFallbackCheck")
     $updatesEnabledCheck = $window.FindName("UpdatesEnabledCheck")
     $updatesTargetVersionBox = $window.FindName("UpdatesTargetVersionBox")
@@ -1040,6 +1219,38 @@ foreach ($item in Get-M365AppsExcludeAppCatalog) {
     $cb.Margin = '0,4,16,4'
     if ($cbStyle) { $cb.Style = $cbStyle }
     [void]$excludeAppsPanel.Children.Add($cb)
+}
+
+function Initialize-PortalChannelCombo {
+    if ($null -eq $channelCombo) { return }
+    $channelCombo.Items.Clear()
+    $def = New-Object System.Windows.Controls.ComboBoxItem
+    $def.Content = 'Profile default (channel from deployment target / SKU)'
+    $def.Tag = ''
+    [void]$channelCombo.Items.Add($def)
+    foreach ($ch in $script:M365AppsValidOdtAddChannelValues) {
+        $it = New-Object System.Windows.Controls.ComboBoxItem
+        $it.Content = $ch
+        $it.Tag = $ch
+        [void]$channelCombo.Items.Add($it)
+    }
+    $channelCombo.SelectedIndex = 0
+}
+
+Initialize-PortalChannelCombo
+
+function Sync-InstallSourcePathUi {
+    if ($null -eq $installSourcePathBox) { return }
+    $local = ($null -ne $installSourceLocalRadio -and $installSourceLocalRadio.IsChecked -eq $true)
+    $installSourcePathBox.IsEnabled = $local
+}
+
+Sync-InstallSourcePathUi
+if ($null -ne $installSourceCdnRadio) {
+    $installSourceCdnRadio.Add_Checked({ Sync-InstallSourcePathUi })
+}
+if ($null -ne $installSourceLocalRadio) {
+    $installSourceLocalRadio.Add_Checked({ Sync-InstallSourcePathUi })
 }
 
 # ============================================================================
@@ -1123,6 +1334,10 @@ function Sync-LanguageComboFromProfile {
         $incP = [bool]$projectCheck.IsChecked
         $langs = Get-M365AppsSupportedLanguages -IncludeVisio:$incV -IncludeProject:$incP
         $langCombo.Items.Clear()
+        $mos = New-Object System.Windows.Controls.ComboBoxItem
+        $mos.Content = 'Match operating system'
+        $mos.Tag = 'MatchOS'
+        [void]$langCombo.Items.Add($mos)
         foreach ($lang in $langs) {
             $item = New-Object System.Windows.Controls.ComboBoxItem
             $item.Content = $lang.Display
@@ -1130,8 +1345,12 @@ function Sync-LanguageComboFromProfile {
             [void]$langCombo.Items.Add($item)
         }
         $pick = 'en-us'
-        if ($prevId -and ($langs.Id -contains $prevId)) {
-            $pick = $prevId
+        if ($prevId) {
+            if ($prevId -match '^(?i)matchos$') {
+                $pick = 'MatchOS'
+            } elseif ($langs.Id -contains $prevId.ToLowerInvariant()) {
+                $pick = $prevId.ToLowerInvariant()
+            }
         }
         for ($i = 0; $i -lt $langCombo.Items.Count; $i++) {
             if ([string]$langCombo.Items[$i].Tag -eq $pick) {
@@ -1153,10 +1372,11 @@ function Sync-LanguageComboFromProfile {
 }
 
 function Initialize-AdditionalLanguagesList {
-    if ($null -eq $additionalLangList -and $null -eq $proofingLangList) { return }
+    if ($null -eq $additionalLangList -and $null -eq $proofingLangList -and $null -eq $partialLangList) { return }
     try {
         if ($null -ne $additionalLangList) { $additionalLangList.Items.Clear() }
         if ($null -ne $proofingLangList) { $proofingLangList.Items.Clear() }
+        if ($null -ne $partialLangList) { $partialLangList.Items.Clear() }
         $incV = [bool]$visioCheck.IsChecked
         $incP = [bool]$projectCheck.IsChecked
         foreach ($lang in Get-M365AppsSupportedLanguages -IncludeVisio:$incV -IncludeProject:$incP) {
@@ -1171,6 +1391,12 @@ function Initialize-AdditionalLanguagesList {
                 $itemP.Content = $lang.Display
                 $itemP.Tag = $lang.Id
                 [void]$proofingLangList.Items.Add($itemP)
+            }
+            if ($null -ne $partialLangList) {
+                $itemPart = New-Object System.Windows.Controls.ListBoxItem
+                $itemPart.Content = $lang.Display
+                $itemPart.Tag = $lang.Id
+                [void]$partialLangList.Items.Add($itemPart)
             }
         }
     } catch {
@@ -1189,6 +1415,22 @@ function Get-SelectedAdditionalLanguageIds {
     $primary = if ($PrimaryId) { $PrimaryId.ToLowerInvariant() } else { '' }
     $ids = New-Object System.Collections.Generic.List[string]
     foreach ($o in $additionalLangList.SelectedItems) {
+        if ($null -eq $o) { continue }
+        $id = [string]$o.Tag
+        if ([string]::IsNullOrWhiteSpace($id)) { continue }
+        $lc = $id.ToLowerInvariant()
+        if ($lc -eq $primary) { continue }
+        if (-not $ids.Contains($lc)) { [void]$ids.Add($lc) }
+    }
+    return ,$ids.ToArray()
+}
+
+function Get-SelectedPartialLanguageIds {
+    param([string]$PrimaryId)
+    if ($null -eq $partialLangList) { return @() }
+    $primary = if ($PrimaryId) { $PrimaryId.ToLowerInvariant() } else { '' }
+    $ids = New-Object System.Collections.Generic.List[string]
+    foreach ($o in $partialLangList.SelectedItems) {
         if ($null -eq $o) { continue }
         $id = [string]$o.Tag
         if ([string]::IsNullOrWhiteSpace($id)) { continue }
@@ -1258,10 +1500,10 @@ function Update-ProfileDependentUI {
         $showVp = ($visioCheck.IsChecked -eq $true) -or ($projectCheck.IsChecked -eq $true)
         $visioProjectLinePanel.Visibility = if ($showVp) { 'Visible' } else { 'Collapsed' }
     }
-    if ($channelProfileDefaultItem) {
-        $channelProfileDefaultItem.IsEnabled = -not $custom
+    if ($null -ne $channelCombo -and $channelCombo.Items.Count -gt 0) {
+        $channelCombo.Items[0].IsEnabled = -not $custom
     }
-    if ($custom -and $channelCombo.SelectedIndex -eq 0) {
+    if ($custom -and $null -ne $channelCombo -and $channelCombo.SelectedIndex -eq 0) {
         $channelCombo.SelectedIndex = 1
     }
     Sync-LanguageComboFromProfile
@@ -1270,18 +1512,18 @@ function Update-ProfileDependentUI {
 function Resolve-ChannelParameter {
     param(
         [bool]$IsCustomProfile,
-        [int]$ChannelSelectedIndex
+        $ChannelCombo
     )
-    if ($IsCustomProfile) {
-        if ($ChannelSelectedIndex -le 1) { return 'Current' }
-        return 'SemiAnnualEnterprise'
+    if ($null -eq $ChannelCombo -or $null -eq $ChannelCombo.SelectedItem) {
+        return $(if ($IsCustomProfile) { 'Current' } else { $null })
     }
-    switch ($ChannelSelectedIndex) {
-        0 { return $null }
-        1 { return 'Current' }
-        2 { return 'SemiAnnualEnterprise' }
-        default { return $null }
+    $tag = $ChannelCombo.SelectedItem.Tag
+    $t = if ($null -eq $tag) { '' } else { [string]$tag }
+    if ([string]::IsNullOrWhiteSpace($t)) {
+        return $(if ($IsCustomProfile) { 'Current' } else { $null })
     }
+    Assert-M365AppsOdtAddChannelValue -Channel $t
+    return $t
 }
 
 <#
@@ -1343,6 +1585,21 @@ function Invoke-OdtPostWriteProofingAndCdn {
         [Parameter(Mandatory)]
         [hashtable]$Options
     )
+    $partial = @()
+    if ($Options.ContainsKey('partialLanguageIds') -and $Options.partialLanguageIds) {
+        $partial = @($Options.partialLanguageIds)
+    }
+    Add-M365AppsLanguagePackProductToConfigurationFile -Path $DestinationPath -LanguagePackLanguageIds $partial
+
+    $ver = ''
+    if ($Options.ContainsKey('deployVersion')) { $ver = [string]$Options.deployVersion }
+    $sp = ''
+    if ($Options.ContainsKey('sourcePath')) { $sp = [string]$Options.sourcePath }
+    $fromCdn = $true
+    if ($Options.ContainsKey('installFromCdn')) { $fromCdn = [bool]$Options.installFromCdn }
+    if ($fromCdn) { $sp = '' }
+    Set-M365AppsConfigurationAddExtendedAttributes -Path $DestinationPath -Version $ver -SourcePath $sp
+
     $proof = @()
     if ($Options.ContainsKey('proofingToolsLanguageIds') -and $null -ne $Options.proofingToolsLanguageIds) {
         $proof = @($Options.proofingToolsLanguageIds)
@@ -1375,9 +1632,11 @@ function Export-OdtConfigFromOptionsToPath {
             -OfficeClientEdition $Options.bit -Channel $Options.channelOverride -LanguageId $Options.language `
             -AdditionalLanguageIds @($Options.additionalLanguageIds) -DisplayLevel $Options.ui `
             -AdditionalExcludeAppIds @($Options.excludeAppIds) -UpdatesEnabled:$Options.updatesEnabled `
-            -UpdatesTargetVersion $Options.updatesTargetVersion -UpdatesDeadline $Options.updatesDeadline
+            -UpdatesTargetVersion $Options.updatesTargetVersion -UpdatesDeadline $Options.updatesDeadline `
+            -ForceAppShutdown:$Options.forceAppShutdown -AcceptEULA $Options.acceptEula -AutoActivate:$Options.autoActivate
         [System.IO.File]::WriteAllText($DestinationPath, $xml, $enc)
-        Set-M365AppsConfigurationDisplayLevel -Path $DestinationPath -Level $Options.ui
+        $ae = if ($Options.ContainsKey('acceptEula')) { [string]$Options.acceptEula } else { 'TRUE' }
+        Set-M365AppsConfigurationDisplayLevel -Path $DestinationPath -Level $Options.ui -AcceptEULA $ae
         if ($Options.visio -eq '1' -or $Options.project -eq '1') {
             if (-not $Options.visioProjectLine) { throw 'Internal error: visioProjectLine missing for optional Visio/Project.' }
             Add-M365AppsOptionalVisioProjectProducts -Path $DestinationPath -LanguageId $Options.language `
@@ -1398,7 +1657,8 @@ function Export-OdtConfigFromOptionsToPath {
         $xml = New-M365AppsInteractiveConfiguration -AddOnsOnly -LanguageId $Options.language `
             -OfficeClientEdition $Options.bit -Channel $Options.channel -DisplayLevel $Options.ui `
             -IncludeVisio:($Options.visio -eq '1') -IncludeProject:($Options.project -eq '1') -VisioProjectLine $vpl `
-            -AdditionalLanguageIds $addLangs -UpdatesEnabled:$updEn -UpdatesTargetVersion $updTv -UpdatesDeadline $updDl
+            -AdditionalLanguageIds $addLangs -UpdatesEnabled:$updEn -UpdatesTargetVersion $updTv -UpdatesDeadline $updDl `
+            -AcceptEULA $Options.acceptEula
         [System.IO.File]::WriteAllText($DestinationPath, $xml, $enc)
         Invoke-OdtPostWriteProofingAndCdn -DestinationPath $DestinationPath -Options $Options
         return
@@ -1408,20 +1668,22 @@ function Export-OdtConfigFromOptionsToPath {
         $xml = New-M365AppsInteractiveConfiguration -ProductId $Options.edition -LanguageId $Options.language `
             -OfficeClientEdition $Options.bit -Channel $Options.channel -DisplayLevel $Options.ui `
             -IncludeVisio:($Options.visio -eq '1') -IncludeProject:($Options.project -eq '1') `
-            -VisioProjectLine $Options.visioProjectLine -AutoActivate `
+            -VisioProjectLine $Options.visioProjectLine -AutoActivate:$Options.autoActivate `
             -ExcludeAppIds @($Options.excludeAppIds) -AdditionalLanguageIds $addLangs `
             -UpdatesEnabled:$updEn -UpdatesTargetVersion $updTv -UpdatesDeadline $updDl `
-            -SharedComputerLicensing:$sc
+            -SharedComputerLicensing:$sc `
+            -ForceAppShutdown:$Options.forceAppShutdown -AcceptEULA $Options.acceptEula
         [System.IO.File]::WriteAllText($DestinationPath, $xml, $enc)
         Invoke-OdtPostWriteProofingAndCdn -DestinationPath $DestinationPath -Options $Options
         return
     }
     $xml = New-M365AppsInteractiveConfiguration -ProductId $Options.edition -LanguageId $Options.language `
         -OfficeClientEdition $Options.bit -Channel $Options.channel -DisplayLevel $Options.ui `
-        -IncludeVisio:($Options.visio -eq '1') -IncludeProject:($Options.project -eq '1') -AutoActivate `
+        -IncludeVisio:($Options.visio -eq '1') -IncludeProject:($Options.project -eq '1') -AutoActivate:$Options.autoActivate `
         -ExcludeAppIds @($Options.excludeAppIds) -AdditionalLanguageIds $addLangs `
         -UpdatesEnabled:$updEn -UpdatesTargetVersion $updTv -UpdatesDeadline $updDl `
-        -SharedComputerLicensing:$sc
+        -SharedComputerLicensing:$sc `
+        -ForceAppShutdown:$Options.forceAppShutdown -AcceptEULA $Options.acceptEula
     [System.IO.File]::WriteAllText($DestinationPath, $xml, $enc)
     Invoke-OdtPostWriteProofingAndCdn -DestinationPath $DestinationPath -Options $Options
 }
@@ -1443,7 +1705,16 @@ function Build-UiInstallOptionsHashtable {
     $uiLevel = if ($uiCombo.SelectedIndex -eq 0) { 'Full' } else { 'None' }
     $retailProfile = Get-M365RetailProfileFromPortalSelectors
     $isCustom = ($null -eq $retailProfile)
-    $channelOverride = Resolve-ChannelParameter -IsCustomProfile $isCustom -ChannelSelectedIndex $channelCombo.SelectedIndex
+    try {
+        $channelOverride = Resolve-ChannelParameter -IsCustomProfile $isCustom -ChannelCombo $channelCombo
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Invalid update channel selection.`n`n$($_.Exception.Message)",
+            'Office Auto Install',
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning)
+        return $null
+    }
     $excludeIds = @(Get-SelectedExcludeAppIds)
     $visio = if ($visioCheck.IsChecked) { '1' } else { '2' }
     $project = if ($projectCheck.IsChecked) { '1' } else { '2' }
@@ -1453,6 +1724,27 @@ function Build-UiInstallOptionsHashtable {
     }
     $moreLangs = @(Get-SelectedAdditionalLanguageIds -PrimaryId $languageCode)
     $proofLangs = @(Get-SelectedProofingLanguageIds -PrimaryId $languageCode)
+    $partialLangs = @(Get-SelectedPartialLanguageIds -PrimaryId $languageCode)
+    $installCdn = ($null -eq $installSourceCdnRadio) -or ($installSourceCdnRadio.IsChecked -eq $true)
+    if (-not $installCdn) {
+        $spReq = if ($installSourcePathBox) { [string]$installSourcePathBox.Text.Trim() } else { '' }
+        if ([string]::IsNullOrWhiteSpace($spReq)) {
+            [System.Windows.Forms.MessageBox]::Show(
+                'Enter a local or network path for the installation files, or choose Office Content Delivery Network (CDN) on the Installation tab.',
+                'Office Auto Install',
+                [System.Windows.Forms.MessageBoxButtons]::OK,
+                [System.Windows.Forms.MessageBoxIcon]::Warning)
+            return $null
+        }
+    }
+    $srcPathOpt = ''
+    if (-not $installCdn -and $installSourcePathBox) { $srcPathOpt = [string]$installSourcePathBox.Text.Trim() }
+    $deployVer = if ($deployVersionBox) { [string]$deployVersionBox.Text.Trim() } else { '' }
+    $forceShutdown = ($null -eq $forceShutdownCheck) -or ($forceShutdownCheck.IsChecked -eq $true)
+    $acceptEulaStr = if ($null -ne $acceptEulaCheck -and $acceptEulaCheck.IsChecked -eq $true) { 'TRUE' } else { 'FALSE' }
+    $autoAct = ($null -ne $autoActivateCheck -and $autoActivateCheck.IsChecked -eq $true)
+    $genOrg = if ($generalOrgBox) { [string]$generalOrgBox.Text.Trim() } else { '' }
+    $genDesc = if ($generalDescriptionBox) { [string]$generalDescriptionBox.Text.Trim() } else { '' }
     $allowCdn = ($null -eq $allowCdnFallbackCheck) -or ($allowCdnFallbackCheck.IsChecked -eq $true)
     $updEn = ($null -eq $updatesEnabledCheck) -or ($updatesEnabledCheck.IsChecked -eq $true)
     $updTv = if ($updatesTargetVersionBox) { [string]$updatesTargetVersionBox.Text.Trim() } else { '' }
@@ -1489,6 +1781,7 @@ function Build-UiInstallOptionsHashtable {
         $channel = $channelOverride
         $profileLabel = Get-PortalDeploymentSummaryLabel -RetailProfile $null -IsCustom $true -EditionName $editionName
         $summaryLine = "$profileLabel | $languageName | ${bit}-bit"
+        if ($genOrg) { $summaryLine = "$summaryLine | $genOrg" }
         $ex = if ($editionID -eq 'ADDONS_ONLY') { @() } else { $excludeIds }
         return @{
             retailProfile = $null
@@ -1508,6 +1801,15 @@ function Build-UiInstallOptionsHashtable {
             excludeAppIds = $ex
             additionalLanguageIds = $moreLangs
             proofingToolsLanguageIds = $proofLangs
+            partialLanguageIds = $partialLangs
+            deployVersion = $deployVer
+            installFromCdn = $installCdn
+            sourcePath = $srcPathOpt
+            forceAppShutdown = $forceShutdown
+            acceptEula = $acceptEulaStr
+            autoActivate = $autoAct
+            generalOrg = $genOrg
+            generalDescription = $genDesc
             allowCdnFallback = $allowCdn
             updatesEnabled = $updEn
             updatesTargetVersion = $updTv
@@ -1525,6 +1827,7 @@ function Build-UiInstallOptionsHashtable {
     }
     $profileLabel = Get-PortalDeploymentSummaryLabel -RetailProfile $retailProfile -IsCustom $false -EditionName ''
     $summaryLine = "$profileLabel | $languageName | ${bit}-bit"
+    if ($genOrg) { $summaryLine = "$summaryLine | $genOrg" }
     return @{
         retailProfile = $retailProfile
         channelOverride = $channelOverride
@@ -1540,6 +1843,15 @@ function Build-UiInstallOptionsHashtable {
         excludeAppIds = $excludeIds
         additionalLanguageIds = $moreLangs
         proofingToolsLanguageIds = $proofLangs
+        partialLanguageIds = $partialLangs
+        deployVersion = $deployVer
+        installFromCdn = $installCdn
+        sourcePath = $srcPathOpt
+        forceAppShutdown = $forceShutdown
+        acceptEula = $acceptEulaStr
+        autoActivate = $autoAct
+        generalOrg = $genOrg
+        generalDescription = $genDesc
         allowCdnFallback = $allowCdn
         updatesEnabled = $updEn
         updatesTargetVersion = $updTv
@@ -1665,6 +1977,16 @@ function Restore-FullInstallUi {
     $langCombo.IsEnabled = $true
     if ($null -ne $additionalLangList) { $additionalLangList.IsEnabled = $true }
     if ($null -ne $proofingLangList) { $proofingLangList.IsEnabled = $true }
+    if ($null -ne $partialLangList) { $partialLangList.IsEnabled = $true }
+    if ($null -ne $deployVersionBox) { $deployVersionBox.IsEnabled = $true }
+    if ($null -ne $installSourceCdnRadio) { $installSourceCdnRadio.IsEnabled = $true }
+    if ($null -ne $installSourceLocalRadio) { $installSourceLocalRadio.IsEnabled = $true }
+    Sync-InstallSourcePathUi
+    if ($null -ne $forceShutdownCheck) { $forceShutdownCheck.IsEnabled = $true }
+    if ($null -ne $autoActivateCheck) { $autoActivateCheck.IsEnabled = $true }
+    if ($null -ne $acceptEulaCheck) { $acceptEulaCheck.IsEnabled = $true }
+    if ($null -ne $generalOrgBox) { $generalOrgBox.IsEnabled = $true }
+    if ($null -ne $generalDescriptionBox) { $generalDescriptionBox.IsEnabled = $true }
     if ($null -ne $allowCdnFallbackCheck) { $allowCdnFallbackCheck.IsEnabled = $true }
     if ($null -ne $updatesEnabledCheck) { $updatesEnabledCheck.IsEnabled = $true }
     if ($null -ne $updatesTargetVersionBox) { $updatesTargetVersionBox.IsEnabled = $true }
@@ -1700,6 +2022,16 @@ $installButton.Add_Click({
     $langCombo.IsEnabled = $false
     if ($null -ne $additionalLangList) { $additionalLangList.IsEnabled = $false }
     if ($null -ne $proofingLangList) { $proofingLangList.IsEnabled = $false }
+    if ($null -ne $partialLangList) { $partialLangList.IsEnabled = $false }
+    if ($null -ne $deployVersionBox) { $deployVersionBox.IsEnabled = $false }
+    if ($null -ne $installSourceCdnRadio) { $installSourceCdnRadio.IsEnabled = $false }
+    if ($null -ne $installSourceLocalRadio) { $installSourceLocalRadio.IsEnabled = $false }
+    if ($null -ne $installSourcePathBox) { $installSourcePathBox.IsEnabled = $false }
+    if ($null -ne $forceShutdownCheck) { $forceShutdownCheck.IsEnabled = $false }
+    if ($null -ne $autoActivateCheck) { $autoActivateCheck.IsEnabled = $false }
+    if ($null -ne $acceptEulaCheck) { $acceptEulaCheck.IsEnabled = $false }
+    if ($null -ne $generalOrgBox) { $generalOrgBox.IsEnabled = $false }
+    if ($null -ne $generalDescriptionBox) { $generalDescriptionBox.IsEnabled = $false }
     if ($null -ne $allowCdnFallbackCheck) { $allowCdnFallbackCheck.IsEnabled = $false }
     if ($null -ne $updatesEnabledCheck) { $updatesEnabledCheck.IsEnabled = $false }
     if ($null -ne $updatesTargetVersionBox) { $updatesTargetVersionBox.IsEnabled = $false }
