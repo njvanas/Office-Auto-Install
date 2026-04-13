@@ -403,7 +403,15 @@ $xaml = @"
         <Setter Property="Height" Value="10"/>
       </Style>
 
-      <!-- Tab headers: dark surfaces + light text (default WPF TabItem uses light chrome and hides pale foreground) -->
+      <!-- Tab headers: string headers render as TextBlock with system theme unless HeaderTemplate binds Foreground -->
+      <DataTemplate x:Key="SiteTabHeaderTemplate">
+        <TextBlock Text="{Binding}"
+                   FontFamily="Inter, Segoe UI"
+                   FontSize="13"
+                   TextTrimming="CharacterEllipsis"
+                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=TabItem}}"/>
+      </DataTemplate>
+
       <Style x:Key="SiteTabItemStyle" TargetType="TabItem">
         <Setter Property="Foreground" Value="{StaticResource SiteTextBodyBrush}"/>
         <Setter Property="Background" Value="Transparent"/>
@@ -411,6 +419,7 @@ $xaml = @"
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Padding" Value="16,10"/>
         <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="HeaderTemplate" Value="{StaticResource SiteTabHeaderTemplate}"/>
         <Setter Property="Template">
           <Setter.Value>
             <ControlTemplate TargetType="TabItem">
@@ -421,10 +430,10 @@ $xaml = @"
                       CornerRadius="8"
                       Padding="{TemplateBinding Padding}"
                       Margin="{TemplateBinding Margin}"
-                      SnapsToDevicePixels="True"
-                      TextElement.Foreground="{TemplateBinding Foreground}">
+                      SnapsToDevicePixels="True">
                 <ContentPresenter x:Name="HeaderHost"
                                     ContentSource="Header"
+                                    ContentTemplate="{TemplateBinding HeaderTemplate}"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     RecognizesAccessKey="True"/>
@@ -443,6 +452,42 @@ $xaml = @"
                   <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SiteItemHoverBrush}"/>
                 </MultiTrigger>
               </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+
+      <!-- Replace default TabControl chrome (light TabPanel / borders) so the strip matches the slate UI -->
+      <Style x:Key="SiteTabControlStyle" TargetType="TabControl">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="TabControl">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TabPanel x:Name="HeaderPanel"
+                          Grid.Row="0"
+                          Background="Transparent"
+                          IsItemsHost="True"
+                          KeyboardNavigation.TabIndex="1"
+                          Panel.ZIndex="1"/>
+                <Border Grid.Row="1"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0,12,0,0"
+                        KeyboardNavigation.DirectionalNavigation="Contained"
+                        KeyboardNavigation.TabIndex="2"
+                        KeyboardNavigation.TabNavigation="Local">
+                  <ContentPresenter x:Name="PART_SelectedContentHost"
+                                      Margin="0"
+                                      ContentSource="SelectedContent"/>
+                </Border>
+              </Grid>
             </ControlTemplate>
           </Setter.Value>
         </Setter>
@@ -497,6 +542,7 @@ $xaml = @"
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Disabled" Background="Transparent">
       <TabControl x:Name="MainTabControl"
+                  Style="{StaticResource SiteTabControlStyle}"
                   Margin="28,20,28,16"
                   Background="Transparent"
                   BorderThickness="0"
