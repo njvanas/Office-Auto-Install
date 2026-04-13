@@ -1,3 +1,5 @@
+# Publishes a GitHub Release when you push a version tag (semantic version: v1.2.3).
+# Example: git tag -a v1.2.3 -m "Release" && git push origin v1.2.3
 name: Release
 
 on:
@@ -5,31 +7,35 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.ref_name }}
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Create Release Archive
-        run: |
-          New-Item -ItemType Directory -Path "release" -Force | Out-Null
-          Copy-Item "office.ps1" -Destination "release/"
-          Copy-Item "Install-Office-GUI-WPF.ps1" -Destination "release/"
-          Copy-Item "Install-Office.ps1" -Destination "release/"
-          Copy-Item "Deploy-Microsoft365Apps.ps1" -Destination "release/"
-          Copy-Item "M365AppsCore.ps1" -Destination "release/"
-          Copy-Item "configs" -Destination "release/configs" -Recurse
-          Copy-Item "README.md" -Destination "release/"
-          Copy-Item "LICENSE" -Destination "release/"
-          Copy-Item "NOTICES.md" -Destination "release/"
-          Compress-Archive -Path "release\*" -DestinationPath "Office-Auto-Installer.zip" -Force
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          files: Office-Auto-Installer.zip
+          fetch-depth: 0
+
+      - name: Build release packages
+        run: bash .github/scripts/build-release-assets.sh "$VERSION"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Office Auto Installer ${{ env.VERSION }}
           generate_release_notes: true
+          files: |
+            Office-Auto-Installer-GUI-${{ env.VERSION }}.zip
+            Office-Auto-Installer-Console-${{ env.VERSION }}.zip
+            Office-Auto-Installer-Complete-${{ env.VERSION }}.zip
+            office.ps1
+            Install-Office.ps1
+            Install-Office-GUI-WPF.ps1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
