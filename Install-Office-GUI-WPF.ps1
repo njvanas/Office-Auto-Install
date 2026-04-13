@@ -402,6 +402,51 @@ $xaml = @"
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Height" Value="10"/>
       </Style>
+
+      <!-- Tab headers: dark surfaces + light text (default WPF TabItem uses light chrome and hides pale foreground) -->
+      <Style x:Key="SiteTabItemStyle" TargetType="TabItem">
+        <Setter Property="Foreground" Value="{StaticResource SiteTextBodyBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="FontFamily" Value="Inter, Segoe UI"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="16,10"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="TabItem">
+              <Border x:Name="TabBorder"
+                      Background="{StaticResource SiteControlBrush}"
+                      BorderBrush="{StaticResource SiteBorderBrush}"
+                      BorderThickness="1"
+                      CornerRadius="8"
+                      Padding="{TemplateBinding Padding}"
+                      Margin="{TemplateBinding Margin}"
+                      SnapsToDevicePixels="True"
+                      TextElement.Foreground="{TemplateBinding Foreground}">
+                <ContentPresenter x:Name="HeaderHost"
+                                    ContentSource="Header"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    RecognizesAccessKey="True"/>
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                  <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SiteCardBrush}"/>
+                  <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource SiteAccentBrush}"/>
+                  <Setter Property="Foreground" Value="{StaticResource SiteTextBrush}"/>
+                </Trigger>
+                <MultiTrigger>
+                  <MultiTrigger.Conditions>
+                    <Condition Property="IsSelected" Value="False"/>
+                    <Condition Property="IsMouseOver" Value="True"/>
+                  </MultiTrigger.Conditions>
+                  <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SiteItemHoverBrush}"/>
+                </MultiTrigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
     </ResourceDictionary>
   </Window.Resources>
 
@@ -451,16 +496,11 @@ $xaml = @"
     </Border>
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Disabled" Background="Transparent">
-      <TabControl x:Name="MainTabControl" Margin="28,20,28,16" Background="Transparent" BorderThickness="0">
-        <TabControl.Resources>
-          <Style TargetType="TabItem">
-            <Setter Property="Foreground" Value="#E2E8F0"/>
-            <Setter Property="FontFamily" Value="Inter, Segoe UI"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="Margin" Value="0,0,4,0"/>
-          </Style>
-        </TabControl.Resources>
+      <TabControl x:Name="MainTabControl"
+                  Margin="28,20,28,16"
+                  Background="Transparent"
+                  BorderThickness="0"
+                  ItemContainerStyle="{StaticResource SiteTabItemStyle}">
         <TabItem Header="Products &amp; apps">
           <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,8,0">
             <StackPanel Margin="12,4,12,20">
