@@ -844,83 +844,105 @@ $xaml = @"
                              TextWrapping="Wrap"/>
                 </StackPanel>
               </Border>
-              <TextBlock Text="Additional languages - full (optional)"
+
+              <TextBlock Text="Additional languages &amp; proofing"
                          FontSize="15" FontWeight="SemiBold"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
-                         Margin="0,20,0,12"/>
-              <TextBlock Text="Full UI language packs (all locales that support a full LP in the deployment settings portal). Lists differ from Partial and Proofing below."
+                         Margin="0,24,0,8"/>
+              <Rectangle Height="1" Fill="{StaticResource SiteBorderBrush}" Margin="0,0,0,12"/>
+              <TextBlock Text="Optional full packs, partial packs, and proofing-only bundles (same roles as the Office deployment portal). Each list scrolls independently; pick one category or combine as needed."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
-                         Margin="0,0,0,10"
+                         Margin="0,0,0,16"
                          TextWrapping="Wrap"/>
+
               <Border Background="{StaticResource SiteCardBrush}"
                       BorderBrush="{StaticResource SiteBorderBrush}"
                       BorderThickness="1"
                       CornerRadius="12"
-                      Padding="8,8">
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              MinHeight="200"
-                              MaxHeight="280"
-                              Background="{StaticResource SiteControlBrush}"
-                              BorderBrush="{StaticResource SiteBorderBrush}"
-                              BorderThickness="1"
-                              Padding="4,4">
-                  <StackPanel x:Name="AdditionalLangPanel" Margin="4,2"/>
-                </ScrollViewer>
-              </Border>
-              <TextBlock Text="Additional languages - partial (optional)"
-                         FontSize="15" FontWeight="SemiBold"
-                         Foreground="{StaticResource SiteTextBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         Margin="0,20,0,12"/>
-              <TextBlock Text="Partial UI packs only (long-tail locales; major markets use full packs above). ODT Product ID=&quot;LanguagePack&quot;."
-                         FontSize="12"
-                         Foreground="{StaticResource SiteTextMutedBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         Margin="0,0,0,10"
-                         TextWrapping="Wrap"/>
-              <Border Background="{StaticResource SiteCardBrush}"
-                      BorderBrush="{StaticResource SiteBorderBrush}"
-                      BorderThickness="1"
-                      CornerRadius="12"
-                      Padding="8,8">
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              MinHeight="140"
-                              MaxHeight="220"
-                              Background="{StaticResource SiteControlBrush}"
-                              BorderBrush="{StaticResource SiteBorderBrush}"
-                              BorderThickness="1"
-                              Padding="4,4">
-                  <StackPanel x:Name="PartialLangPanel" Margin="4,2"/>
-                </ScrollViewer>
-              </Border>
-              <TextBlock Text="Proofing tools only (optional)"
-                         FontSize="15" FontWeight="SemiBold"
-                         Foreground="{StaticResource SiteTextBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         Margin="0,20,0,12"/>
-              <TextBlock Text="Proofing tools only (Product ID=&quot;ProofingTools&quot;). Japanese and Chinese UI locales are omitted here to match typical portal options; use full LP if you need those proofing bundles."
-                         FontSize="12"
-                         Foreground="{StaticResource SiteTextMutedBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         Margin="0,0,0,10"
-                         TextWrapping="Wrap"/>
-              <Border Background="{StaticResource SiteCardBrush}"
-                      BorderBrush="{StaticResource SiteBorderBrush}"
-                      BorderThickness="1"
-                      CornerRadius="12"
-                      Padding="8,8">
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              MinHeight="160"
-                              MaxHeight="240"
-                              Background="{StaticResource SiteControlBrush}"
-                              BorderBrush="{StaticResource SiteBorderBrush}"
-                              BorderThickness="1"
-                              Padding="4,4">
-                  <StackPanel x:Name="ProofingLangPanel" Margin="4,2"/>
-                </ScrollViewer>
+                      Padding="20,16">
+                <StackPanel>
+                  <TextBlock Text="Full language packs"
+                             FontSize="13" FontWeight="SemiBold"
+                             Foreground="{StaticResource SiteTextBodyBrush}"
+                             FontFamily="Inter, Segoe UI"
+                             Margin="0,0,0,6"/>
+                  <TextBlock Text="Locales with a full UI language pack. Lists differ from partial and proofing below."
+                             FontSize="12"
+                             Foreground="{StaticResource SiteTextMutedBrush}"
+                             FontFamily="Inter, Segoe UI"
+                             Margin="0,0,0,10"
+                             TextWrapping="Wrap"/>
+                  <Border CornerRadius="8"
+                          BorderBrush="{StaticResource SiteBorderBrush}"
+                          BorderThickness="1"
+                          Background="{StaticResource SiteControlBrush}"
+                          SnapsToDevicePixels="True">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  MinHeight="120"
+                                  MaxHeight="220"
+                                  Padding="10,10,6,10">
+                      <WrapPanel x:Name="AdditionalLangPanel" Orientation="Horizontal" ItemWidth="372"/>
+                    </ScrollViewer>
+                  </Border>
+
+                  <Rectangle Height="1" Fill="{StaticResource SiteBorderBrush}" Margin="0,18,0,18"/>
+
+                  <TextBlock Text="Partial language packs"
+                             FontSize="13" FontWeight="SemiBold"
+                             Foreground="{StaticResource SiteTextBodyBrush}"
+                             FontFamily="Inter, Segoe UI"
+                             Margin="0,0,0,6"/>
+                  <TextBlock Text="Long-tail locales (ODT Product ID LanguagePack). Major markets usually use full packs above."
+                             FontSize="12"
+                             Foreground="{StaticResource SiteTextMutedBrush}"
+                             FontFamily="Inter, Segoe UI"
+                             Margin="0,0,0,10"
+                             TextWrapping="Wrap"/>
+                  <Border CornerRadius="8"
+                          BorderBrush="{StaticResource SiteBorderBrush}"
+                          BorderThickness="1"
+                          Background="{StaticResource SiteControlBrush}"
+                          SnapsToDevicePixels="True">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  MinHeight="120"
+                                  MaxHeight="220"
+                                  Padding="10,10,6,10">
+                      <WrapPanel x:Name="PartialLangPanel" Orientation="Horizontal" ItemWidth="372"/>
+                    </ScrollViewer>
+                  </Border>
+
+                  <Rectangle Height="1" Fill="{StaticResource SiteBorderBrush}" Margin="0,18,0,18"/>
+
+                  <TextBlock Text="Proofing tools only"
+                             FontSize="13" FontWeight="SemiBold"
+                             Foreground="{StaticResource SiteTextBodyBrush}"
+                             FontFamily="Inter, Segoe UI"
+                             Margin="0,0,0,6"/>
+                  <TextBlock Text="ProofingTools product only. Some locales are omitted here to mirror typical portal choices; use a full pack if you need those bundles."
+                             FontSize="12"
+                             Foreground="{StaticResource SiteTextMutedBrush}"
+                             FontFamily="Inter, Segoe UI"
+                             Margin="0,0,0,10"
+                             TextWrapping="Wrap"/>
+                  <Border CornerRadius="8"
+                          BorderBrush="{StaticResource SiteBorderBrush}"
+                          BorderThickness="1"
+                          Background="{StaticResource SiteControlBrush}"
+                          SnapsToDevicePixels="True">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  MinHeight="120"
+                                  MaxHeight="220"
+                                  Padding="10,10,6,10">
+                      <WrapPanel x:Name="ProofingLangPanel" Orientation="Horizontal" ItemWidth="372"/>
+                    </ScrollViewer>
+                  </Border>
+                </StackPanel>
               </Border>
             </StackPanel>
           </ScrollViewer>
@@ -1573,8 +1595,7 @@ function Initialize-AdditionalLanguagesList {
                 $cb = New-Object System.Windows.Controls.CheckBox
                 $cb.Content = $lang.Display
                 $cb.Tag = $lang.Id
-                $cb.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
-                $cb.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
+                $cb.Margin = New-Object System.Windows.Thickness(0, 0, 0, 8)
                 if ($script:siteCheckBoxStyle) { $cb.Style = $script:siteCheckBoxStyle }
                 [void]$additionalLangPanel.Children.Add($cb)
             }
@@ -1584,8 +1605,7 @@ function Initialize-AdditionalLanguagesList {
                 $cbPart = New-Object System.Windows.Controls.CheckBox
                 $cbPart.Content = $lang.Display
                 $cbPart.Tag = $lang.Id
-                $cbPart.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
-                $cbPart.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
+                $cbPart.Margin = New-Object System.Windows.Thickness(0, 0, 0, 8)
                 if ($script:siteCheckBoxStyle) { $cbPart.Style = $script:siteCheckBoxStyle }
                 [void]$partialLangPanel.Children.Add($cbPart)
             }
@@ -1595,8 +1615,7 @@ function Initialize-AdditionalLanguagesList {
                 $cbP = New-Object System.Windows.Controls.CheckBox
                 $cbP.Content = $lang.Display
                 $cbP.Tag = $lang.Id
-                $cbP.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
-                $cbP.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
+                $cbP.Margin = New-Object System.Windows.Thickness(0, 0, 0, 8)
                 if ($script:siteCheckBoxStyle) { $cbP.Style = $script:siteCheckBoxStyle }
                 [void]$proofingLangPanel.Children.Add($cbP)
             }
