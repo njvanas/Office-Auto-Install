@@ -231,6 +231,47 @@ $xaml = @"
       <SolidColorBrush x:Key="SiteBorderBrush" Color="#475569"/>
       <SolidColorBrush x:Key="SiteControlBrush" Color="#1E293B"/>
       <SolidColorBrush x:Key="SiteItemHoverBrush" Color="#334155"/>
+      <!-- Office Customization Tool-style pill switches (Microsoft blue #0078D4) -->
+      <SolidColorBrush x:Key="SiteOctSwitchOnBrush" Color="#0078D4"/>
+      <SolidColorBrush x:Key="SiteOctSwitchOffTrackBrush" Color="#334155"/>
+      <SolidColorBrush x:Key="SiteOctSwitchOffBorderBrush" Color="#64748B"/>
+
+      <Style x:Key="SiteOctToggleSwitchStyle" TargetType="ToggleButton">
+        <Setter Property="Focusable" Value="True"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="ToggleButton">
+              <Grid Width="44" Height="26" SnapsToDevicePixels="True">
+                <Border x:Name="Track"
+                        CornerRadius="13"
+                        Background="{StaticResource SiteOctSwitchOffTrackBrush}"
+                        BorderBrush="{StaticResource SiteOctSwitchOffBorderBrush}"
+                        BorderThickness="1"/>
+                <Border x:Name="Thumb"
+                        Width="20" Height="20" CornerRadius="10"
+                        Background="#FFFFFF"
+                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Margin="3,0,0,0"/>
+              </Grid>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                  <Setter TargetName="Track" Property="Background" Value="{StaticResource SiteOctSwitchOnBrush}"/>
+                  <Setter TargetName="Track" Property="BorderBrush" Value="{StaticResource SiteOctSwitchOnBrush}"/>
+                  <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                  <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter TargetName="Track" Property="Opacity" Value="0.45"/>
+                  <Setter TargetName="Thumb" Property="Opacity" Value="0.7"/>
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
 
       <Style x:Key="SiteComboBoxStyle" TargetType="ComboBox">
         <Setter Property="MinHeight" Value="36"/>
@@ -676,8 +717,9 @@ $xaml = @"
                      FontSize="15" FontWeight="SemiBold"
                      Foreground="{StaticResource SiteTextBrush}"
                      FontFamily="Inter, Segoe UI"
-                     Margin="0,0,0,12"/>
-          <TextBlock Text="Add either, both, or neither. Edition below applies to any Visio/Project you include (not to the Office suite)."
+                     Margin="0,0,0,8"/>
+          <Rectangle Height="1" Fill="{StaticResource SiteBorderBrush}" Margin="0,0,0,12"/>
+          <TextBlock Text="Turn each add-on on to include it, then pick the product line (subscription vs perpetual / volume). Same pattern as the Office Customization Tool."
                      FontSize="12"
                      Foreground="{StaticResource SiteTextMutedBrush}"
                      FontFamily="Inter, Segoe UI"
@@ -689,13 +731,50 @@ $xaml = @"
                   CornerRadius="12"
                   Padding="20,16">
             <StackPanel>
-              <CheckBox x:Name="VisioCheck" Style="{StaticResource SiteCheckBoxStyle}"
-                        Content="Include Visio Professional (for diagrams and flowcharts)"
-                        Margin="0,0,0,12"/>
-              <CheckBox x:Name="ProjectCheck" Style="{StaticResource SiteCheckBoxStyle}"
-                        Content="Include Project Professional (for project management)"/>
-              <StackPanel x:Name="VisioProjectLinePanel" Margin="0,16,0,0" Visibility="Collapsed">
-                <TextBlock Text="Visio / Project product line (when either is checked)"
+              <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Visio (diagrams and flowcharts)"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource SiteTextBodyBrush}"
+                           FontSize="13"
+                           FontFamily="Inter, Segoe UI"
+                           Margin="0,0,16,0"/>
+                <ToggleButton x:Name="VisioCheck"
+                              Grid.Column="1"
+                              Style="{StaticResource SiteOctToggleSwitchStyle}"
+                              VerticalAlignment="Center"/>
+              </Grid>
+              <Grid Margin="0,0,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Project (project management)"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource SiteTextBodyBrush}"
+                           FontSize="13"
+                           FontFamily="Inter, Segoe UI"
+                           Margin="0,0,16,0"/>
+                <ToggleButton x:Name="ProjectCheck"
+                              Grid.Column="1"
+                              Style="{StaticResource SiteOctToggleSwitchStyle}"
+                              VerticalAlignment="Center"/>
+              </Grid>
+              <StackPanel x:Name="VisioProjectLinePanel" Margin="0,18,0,0" Visibility="Collapsed">
+                <TextBlock Text="Product line for Visio and Project"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource SiteTextBrush}"
+                           FontFamily="Inter, Segoe UI"
+                           Margin="0,0,0,6"/>
+                <TextBlock Text="Microsoft 365 vs Office LTSC / perpetual SKUs (ODT Product IDs)."
                            FontSize="12"
                            Foreground="{StaticResource SiteTextMutedBrush}"
                            FontFamily="Inter, Segoe UI"
@@ -717,12 +796,13 @@ $xaml = @"
         </StackPanel>
 
         <StackPanel Margin="0,0,0,24">
-          <TextBlock Text="Exclude apps (optional)"
+          <TextBlock Text="Apps"
                      FontSize="15" FontWeight="SemiBold"
                      Foreground="{StaticResource SiteTextBrush}"
                      FontFamily="Inter, Segoe UI"
-                     Margin="0,0,0,12"/>
-          <TextBlock Text="Uncheck apps you do not want in the Microsoft 365 Apps suite (ODT ExcludeApp). Enterprise/business packages include baseline excludes; shared-computer (VDI) adds stricter defaults. Your choices are merged into the XML."
+                     Margin="0,0,0,8"/>
+          <Rectangle Height="1" Fill="{StaticResource SiteBorderBrush}" Margin="0,0,0,12"/>
+          <TextBlock Text="Turn apps on or off to include or exclude them from the Microsoft 365 Apps suite (ODT ExcludeApp). On = deploy the app; Off = exclude. Baseline excludes for enterprise/VDI still apply in addition to your choices."
                      FontSize="12"
                      Foreground="{StaticResource SiteTextMutedBrush}"
                      FontFamily="Inter, Segoe UI"
@@ -733,7 +813,7 @@ $xaml = @"
                   BorderThickness="1"
                   CornerRadius="12"
                   Padding="20,16">
-            <WrapPanel x:Name="ExcludeAppsPanel" />
+            <Grid x:Name="ExcludeAppsPanel" MinHeight="120"/>
           </Border>
         </StackPanel>
 
@@ -1213,14 +1293,87 @@ $script:excludeAppsPanel = $excludeAppsPanel
 
 $cbStyle = $window.FindResource('SiteCheckBoxStyle')
 $script:siteCheckBoxStyle = $cbStyle
-foreach ($item in Get-M365AppsExcludeAppCatalog) {
-    $cb = New-Object System.Windows.Controls.CheckBox
-    $cb.Content = $item.Label
-    $cb.Tag = $item.Id
-    $cb.Margin = '0,4,16,4'
-    if ($cbStyle) { $cb.Style = $cbStyle }
-    [void]$excludeAppsPanel.Children.Add($cb)
+
+function New-OctExcludeAppAppRow {
+    param(
+        [Parameter(Mandatory)]$CatalogItem,
+        $SwitchStyle
+    )
+    $grid = New-Object System.Windows.Controls.Grid
+    $grid.Margin = New-Object System.Windows.Thickness(0, 0, 0, 14)
+    $d0 = New-Object System.Windows.Controls.ColumnDefinition
+    $d0.Width = New-Object System.Windows.GridLength(1, [System.Windows.GridUnitType]::Star)
+    $d1 = New-Object System.Windows.Controls.ColumnDefinition
+    $d1.Width = New-Object System.Windows.GridLength(1, [System.Windows.GridUnitType]::Auto)
+    [void]$grid.ColumnDefinitions.Add($d0)
+    [void]$grid.ColumnDefinitions.Add($d1)
+
+    $label = New-Object System.Windows.Controls.TextBlock
+    $label.Text = $CatalogItem.Label
+    $label.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
+    $label.TextWrapping = [System.Windows.TextWrapping]::Wrap
+    $label.Foreground = $script:window.FindResource('SiteTextBodyBrush')
+    $label.FontSize = 13
+    $label.FontFamily = New-Object System.Windows.Media.FontFamily('Inter, Segoe UI')
+    $label.Margin = New-Object System.Windows.Thickness(0, 0, 12, 0)
+    [System.Windows.Controls.Grid]::SetColumn($label, 0)
+
+    $toggle = New-Object System.Windows.Controls.Primitives.ToggleButton
+    $toggle.Tag = $CatalogItem.Id
+    $toggle.IsChecked = $true
+    if ($SwitchStyle) { $toggle.Style = $SwitchStyle }
+    $toggle.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
+    $toggle.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Right
+    [System.Windows.Controls.Grid]::SetColumn($toggle, 1)
+
+    [void]$grid.Children.Add($label)
+    [void]$grid.Children.Add($toggle)
+    return $grid
 }
+
+function Initialize-OctExcludeAppsPanel {
+    $panel = $script:excludeAppsPanel
+    if ($null -eq $panel) { return }
+    $panel.Children.Clear()
+    $swStyle = $null
+    try { $swStyle = $script:window.FindResource('SiteOctToggleSwitchStyle') } catch { }
+
+    $catalog = Get-M365AppsExcludeAppCatalog
+    $byId = @{}
+    foreach ($e in $catalog) { $byId[$e.Id] = $e }
+
+    $leftIds = @('Access', 'Groove', 'OneDrive', 'Outlook', 'PowerPoint', 'Teams')
+    $rightIds = @('Excel', 'Lync', 'OneNote', 'OutlookForWindows', 'Publisher', 'Word')
+
+    $main = New-Object System.Windows.Controls.Grid
+    $gc0 = New-Object System.Windows.Controls.ColumnDefinition
+    $gc0.Width = New-Object System.Windows.GridLength(1, [System.Windows.GridUnitType]::Star)
+    $gc1 = New-Object System.Windows.Controls.ColumnDefinition
+    $gc1.Width = New-Object System.Windows.GridLength(1, [System.Windows.GridUnitType]::Star)
+    [void]$main.ColumnDefinitions.Add($gc0)
+    [void]$main.ColumnDefinitions.Add($gc1)
+
+    $leftStack = New-Object System.Windows.Controls.StackPanel
+    $leftStack.Margin = New-Object System.Windows.Thickness(0, 0, 16, 0)
+    $rightStack = New-Object System.Windows.Controls.StackPanel
+    [System.Windows.Controls.Grid]::SetColumn($leftStack, 0)
+    [System.Windows.Controls.Grid]::SetColumn($rightStack, 1)
+
+    foreach ($id in $leftIds) {
+        if (-not $byId.ContainsKey($id)) { continue }
+        [void]$leftStack.Children.Add((New-OctExcludeAppAppRow -CatalogItem $byId[$id] -SwitchStyle $swStyle))
+    }
+    foreach ($id in $rightIds) {
+        if (-not $byId.ContainsKey($id)) { continue }
+        [void]$rightStack.Children.Add((New-OctExcludeAppAppRow -CatalogItem $byId[$id] -SwitchStyle $swStyle))
+    }
+
+    [void]$main.Children.Add($leftStack)
+    [void]$main.Children.Add($rightStack)
+    [void]$panel.Children.Add($main)
+}
+
+Initialize-OctExcludeAppsPanel
 
 function Initialize-PortalChannelCombo {
     if ($null -eq $channelCombo) { return }
@@ -1308,11 +1461,28 @@ function Get-PortalDeploymentSummaryLabel {
     return "Other products: $EditionName"
 }
 
+function Get-ExcludeAppsPanelToggleButtons {
+    $list = New-Object System.Collections.Generic.List[System.Windows.Controls.Primitives.ToggleButton]
+    function Walk($node) {
+        if ($null -eq $node) { return }
+        if ($node -is [System.Windows.Controls.Primitives.ToggleButton]) {
+            [void]$list.Add($node)
+            return
+        }
+        if ($node -is [System.Windows.Controls.Panel]) {
+            foreach ($ch in $node.Children) { Walk $ch }
+        }
+    }
+    Walk $script:excludeAppsPanel
+    return $list
+}
+
 function Get-SelectedExcludeAppIds {
+    # OCT-style: switch On = deploy app; Off = add ExcludeApp ID
     $ids = @()
-    foreach ($c in $script:excludeAppsPanel.Children) {
-        if ($c -is [System.Windows.Controls.CheckBox] -and $c.IsChecked -eq $true -and $c.Tag) {
-            $ids += [string]$c.Tag
+    foreach ($tb in (Get-ExcludeAppsPanelToggleButtons)) {
+        if ($tb.Tag -and $tb.IsChecked -ne $true) {
+            $ids += [string]$tb.Tag
         }
     }
     return ,$ids
@@ -1320,8 +1490,8 @@ function Get-SelectedExcludeAppIds {
 
 function Set-ExcludeAppsPanelEnabled {
     param([bool]$Enabled)
-    foreach ($c in $script:excludeAppsPanel.Children) {
-        if ($c -is [System.Windows.Controls.CheckBox]) { $c.IsEnabled = $Enabled }
+    foreach ($tb in (Get-ExcludeAppsPanelToggleButtons)) {
+        $tb.IsEnabled = $Enabled
     }
 }
 

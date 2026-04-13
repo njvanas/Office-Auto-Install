@@ -162,9 +162,9 @@ function Get-M365AppsExcludeAppCatalog {
     @(
         @{ Id = 'Access'; Label = 'Access' }
         @{ Id = 'Excel'; Label = 'Excel' }
-        @{ Id = 'Groove'; Label = 'Groove (legacy sync)' }
+        @{ Id = 'Groove'; Label = 'OneDrive (Groove)' }
         @{ Id = 'Lync'; Label = 'Skype for Business (Lync)' }
-        @{ Id = 'OneDrive'; Label = 'OneDrive' }
+        @{ Id = 'OneDrive'; Label = 'OneDrive (desktop)' }
         @{ Id = 'OneNote'; Label = 'OneNote (Win32)' }
         @{ Id = 'Outlook'; Label = 'Outlook (classic)' }
         @{ Id = 'OutlookForWindows'; Label = 'Outlook (new)' }
