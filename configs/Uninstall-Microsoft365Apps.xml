@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- Remove all Microsoft 365 Apps (Office Click-to-Run). Run: setup.exe /configure Uninstall-Microsoft365Apps.xml -->
-<Configuration>
-  <Remove All="TRUE" />
-  <Display Level="None" AcceptEULA="TRUE" />
-</Configuration>

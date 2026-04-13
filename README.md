@@ -1,6 +1,6 @@
 # Office Auto Install
 
-**Office-Auto-Install** is a PowerShell automation layer for deploying **Microsoft 365 Apps** using **Microsoft’s supported tools**. The **Office Deployment Tool (`setup.exe`)** is downloaded at install time from **Microsoft’s official Office CDN** (this repo does not ship Microsoft binaries). We provide **presets** in `configs\`, a single shared **`M365AppsCore.ps1`** (ODT helpers + full language list), and **one-command** bootstrap plus separate **GUI** and **console** installers.
+**Office-Auto-Install** is a PowerShell automation layer for deploying **Microsoft 365 Apps** using **Microsoft’s supported tools**. The **Office Deployment Tool (`setup.exe`)** is downloaded at install time from **Microsoft’s official Office CDN** (this repo does not ship Microsoft binaries). **All ODT configuration XML** is **built from your choices** in the GUI, console wizard, or deploy parameters—**`M365AppsCore.ps1`** generates retail profiles, custom product mixes, Visio + Project bundles, and uninstall XML. The repo also ships **one-command** bootstrap plus separate **GUI** and **console** installers.
 
 ## One command (recommended)
 
@@ -10,7 +10,7 @@
 irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 ```
 
-That fetches **`M365AppsCore.ps1`**, the chosen installer script, and **`configs\`**, into `%TEMP%`, then starts the installer.
+That fetches **`M365AppsCore.ps1`** and the chosen installer script into `%TEMP%`, then starts the installer.
 
 ### Modes (`office.ps1`)
 
@@ -20,7 +20,7 @@ Set **`OFFICE_AUTO_INSTALL_MODE`** before `irm ... | iex` (or use defaults):
 |-----|------|----------------|
 | **Standard user** | `gui` (default) | WPF installer. |
 | **Terminal prompts** | `console` | `Install-Office.ps1`. |
-| **IT automation** | `deploy` | Downloads **`Deploy-Microsoft365Apps.ps1`** + **`configs\`**, then silent ODT install. **Elevated** PowerShell required. |
+| **IT automation** | `deploy` | Downloads **`Deploy-Microsoft365Apps.ps1`**, then silent ODT install. **Elevated** PowerShell required. |
 
 **Examples:**
 
@@ -36,7 +36,7 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 
 ```powershell
 $env:OFFICE_AUTO_INSTALL_MODE = "deploy"
-$env:OFFICE_AUTO_INSTALL_PRESET = "O365ProPlus-VDI"
+$env:OFFICE_AUTO_INSTALL_RETAIL_PROFILE = "EnterpriseVDI"
 $env:OFFICE_AUTO_INSTALL_LANGUAGE = "en-us"
 irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 ```
@@ -47,16 +47,17 @@ irm "https://njvanas.github.io/Office-Auto-Install/office.ps1" | iex
 
 | Variable | Purpose |
 |----------|---------|
-| `OFFICE_AUTO_INSTALL_PRESET` | Preset name (default `O365ProPlus`). |
+| `OFFICE_AUTO_INSTALL_RETAIL_PROFILE` | `EnterprisePhysical`, `EnterpriseVDI`, `BusinessPhysical`, or `BusinessVDI` (default `EnterprisePhysical`). |
+| `OFFICE_AUTO_INSTALL_BUNDLE` | Optional: Visio+Project bundle name (e.g. `O365ProPlusVisioProject-VDI`) instead of retail profile. |
+| `OFFICE_AUTO_INSTALL_PRESET` | **Legacy:** old names such as `O365ProPlus-VDI` map to retail profiles; `O365ProPlusVisioProject*` selects a bundle. |
 | `OFFICE_AUTO_INSTALL_LANGUAGE` / `OFFICE_AUTO_INSTALL_LANGUAGEID` | e.g. `en-us`. |
 | `OFFICE_AUTO_INSTALL_CHANNEL` | e.g. `MonthlyEnterprise`, `Current`. |
 | `OFFICE_AUTO_INSTALL_ARCH` | `32` or `64`. |
 | `OFFICE_AUTO_INSTALL_UNINSTALL` | `1` removes Microsoft 365 Apps (Click-to-Run). |
-| `OFFICE_AUTO_INSTALL_CONFIGURATION_FILE` | Path to your own ODT XML. |
 | `OFFICE_AUTO_INSTALL_WORKING_DIRECTORY` | Working folder for ODT/setup. |
 | `OFFICE_AUTO_INSTALL_SKIP_PREREQ` | `1` skips disk/network checks (testing). |
 | `OFFICE_AUTO_INSTALL_SKIP_ADMIN` | `1` skips admin check (testing only). |
-| `OFFICE_AUTO_INSTALL_EXCLUDE_APPS` | Comma-separated ODT `ExcludeApp` IDs (e.g. `Teams,OneDrive,Access`) merged into the suite product for preset or custom XML deploys. |
+| `OFFICE_AUTO_INSTALL_EXCLUDE_APPS` | Comma-separated ODT `ExcludeApp` IDs (e.g. `Teams,OneDrive,Access`) merged into the suite product for retail or bundle deploys. |
 
 **Forks:** `OFFICE_AUTO_INSTALL_REPO`, `OFFICE_AUTO_INSTALL_BRANCH`.
 
@@ -72,40 +73,36 @@ Primary languages match **Microsoft 365 Apps** (ODT culture IDs). After dot-sour
 ```text
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\Install-Office-GUI-WPF.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\Install-Office.ps1"
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\Deploy-Microsoft365Apps.ps1" -Preset O365ProPlus-VDI -LanguageId en-us
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\Deploy-Microsoft365Apps.ps1" -RetailProfile EnterpriseVDI -LanguageId en-us
 ```
 
 ## Automation (direct script use)
 
 ```powershell
-.\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus-VDI -LanguageId en-us
-.\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus -Channel MonthlyEnterprise -LanguageId en-us
-.\Deploy-Microsoft365Apps.ps1 -ConfigurationFile 'D:\Deploy\company.xml'
-.\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus -LanguageId en-us -ExcludeApp Teams,OneDrive
+.\Deploy-Microsoft365Apps.ps1 -RetailProfile EnterpriseVDI -LanguageId en-us
+.\Deploy-Microsoft365Apps.ps1 -RetailProfile EnterprisePhysical -Channel MonthlyEnterprise -LanguageId en-us
+.\Deploy-Microsoft365Apps.ps1 -RetailProfile EnterprisePhysical -LanguageId en-us -ExcludeApp Teams,OneDrive
+.\Deploy-Microsoft365Apps.ps1 -Bundle O365ProPlusVisioProject-VDI -LanguageId en-us
 .\Deploy-Microsoft365Apps.ps1 -Uninstall
 ```
 
-**Parameters:** `-Preset`, `-ConfigurationFile`, `-Uninstall`, `-OfficeClientEdition`, `-Channel`, `-LanguageId`, `-ExcludeApp`, `-WorkingDirectory`, `-SkipPrerequisiteTest`, `-SkipAdministratorCheck`.
+**Parameters:** `-RetailProfile` (default `EnterprisePhysical`), `-Bundle`, `-Uninstall`, `-OfficeClientEdition`, `-Channel`, `-LanguageId`, `-ExcludeApp`, `-WorkingDirectory`, `-SkipPrerequisiteTest`, `-SkipAdministratorCheck`.
 
-**Excluding apps:** The GUI and console installers offer optional exclusions. For automation, pass `-ExcludeApp` (repeatable or comma-separated) or set `OFFICE_AUTO_INSTALL_EXCLUDE_APPS`. IDs are the same as ODT `<ExcludeApp ID="…"/>` (for example `Access`, `Excel`, `Groove`, `Lync`, `OneDrive`, `OneNote`, `Outlook`, `OutlookForWindows`, `PowerPoint`, `Publisher`, `Teams`, `Word`). Merges apply to **suite** products in the XML; standalone Visio/Project products in multi-product presets are left unchanged. See [configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options).
+**Excluding apps:** The GUI and console installers offer optional exclusions. For automation, pass `-ExcludeApp` (repeatable or comma-separated) or set `OFFICE_AUTO_INSTALL_EXCLUDE_APPS`. IDs are the same as ODT `<ExcludeApp ID="…"/>` (for example `Access`, `Excel`, `Groove`, `Lync`, `OneDrive`, `OneNote`, `Outlook`, `OutlookForWindows`, `PowerPoint`, `Publisher`, `Teams`, `Word`). Merges apply to **suite** products in the generated XML; standalone Visio/Project products in multi-product bundles are left unchanged. See [configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options).
 
-### Presets (`configs\`)
+### Multi-product deploy (`-Bundle`) and uninstall
 
-**GUI / console:** The four **enterprise/business** profiles install the matching base XML; **Visio** and **Project** are optional add-ons you can mix freely (Visio only, Project only, both, or neither). **Custom** also offers **Visio and/or Project only** with no Word/Excel suite. **`Deploy-Microsoft365Apps.ps1`** can still target the combined `O365ProPlusVisioProject*.xml` files in one step for automation.
+**GUI / console:** The four **retail profiles** build installation XML in memory (enterprise/business × physical/VDI), merging **baseline excludes** with your checkboxes. **Visio** and **Project** are optional add-ons on any profile. **Custom** offers Office 2024 / LTSC / M365 retail or **Visio and/or Project only**. **`Deploy-Microsoft365Apps.ps1`** uses **`-RetailProfile`** for suite XML, **`-Bundle`** for M365 + Visio + Project multi-product scenarios, or **`-Uninstall`** for remove-all XML.
 
-| File | Use case |
-|------|-----------|
-| `O365ProPlus.xml` | Microsoft 365 Apps for enterprise, persistent machines |
-| `O365ProPlus-VDI.xml` | AVD / Windows 365 — shared computer licensing; Teams/OneDrive excluded (deploy separately if needed) |
-| `O365Business.xml` / `O365Business-VDI.xml` | Microsoft 365 Apps for business |
-| `O365ProPlusVisioProject.xml` / `…-VDI` | **All-in-one XML:** M365 Apps + **Visio LTSC 2021** + **Project LTSC 2021** (volume) — for `Deploy-Microsoft365Apps.ps1` or hand-editing |
-| `O365ProPlusVisioProject-Retail.xml` / `…-Retail-VDI` | **All-in-one:** M365 + **VisioProRetail** + **ProjectProRetail** (subscription Retail) |
-| `O365ProPlusVisioProject-2024.xml` / `…-2024-VDI` | **All-in-one:** M365 + **Visio/Project LTSC 2024** (volume) |
-| `Uninstall-Microsoft365Apps.xml` | Removal |
+| `-Bundle` value | Scenario |
+|-----------------|----------|
+| `O365ProPlusVisioProject` / `…-VDI` | M365 Apps + **Visio LTSC 2021** + **Project LTSC 2021** (volume); `-VDI` adds shared licensing |
+| `O365ProPlusVisioProject-Retail` / `…-Retail-VDI` | M365 + **VisioProRetail** + **ProjectProRetail** |
+| `O365ProPlusVisioProject-2024` / `…-2024-VDI` | M365 + **Visio/Project LTSC 2024** (volume) |
 
 **Visio / Project product IDs:** Microsoft’s ODT uses **`VisioProRetail`** / **`ProjectProRetail`** for subscription-style Click-to-Run, and **`VisioPro2024Volume`** / **`ProjectPro2024Volume`** (or **`*2024Retail`**) for Office LTSC 2024–aligned perpetual licenses. **`VisioPro2021Volume`** / **`ProjectPro2021Volume`** match LTSC 2021 volume. See [supported product IDs](https://learn.microsoft.com/office365/troubleshoot/installation/product-ids-supported-office-deployment-click-to-run) and the [configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options) Product element.
 
-Default presets exclude **new Outlook** (`OutlookForWindows`); edit XML to include or switch exclusions per [Microsoft’s configuration options](https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options).
+Standard retail profiles include a baseline **`OutlookForWindows`** exclude on physical machines and additional VDI excludes (Teams, OneDrive, etc.); your **ExcludeApp** choices are merged into the generated XML before setup runs.
 
 ### Shared engine (`M365AppsCore.ps1`)
 
@@ -117,7 +114,7 @@ Dot-sourced by the installers (not run directly). Provides `Save-M365AppsOfficeD
 |-------|------|
 | Office Deployment Tool (download) | https://www.microsoft.com/download/details.aspx?id=49117 |
 | ODT overview | https://learn.microsoft.com/microsoft-365-apps/deploy/overview-office-deployment-tool |
-| Configuration options | https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options |
+| **ODT configuration options** (valid XML elements, attributes, `Channel` values, examples) | https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options |
 | Win32 app packaging for Intune (optional) | https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool |
 | Microsoft license terms | https://www.microsoft.com/licensing/terms |
 
@@ -125,12 +122,12 @@ Dot-sourced by the installers (not run directly). Provides `Save-M365AppsOfficeD
 
 | Path | Role |
 |------|------|
-| `office.ps1` | Bootstrap (`irm \| iex`): downloads core + installer + `configs\`. |
+| `office.ps1` | Bootstrap (`irm \| iex`): downloads core + installer script. |
 | `M365AppsCore.ps1` | Shared engine (languages + ODT helpers); dot-sourced by other scripts. |
 | `Install-Office-GUI-WPF.ps1` | Graphical installer (Windows PowerShell 5.1). |
 | `Install-Office.ps1` | Console wizard. |
 | `Deploy-Microsoft365Apps.ps1` | Silent / automation entry. |
-| `configs\` | ODT XML presets. |
+| `configs\` | Optional empty folder (e.g. for your own XML); not required for built-in flows. |
 | `NOTICES.md` | License notices. |
 
 ## Requirements
@@ -141,7 +138,7 @@ Dot-sourced by the installers (not run directly). Provides `Save-M365AppsOfficeD
 
 ## Language compatibility (built-in rules)
 
-Deployments that include **Visio and/or Project** (volume) cannot use **en-gb**, **fr-ca**, or **es-mx** as the **primary** language in the same install — this matches Microsoft’s documented limitation for those apps. The GUI language list is **filtered** for Visio/Project profiles; `Assert-M365AppsLanguageCompatibleWithDeployment` in **`M365AppsCore.ps1`** blocks invalid combos in console and deploy (not for custom `-ConfigurationFile`).
+Deployments that include **Visio and/or Project** (volume) cannot use **en-gb**, **fr-ca**, or **es-mx** as the **primary** language in the same install — this matches Microsoft’s documented limitation for those apps. The GUI language list is **filtered** for Visio/Project profiles; `Assert-M365AppsLanguageCompatibleWithDeployment` in **`M365AppsCore.ps1`** blocks invalid combos in the GUI, console wizard, and deploy script.
 
 ## Troubleshooting: “language is not available”
 

@@ -4,9 +4,10 @@
     Interactive Microsoft 365 / Office installer using the Office Deployment Tool.
 
 .DESCRIPTION
-    Console wizard: choose a deployment profile (bundled preset XML under .\configs) or a custom interactive
-    configuration. Primary languages match Microsoft 365 Apps (see Get-M365AppsSupportedLanguages).
-    For unattended deploys use Deploy-Microsoft365Apps.ps1. ODT is downloaded from Microsoft's CDN.
+    Console wizard: choose a standard Microsoft 365 Apps profile (enterprise/business, physical/VDI) built from
+    M365AppsCore.ps1, or a custom interactive configuration. Primary languages match Microsoft 365 Apps
+    (see Get-M365AppsSupportedLanguages). For unattended deploys use Deploy-Microsoft365Apps.ps1.
+    ODT is downloaded from Microsoft's CDN.
 
 .NOTES
     Requires elevation. Example: powershell -ExecutionPolicy Bypass -File .\Install-Office.ps1
@@ -44,13 +45,13 @@ function Read-Choice {
     } while ($true)
 }
 
-function Get-PresetNameFromMenuChoice {
+function Get-M365RetailProfileFromMenuChoice {
     param([string]$Choice)
     $map = @{
-        '1' = 'O365ProPlus'
-        '2' = 'O365ProPlus-VDI'
-        '3' = 'O365Business'
-        '4' = 'O365Business-VDI'
+        '1' = 'EnterprisePhysical'
+        '2' = 'EnterpriseVDI'
+        '3' = 'BusinessPhysical'
+        '4' = 'BusinessVDI'
     }
     if ($map.ContainsKey($Choice)) { return $map[$Choice] }
     return $null
@@ -86,7 +87,7 @@ function Read-VisioProjectOptionalAddOns {
 
 function Resolve-ConsoleChannelOverride {
     <#
-    Preset path: 1 = use XML default (no override), 2 = Current, 3 = SemiAnnualEnterprise.
+    Standard profile path: 1 = use recommended default channel, 2 = Current, 3 = SemiAnnualEnterprise.
     Custom path: 1 = Current, 2 = SemiAnnualEnterprise.
     #>
     param(
@@ -149,27 +150,17 @@ Write-Host ' Uses Microsoft Office Deployment Tool (official).' -ForegroundColor
 Write-Host ''
 
 Write-Host ' Deployment mode:' -ForegroundColor White
-Write-Host '  [1] Deployment profile — uses preset XML (same as GUI; recommended for M365 business/enterprise, VDI, etc.)'
-Write-Host '  [2] Custom — Office 2024 / LTSC / M365 retail XML built in this session (no preset file)'
+Write-Host '  [1] Standard profile — Microsoft 365 Apps (enterprise/business, physical or VDI); XML generated for your choices'
+Write-Host '  [2] Custom — Office 2024 / LTSC / M365 retail XML built in this session'
 $deployMode = Read-Choice -Prompt 'Select' -Valid @('1', '2') -Default '1'
 $usePreset = ($deployMode -eq '1')
 
-if ($usePreset) {
-    try {
-        $null = Get-M365AppsPresetConfigurationPath -Preset 'O365ProPlus'
-    } catch {
-        Write-Host ' Preset configurations are missing. Ensure configs\ is next to this script and M365AppsCore.ps1.' -ForegroundColor Red
-        Write-Host " $($_.Exception.Message)" -ForegroundColor Yellow
-        Read-Host 'Press Enter to exit'
-        exit 1
-    }
-}
 
 Write-Host ''
 $arch = Read-Choice -Prompt 'Architecture: 1=64-bit  2=32-bit' -Valid @('1', '2') -Default '1'
 $bit = if ($arch -eq '2') { '32' } else { '64' }
 
-$presetName = $null
+$retailProfileName = $null
 $isCustom = $false
 $addonsOnly = $false
 $productId = $null
@@ -179,14 +170,14 @@ $visioProjectLine = $null
 
 if ($usePreset) {
     Write-Host ''
-    Write-Host ' Deployment profile (matches files under configs\):' -ForegroundColor White
+    Write-Host ' Microsoft 365 Apps profile:' -ForegroundColor White
     Write-Host '  [1] Microsoft 365 Apps — enterprise (physical / desktop)'
     Write-Host '  [2] Microsoft 365 Apps — enterprise (VDI / shared PC)'
     Write-Host '  [3] Microsoft 365 Apps — business (physical / desktop)'
     Write-Host '  [4] Microsoft 365 Apps — business (VDI / shared PC)'
     Write-Host ' Optional Visio/Project: you will be asked next (each is independent).' -ForegroundColor DarkGray
     $prof = Read-Choice -Prompt 'Select' -Valid @('1', '2', '3', '4') -Default '1'
-    $presetName = Get-PresetNameFromMenuChoice -Choice $prof
+    $retailProfileName = Get-M365RetailProfileFromMenuChoice -Choice $prof
     $isCustom = $false
     $vp = Read-VisioProjectOptionalAddOns -DefaultLineMenuChoice '1'
     $visio = $vp.Visio
@@ -232,8 +223,8 @@ if ($usePreset) {
 
 Write-Host ''
 if ($usePreset) {
-    Write-Host ' Update channel: preset XML has a default; override only if you need to.' -ForegroundColor DarkGray
-    $ch = Read-Choice -Prompt 'Channel: 1=Use preset default  2=Current  3=SemiAnnualEnterprise' -Valid @('1', '2', '3') -Default '1'
+    Write-Host ' Update channel: each profile has a recommended default; override only if you need to.' -ForegroundColor DarkGray
+    $ch = Read-Choice -Prompt 'Channel: 1=Use profile default  2=Current  3=SemiAnnualEnterprise' -Valid @('1', '2', '3') -Default '1'
 } else {
     Write-Host ' Update channel: Current = frequent; SemiAnnualEnterprise = less frequent.' -ForegroundColor DarkGray
     $ch = Read-Choice -Prompt 'Channel: 1=Current  2=SemiAnnualEnterprise' -Valid @('1', '2') -Default '1'
@@ -243,7 +234,7 @@ $channelOverride = Resolve-ConsoleChannelOverride -IsCustomProfile $isCustom -Ch
 $languageId = Read-ValidatedLanguageId
 try {
     if ($usePreset) {
-        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $languageId -Preset $presetName `
+        Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $languageId -Preset '' `
             -CustomIncludeVisio:($visio -eq '1') -CustomIncludeProject:($project -eq '1')
     } else {
         Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $languageId `
@@ -287,15 +278,17 @@ $configPath = Join-Path $installerFolder 'config.xml'
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 if ($usePreset) {
-    Write-Log "Building config from preset $presetName"
-    $src = Get-M365AppsPresetConfigurationPath -Preset $presetName
-    Copy-M365AppsConfigurationWithOverrides -SourcePath $src -DestinationPath $configPath `
-        -OfficeClientEdition $bit -LanguageId $languageId -Channel $channelOverride -ExcludeAppIds $excludeAppIds
+    Write-Log "Building config for retail profile $retailProfileName (merging user ExcludeApp selections)"
+    $xml = New-M365AppsO365ConfigurationForRetailProfile -RetailProfile $retailProfileName -OfficeClientEdition $bit `
+        -Channel $channelOverride -LanguageId $languageId -DisplayLevel $displayLevel `
+        -AdditionalExcludeAppIds $excludeAppIds
+    [System.IO.File]::WriteAllText($configPath, $xml, $utf8NoBom)
     Set-M365AppsConfigurationDisplayLevel -Path $configPath -Level $displayLevel
     if ($visio -eq '1' -or $project -eq '1') {
         Add-M365AppsOptionalVisioProjectProducts -Path $configPath -LanguageId $languageId `
             -IncludeVisio:($visio -eq '1') -IncludeProject:($project -eq '1') -VisioProjectLine $visioProjectLine
     }
+    Write-Log "Wrote configuration to $configPath"
 } else {
     if ($addonsOnly) {
         $vpl = if ($visioProjectLine) { $visioProjectLine } else { 'M365Retail' }
@@ -315,8 +308,8 @@ if ($usePreset) {
             -IncludeVisio:($visio -eq '1') -IncludeProject:($project -eq '1') -AutoActivate:$autoActivate -ExcludeAppIds $excludeAppIds
         [System.IO.File]::WriteAllText($configPath, $xml, $utf8NoBom)
     }
+    Write-Log "Wrote configuration to $configPath"
 }
-Write-Log "Wrote configuration to $configPath"
 
 $setupExe = Join-Path $installerFolder 'setup.exe'
 Write-Host ''

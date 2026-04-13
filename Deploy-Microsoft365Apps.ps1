@@ -1,45 +1,48 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Deploy Microsoft 365 Apps using the Office Deployment Tool and preset XML (AVD, physical, business).
+    Deploy Microsoft 365 Apps using the Office Deployment Tool (ODT).
 
 .DESCRIPTION
     Intended for automation: Azure Virtual Desktop, Windows 365, MECM, Intune Win32 wrapper scripts, golden images.
-    Preset XML is maintained under .\configs.
+    All configuration XML (retail profiles, Visio + Project bundles, uninstall) is generated from parameters.
 
-.PARAMETER Preset
-    Bundled configuration name under .\configs (see repository).
+.PARAMETER RetailProfile
+    One of four retail suite profiles: enterprise/business combined with physical desktop or VDI/shared PC.
+    Default channel is chosen per profile unless -Channel is set.
 
-.PARAMETER ConfigurationFile
-    Overrides Preset with a full path to any valid ODT configuration XML.
+.PARAMETER Channel
+    Optional override for the ODT Add Channel attribute. Must match values documented by Microsoft:
+    https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options
+
+.PARAMETER Bundle
+    Generates multi-product XML (M365 Apps + Visio + Project) for the named bundle scenario (same names as before).
 
 .PARAMETER Uninstall
-    Runs removal using configs\Uninstall-Microsoft365Apps.xml
+    Removes Microsoft 365 Apps (Click-to-Run) using generated Remove All configuration XML.
 
 .PARAMETER ExcludeApp
-    One or more ODT ExcludeApp IDs (e.g. Teams, OneDrive, Access) merged into the suite product in preset or custom XML.
-    Valid IDs match Microsoft’s documentation (see M365AppsCore.ps1). Ignored when -Uninstall is used.
+    ODT ExcludeApp IDs merged into the suite product (retail or bundle). Ignored when -Uninstall is used.
 
 .EXAMPLE
-    .\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus-VDI -LanguageId en-us
-
-.EXAMPLE
-    .\Deploy-Microsoft365Apps.ps1 -ConfigurationFile 'C:\Deploy\custom.xml'
+    .\Deploy-Microsoft365Apps.ps1 -RetailProfile EnterpriseVDI -LanguageId en-us
 
 .EXAMPLE
     .\Deploy-Microsoft365Apps.ps1 -Uninstall
 
 .EXAMPLE
-    .\Deploy-Microsoft365Apps.ps1 -Preset O365ProPlus -LanguageId en-us -ExcludeApp Teams,OneDrive,Access
+    .\Deploy-Microsoft365Apps.ps1 -RetailProfile EnterprisePhysical -LanguageId en-us -ExcludeApp Teams,OneDrive,Access
+
+.EXAMPLE
+    .\Deploy-Microsoft365Apps.ps1 -Bundle O365ProPlusVisioProject-VDI -LanguageId en-us
 #>
-[CmdletBinding(DefaultParameterSetName = 'Deploy')]
+[CmdletBinding(DefaultParameterSetName = 'Retail')]
 param(
-    [Parameter(ParameterSetName = 'Deploy')]
+    [Parameter(ParameterSetName = 'Uninstall')]
+    [switch]$Uninstall,
+
+    [Parameter(ParameterSetName = 'Bundle', Mandatory)]
     [ValidateSet(
-        'O365ProPlus',
-        'O365ProPlus-VDI',
-        'O365Business',
-        'O365Business-VDI',
         'O365ProPlusVisioProject',
         'O365ProPlusVisioProject-Retail',
         'O365ProPlusVisioProject-2024',
@@ -47,24 +50,21 @@ param(
         'O365ProPlusVisioProject-Retail-VDI',
         'O365ProPlusVisioProject-2024-VDI'
     )]
-    [string]$Preset = 'O365ProPlus',
+    [string]$Bundle,
 
-    [Parameter(ParameterSetName = 'Deploy')]
-    [ValidateScript({ Test-Path -LiteralPath $_ })]
-    [string]$ConfigurationFile,
-
-    [Parameter(ParameterSetName = 'Uninstall')]
-    [switch]$Uninstall,
+    [Parameter(ParameterSetName = 'Retail')]
+    [ValidateSet('EnterprisePhysical', 'EnterpriseVDI', 'BusinessPhysical', 'BusinessVDI')]
+    [string]$RetailProfile = 'EnterprisePhysical',
 
     [ValidateSet('32', '64')]
     [string]$OfficeClientEdition = '64',
 
-    [ValidateSet('Current', 'MonthlyEnterprise', 'SemiAnnualEnterprise', 'SemiAnnualPreview')]
     [string]$Channel,
 
     [string]$LanguageId = 'en-us',
 
-    [Parameter(ParameterSetName = 'Deploy')]
+    [Parameter(ParameterSetName = 'Retail')]
+    [Parameter(ParameterSetName = 'Bundle')]
     [string[]]$ExcludeApp = @(),
 
     [string]$WorkingDirectory,
@@ -82,6 +82,10 @@ if (-not (Test-Path -LiteralPath $corePath)) {
 }
 . $corePath
 
+if ($Channel) {
+    Assert-M365AppsOdtAddChannelValue -Channel $Channel
+}
+
 if (-not $SkipAdministratorCheck -and -not (Test-M365AppsAdministrator)) {
     throw 'Run this script from an elevated PowerShell session (Run as Administrator).'
 }
@@ -90,12 +94,13 @@ if (-not $SkipPrerequisiteTest) {
     Test-M365AppsPrerequisites
 }
 
-if ($PSCmdlet.ParameterSetName -eq 'Deploy' -and -not $ConfigurationFile) {
-    Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $LanguageId -Preset $Preset
+if ($PSCmdlet.ParameterSetName -in @('Retail', 'Bundle')) {
+    $assertPreset = if ($PSCmdlet.ParameterSetName -eq 'Bundle') { $Bundle } else { '' }
+    Assert-M365AppsLanguageCompatibleWithDeployment -LanguageId $LanguageId -Preset $assertPreset
 }
 
 $excludeNormalized = @()
-if ($PSCmdlet.ParameterSetName -eq 'Deploy' -and $ExcludeApp -and $ExcludeApp.Count -gt 0) {
+if ($PSCmdlet.ParameterSetName -in @('Retail', 'Bundle') -and $ExcludeApp -and $ExcludeApp.Count -gt 0) {
     $excludeNormalized = Resolve-M365AppsExcludeAppIdList -CommaSeparatedText ($ExcludeApp -join ',')
 }
 
@@ -111,19 +116,25 @@ if (-not (Test-Path -LiteralPath $work)) {
 $setupExe = Join-Path $work 'setup.exe'
 Save-M365AppsOfficeDeploymentTool -DestinationPath $setupExe
 
+$destCfg = Join-Path $work 'config.xml'
+$ch = if ($Channel) { $Channel } else { $null }
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
 if ($Uninstall) {
-    $cfg = Get-M365AppsUninstallConfigurationPath
-    Copy-Item -LiteralPath $cfg -Destination (Join-Path $work 'config.xml') -Force
-} elseif ($ConfigurationFile) {
-    Copy-M365AppsConfigurationWithOverrides -SourcePath $ConfigurationFile -DestinationPath (Join-Path $work 'config.xml') -OfficeClientEdition $OfficeClientEdition -Channel $Channel -LanguageId $LanguageId -ExcludeAppIds $excludeNormalized
+    $xmlUn = New-M365AppsUninstallConfigurationXml -DisplayLevel 'None'
+    [System.IO.File]::WriteAllText($destCfg, $xmlUn, $utf8NoBom)
+} elseif ($PSCmdlet.ParameterSetName -eq 'Bundle') {
+    $xmlBundle = New-M365AppsVisioProjectBundleConfigurationXml -Bundle $Bundle -OfficeClientEdition $OfficeClientEdition `
+        -Channel $ch -LanguageId $LanguageId -DisplayLevel 'None'
+    Export-M365AppsConfigurationStringToPathWithOverrides -ConfigurationXml $xmlBundle -DestinationPath $destCfg `
+        -OfficeClientEdition $OfficeClientEdition -Channel $ch -LanguageId $LanguageId -ExcludeAppIds $excludeNormalized
 } else {
-    $src = Get-M365AppsPresetConfigurationPath -Preset $Preset
-    $ch = if ($Channel) { $Channel } else { $null }
-    Copy-M365AppsConfigurationWithOverrides -SourcePath $src -DestinationPath (Join-Path $work 'config.xml') -OfficeClientEdition $OfficeClientEdition -Channel $ch -LanguageId $LanguageId -ExcludeAppIds $excludeNormalized
+    $xml = New-M365AppsO365ConfigurationForRetailProfile -RetailProfile $RetailProfile -OfficeClientEdition $OfficeClientEdition `
+        -Channel $ch -LanguageId $LanguageId -DisplayLevel 'None' -AdditionalExcludeAppIds $excludeNormalized
+    [System.IO.File]::WriteAllText($destCfg, $xml, $utf8NoBom)
 }
 
-$configPath = Join-Path $work 'config.xml'
-$code = Start-M365AppsSetup -SetupExePath $setupExe -ConfigurationPath $configPath -Wait
+$code = Start-M365AppsSetup -SetupExePath $setupExe -ConfigurationPath $destCfg -Wait
 if ($code -ne 0) {
     Write-Warning "setup.exe exited with code $code. Review Office logs under %TEMP% or the path set in your configuration."
 }

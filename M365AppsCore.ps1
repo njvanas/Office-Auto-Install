@@ -2,12 +2,31 @@
 # Office-Auto-Install: shared ODT engine (Microsoft 365 Apps languages + helpers).
 # Dot-source from installer scripts: . (Join-Path $PSScriptRoot 'M365AppsCore.ps1')
 # Not intended as a standalone entry point.
+# Authoritative ODT configuration XML reference: https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options
 
 $script:OdtSetupExeUrl = 'https://officecdn.microsoft.com/pr/wsus/setup.exe'
 if (-not $PSScriptRoot) {
     throw 'M365AppsCore.ps1 must be saved on disk and dot-sourced so $PSScriptRoot resolves.'
 }
 $script:ModuleRoot = $PSScriptRoot
+
+# Office Deployment Tool — configuration elements, attributes, and allowed values:
+# https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options
+$script:M365AppsOdtConfigurationLearnUrl = 'https://learn.microsoft.com/microsoft-365-apps/deploy/office-deployment-tool-configuration-options'
+
+# <Add Channel="..."> — values documented on the page above (plus legacy names Microsoft still accepts).
+$script:M365AppsValidOdtAddChannelValues = @(
+    'BetaChannel',
+    'CurrentPreview',
+    'Current',
+    'MonthlyEnterprise',
+    'SemiAnnualPreview',
+    'SemiAnnual',
+    'SemiAnnualEnterprise',
+    'PerpetualVL2024',
+    'PerpetualVL2021',
+    'PerpetualVL2019'
+)
 
 # Culture IDs — Microsoft Learn: overview-deploying-languages-microsoft-365-apps
 $script:M365AppsLanguageEntries = @(
@@ -376,7 +395,7 @@ function Get-M365AppsOfficialOfficeDeploymentToolUri {
 function Get-M365AppsConfigDirectory {
     <#
     .SYNOPSIS
-        Returns the path to bundled preset configuration XML files under configs\.
+        Returns the path to configs\ next to the module (optional folder for your own XML files).
     #>
     [CmdletBinding()]
     param()
@@ -435,42 +454,114 @@ function Save-M365AppsOfficeDeploymentTool {
     }
 }
 
-function Get-M365AppsUninstallConfigurationPath {
-    [CmdletBinding()]
-    param()
-    $path = Join-Path (Get-M365AppsConfigDirectory) 'Uninstall-Microsoft365Apps.xml'
-    if (-not (Test-Path -LiteralPath $path)) { throw "Uninstall configuration not found: $path" }
-    (Resolve-Path -LiteralPath $path).Path
-}
-
-function Get-M365AppsPresetConfigurationPath {
+function Get-M365AppsOdtConfigurationDocumentationUri {
     <#
     .SYNOPSIS
-        Resolves a preset name to a bundled configuration file path (see /configs).
+        Returns the Microsoft Learn URL for Office Deployment Tool configuration options (valid elements and attributes).
+    #>
+    [CmdletBinding()]
+    param()
+    $script:M365AppsOdtConfigurationLearnUrl
+}
+
+function Assert-M365AppsOdtAddChannelValue {
+    <#
+    .SYNOPSIS
+        Ensures a Channel value is one of the names documented for the ODT Add element.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Channel
+    )
+    if ([string]::IsNullOrWhiteSpace($Channel)) { return }
+    if ($script:M365AppsValidOdtAddChannelValues -notcontains $Channel) {
+        throw "Invalid ODT Add Channel '$Channel'. See: $(Get-M365AppsOdtConfigurationDocumentationUri). Allowed values: $($script:M365AppsValidOdtAddChannelValues -join ', ')."
+    }
+}
+
+function Test-M365AppsConfigurationXml {
+    <#
+    .SYNOPSIS
+        Validates that text is well-formed XML with an ODT Configuration root element.
+    .NOTES
+        Full syntax for Product, Language, Updates, Remove, and other elements is defined by Microsoft:
+        Get-M365AppsOdtConfigurationDocumentationUri
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [ValidateSet(
-            'O365ProPlus',
-            'O365ProPlus-VDI',
-            'O365Business',
-            'O365Business-VDI',
-            'O365ProPlusVisioProject',
-            'O365ProPlusVisioProject-Retail',
-            'O365ProPlusVisioProject-2024',
-            'O365ProPlusVisioProject-VDI',
-            'O365ProPlusVisioProject-Retail-VDI',
-            'O365ProPlusVisioProject-2024-VDI'
-        )]
-        [string]$Preset
+        [string]$XmlText
     )
-    $name = "$Preset.xml"
-    $path = Join-Path (Get-M365AppsConfigDirectory) $name
-    if (-not (Test-Path -LiteralPath $path)) {
-        throw "Preset configuration not found: $path"
+    if ([string]::IsNullOrWhiteSpace($XmlText)) {
+        throw 'Configuration XML is empty.'
     }
-    return (Resolve-Path -LiteralPath $path).Path
+    try {
+        [xml]$doc = $XmlText.Trim()
+    } catch {
+        throw "Configuration XML is not valid XML: $($_.Exception.Message)"
+    }
+    if (-not $doc.Configuration) {
+        throw 'Invalid ODT configuration: root element must be Configuration.'
+    }
+}
+
+function Build-M365AppsUpdatesXmlLine {
+    <#
+    .SYNOPSIS
+        Single-line ODT Updates element for Configuration (portal-style update controls).
+    #>
+    [CmdletBinding()]
+    param(
+        [bool]$Enabled = $true,
+        [string]$TargetVersion,
+        [string]$Deadline
+    )
+    $attrs = @("Enabled=`"$(if ($Enabled) { 'TRUE' } else { 'FALSE' })`"")
+    if ($TargetVersion -and $TargetVersion.Trim()) {
+        $attrs += "TargetVersion=`"$($TargetVersion.Trim())`""
+    }
+    if ($Deadline -and $Deadline.Trim()) {
+        $attrs += "Deadline=`"$($Deadline.Trim())`""
+    }
+    "  <Updates $($attrs -join ' ') />"
+}
+
+function Merge-M365AppsLanguageIdList {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$PrimaryLanguageId,
+        [string[]]$AdditionalLanguageIds
+    )
+    $list = New-Object System.Collections.Generic.List[string]
+    [void]$list.Add($PrimaryLanguageId.Trim().ToLowerInvariant())
+    if ($AdditionalLanguageIds) {
+        foreach ($a in $AdditionalLanguageIds) {
+            if ([string]::IsNullOrWhiteSpace($a)) { continue }
+            $x = $a.Trim().ToLowerInvariant()
+            if (-not $list.Contains($x)) { [void]$list.Add($x) }
+        }
+    }
+    return ,$list.ToArray()
+}
+
+function New-M365AppsUninstallConfigurationXml {
+    <#
+    .SYNOPSIS
+        Builds ODT XML to remove all Microsoft 365 Apps (Click-to-Run) per Microsoft Remove element guidance.
+    #>
+    [CmdletBinding()]
+    param(
+        [ValidateSet('Full', 'None')]
+        [string]$DisplayLevel = 'None'
+    )
+    @"
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+  <Remove All="TRUE" />
+  <Display Level="$DisplayLevel" AcceptEULA="TRUE" />
+</Configuration>
+"@
 }
 
 function Set-M365AppsConfigurationOverrides {
@@ -488,8 +579,7 @@ function Set-M365AppsConfigurationOverrides {
         [string]$LanguageId = 'en-us'
     )
     if ($Channel) {
-        $valid = @('Current', 'MonthlyEnterprise', 'SemiAnnualEnterprise', 'SemiAnnualPreview')
-        if ($Channel -notin $valid) { throw "Invalid Channel '$Channel'. Use: $($valid -join ', ')." }
+        Assert-M365AppsOdtAddChannelValue -Channel $Channel
     }
     [xml]$doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
     $cfg = $doc.Configuration
@@ -540,11 +630,15 @@ function Set-M365AppsConfigurationDisplayLevel {
     [System.IO.File]::WriteAllText((Resolve-Path -LiteralPath $Path).Path, $doc.OuterXml, $utf8NoBom)
 }
 
-function Copy-M365AppsConfigurationWithOverrides {
+function Export-M365AppsConfigurationStringToPathWithOverrides {
+    <#
+    .SYNOPSIS
+        Writes generated ODT XML to disk, then applies edition/channel/language and optional ExcludeApp merges.
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$SourcePath,
+        [string]$ConfigurationXml,
         [Parameter(Mandatory)]
         [string]$DestinationPath,
         [ValidateSet('32', '64')]
@@ -553,11 +647,95 @@ function Copy-M365AppsConfigurationWithOverrides {
         [string]$LanguageId = 'en-us',
         [string[]]$ExcludeAppIds
     )
-    Copy-Item -LiteralPath $SourcePath -Destination $DestinationPath -Force
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($DestinationPath, $ConfigurationXml.Trim(), $utf8NoBom)
     Set-M365AppsConfigurationOverrides -Path $DestinationPath -OfficeClientEdition $OfficeClientEdition -Channel $Channel -LanguageId $LanguageId
     if ($ExcludeAppIds -and $ExcludeAppIds.Count -gt 0) {
         Merge-M365AppsExcludeAppsIntoProducts -Path $DestinationPath -ExcludeAppIds $ExcludeAppIds
     }
+}
+
+function Resolve-M365AppsVisioProjectBundleDefinition {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet(
+            'O365ProPlusVisioProject',
+            'O365ProPlusVisioProject-Retail',
+            'O365ProPlusVisioProject-2024',
+            'O365ProPlusVisioProject-VDI',
+            'O365ProPlusVisioProject-Retail-VDI',
+            'O365ProPlusVisioProject-2024-VDI'
+        )]
+        [string]$Bundle
+    )
+    switch ($Bundle) {
+        'O365ProPlusVisioProject' { return @{ Line = 'LTSC2021Volume'; Vdi = $false } }
+        'O365ProPlusVisioProject-VDI' { return @{ Line = 'LTSC2021Volume'; Vdi = $true } }
+        'O365ProPlusVisioProject-Retail' { return @{ Line = 'M365Retail'; Vdi = $false } }
+        'O365ProPlusVisioProject-Retail-VDI' { return @{ Line = 'M365Retail'; Vdi = $true } }
+        'O365ProPlusVisioProject-2024' { return @{ Line = 'LTSC2024Volume'; Vdi = $false } }
+        'O365ProPlusVisioProject-2024-VDI' { return @{ Line = 'LTSC2024Volume'; Vdi = $true } }
+        default { throw "Unknown bundle '$Bundle'." }
+    }
+}
+
+function New-M365AppsVisioProjectBundleConfigurationXml {
+    <#
+    .SYNOPSIS
+        Builds ODT XML for Microsoft 365 Apps (enterprise retail suite) plus Visio and Project (subscription or LTSC volume).
+    .DESCRIPTION
+        Replaces former static configs\O365ProPlusVisioProject*.xml files. Baseline suite excludes match physical vs VDI;
+        pass user ExcludeApp lists through Export-M365AppsConfigurationStringToPathWithOverrides.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet(
+            'O365ProPlusVisioProject',
+            'O365ProPlusVisioProject-Retail',
+            'O365ProPlusVisioProject-2024',
+            'O365ProPlusVisioProject-VDI',
+            'O365ProPlusVisioProject-Retail-VDI',
+            'O365ProPlusVisioProject-2024-VDI'
+        )]
+        [string]$Bundle,
+        [ValidateSet('32', '64')]
+        [string]$OfficeClientEdition = '64',
+        [string]$Channel,
+        [string]$LanguageId = 'en-us',
+        [ValidateSet('Full', 'None')]
+        [string]$DisplayLevel = 'None'
+    )
+    $def = Resolve-M365AppsVisioProjectBundleDefinition -Bundle $Bundle
+    $channelResolved = if ($Channel) { $Channel } else { 'MonthlyEnterprise' }
+    Assert-M365AppsOdtAddChannelValue -Channel $channelResolved
+    $vp = Get-M365AppsVisioProjectProductIds -Line $def.Line
+    $suiteEx = @(Get-M365AppsO365RetailBaseExcludeAppIds -Vdi:($def.Vdi))
+    $excLines = @()
+    foreach ($id in ($suiteEx | Sort-Object)) {
+        $excLines += "      <ExcludeApp ID=`"$id`" />"
+    }
+    $excBlock = if ($excLines.Count) { "`n$($excLines -join "`n")" } else { '' }
+    $vdiProps = if ($def.Vdi) { "`n  <Property Name=`"SharedComputerLicensing`" Value=`"1`" />" } else { '' }
+    @"
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration ID="$Bundle">
+  <Add OfficeClientEdition="$OfficeClientEdition" Channel="$channelResolved">
+    <Product ID="O365ProPlusRetail">
+      <Language ID="$LanguageId" />$excBlock
+    </Product>
+    <Product ID="$($vp.Visio)">
+      <Language ID="$LanguageId" />
+    </Product>
+    <Product ID="$($vp.Project)">
+      <Language ID="$LanguageId" />
+    </Product>
+  </Add>
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />$vdiProps
+  <Display Level="$DisplayLevel" AcceptEULA="TRUE" />
+</Configuration>
+"@
 }
 
 function Add-M365AppsOptionalVisioProjectProducts {
@@ -575,10 +753,12 @@ function Add-M365AppsOptionalVisioProjectProducts {
         [switch]$IncludeProject,
         [Parameter(Mandatory)]
         [ValidateSet('M365Retail', 'LTSC2021Volume', 'LTSC2024Volume', 'Office2024Retail')]
-        [string]$VisioProjectLine
+        [string]$VisioProjectLine,
+        [string[]]$AdditionalLanguageIds = @()
     )
     if (-not $IncludeVisio -and -not $IncludeProject) { return }
     $vp = Get-M365AppsVisioProjectProductIds -Line $VisioProjectLine
+    $allLangs = Merge-M365AppsLanguageIdList -PrimaryLanguageId $LanguageId -AdditionalLanguageIds $AdditionalLanguageIds
     [xml]$doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
     $add = $doc.Configuration.Add
     if (-not $add) { throw 'Invalid ODT XML: Configuration/Add missing; cannot append Visio/Project.' }
@@ -591,9 +771,11 @@ function Add-M365AppsOptionalVisioProjectProducts {
         param([string]$ProductId)
         $prod = $doc.CreateElement('Product')
         $prod.SetAttribute('ID', $ProductId)
-        $lang = $doc.CreateElement('Language')
-        $lang.SetAttribute('ID', $LanguageId)
-        [void]$prod.AppendChild($lang)
+        foreach ($lid in $allLangs) {
+            $lang = $doc.CreateElement('Language')
+            $lang.SetAttribute('ID', $lid)
+            [void]$prod.AppendChild($lang)
+        }
         return $prod
     }
     if ($IncludeVisio -and -not $existing.ContainsKey($vp.Visio.ToLowerInvariant())) {
@@ -647,7 +829,6 @@ function New-M365AppsInteractiveConfiguration {
         [string]$LanguageId = 'en-us',
         [ValidateSet('32', '64')]
         [string]$OfficeClientEdition = '64',
-        [ValidateSet('Current', 'MonthlyEnterprise', 'SemiAnnualEnterprise')]
         [string]$Channel = 'Current',
         [ValidateSet('Full', 'None')]
         [string]$DisplayLevel = 'Full',
@@ -657,27 +838,50 @@ function New-M365AppsInteractiveConfiguration {
         [ValidateSet('M365Retail', 'LTSC2021Volume', 'LTSC2024Volume', 'Office2024Retail')]
         [string]$VisioProjectLine,
         [switch]$AutoActivate,
-        [string[]]$ExcludeAppIds
+        [string[]]$ExcludeAppIds,
+        [string[]]$AdditionalLanguageIds = @(),
+        [bool]$UpdatesEnabled = $true,
+        [string]$UpdatesTargetVersion,
+        [string]$UpdatesDeadline,
+        [switch]$SharedComputerLicensing
     )
     if ($PSCmdlet.ParameterSetName -eq 'AddOnsOnly') {
         if (-not $IncludeVisio -and -not $IncludeProject) {
             throw 'AddOnsOnly requires -IncludeVisio and/or -IncludeProject.'
         }
     }
+    if ($SharedComputerLicensing -and $PSCmdlet.ParameterSetName -eq 'Suite' -and $ProductId -ne 'O365ProPlusRetail') {
+        throw 'Shared computer licensing applies to Microsoft 365 Apps (Click-to-Run) suite (O365ProPlusRetail) in this tool.'
+    }
+    Assert-M365AppsOdtAddChannelValue -Channel $Channel
     $validEx = $script:M365AppsValidExcludeAppIds
-    $excLines = @()
+    $mergedEx = @{}
+    if ($PSCmdlet.ParameterSetName -eq 'Suite' -and $ProductId -eq 'O365ProPlusRetail') {
+        $baseEx = if ($SharedComputerLicensing) {
+            @(Get-M365AppsO365RetailBaseExcludeAppIds -Vdi)
+        } else {
+            @(Get-M365AppsO365RetailBaseExcludeAppIds)
+        }
+        foreach ($b in $baseEx) { $mergedEx[$b] = $true }
+    }
     if ($PSCmdlet.ParameterSetName -eq 'Suite' -and $ExcludeAppIds) {
         foreach ($x in $ExcludeAppIds) {
             if ([string]::IsNullOrWhiteSpace($x)) { continue }
             $m = $validEx | Where-Object { $_ -ieq $x.Trim() } | Select-Object -First 1
             if (-not $m) { throw "Invalid ExcludeApp ID '$x'. Use: $($validEx -join ', ')." }
-            $excLines += "    <ExcludeApp ID=`"$m`" />"
+            $mergedEx[$m] = $true
         }
     }
+    $excLines = @()
+    foreach ($id in ($mergedEx.Keys | Sort-Object)) {
+        $excLines += "    <ExcludeApp ID=`"$id`" />"
+    }
     $excBlock = if ($excLines.Count) { "`n$($excLines -join "`n")" } else { '' }
+    $langIds = Merge-M365AppsLanguageIdList -PrimaryLanguageId $LanguageId -AdditionalLanguageIds $AdditionalLanguageIds
+    $langInner = ($langIds | ForEach-Object { "  <Language ID=`"$_`" />" }) -join "`n"
     $products = @()
     if ($PSCmdlet.ParameterSetName -eq 'Suite') {
-        $products += "<Product ID='$ProductId'>`n  <Language ID='$LanguageId' />$excBlock`n</Product>"
+        $products += "<Product ID='$ProductId'>`n$langInner$excBlock`n</Product>"
     }
     $vpIds = $null
     if ($IncludeVisio -or $IncludeProject) {
@@ -692,24 +896,180 @@ function New-M365AppsInteractiveConfiguration {
         $vpIds = Get-M365AppsVisioProjectProductIds -Line $line
     }
     if ($IncludeVisio) {
-        $products += "<Product ID='$($vpIds.Visio)'>`n  <Language ID='$LanguageId' />`n</Product>"
+        $products += "<Product ID='$($vpIds.Visio)'>`n$langInner`n</Product>"
     }
     if ($IncludeProject) {
-        $products += "<Product ID='$($vpIds.Project)'>`n  <Language ID='$LanguageId' />`n</Product>"
+        $products += "<Product ID='$($vpIds.Project)'>`n$langInner`n</Product>"
     }
 
     $props = @()
+    if ($PSCmdlet.ParameterSetName -eq 'Suite') {
+        $props += '  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />'
+        if ($SharedComputerLicensing) {
+            $props += '  <Property Name="SharedComputerLicensing" Value="1" />'
+        }
+    }
     if ($AutoActivate -and $PSCmdlet.ParameterSetName -eq 'Suite') {
         $props += '  <Property Name="AUTOACTIVATE" Value="1" />'
     }
     $propsBlock = if ($props.Count) { "`n$($props -join "`n")" } else { '' }
+    $updatesLine = Build-M365AppsUpdatesXmlLine -Enabled:$UpdatesEnabled -TargetVersion $UpdatesTargetVersion -Deadline $UpdatesDeadline
 
     @"
 <Configuration>
   <Add OfficeClientEdition="$OfficeClientEdition" Channel="$Channel">
     $($products -join "`n    ")
   </Add>
+$updatesLine
   <Display Level="$DisplayLevel" AcceptEULA="TRUE" />$propsBlock
 </Configuration>
 "@
+}
+
+function Get-M365AppsO365RetailBaseExcludeAppIds {
+    <#
+    .SYNOPSIS
+        Built-in ExcludeApp IDs for Microsoft 365 Apps (retail) profiles before user-selected excludes are merged.
+    #>
+    [CmdletBinding()]
+    param(
+        [switch]$Vdi
+    )
+    if ($Vdi) {
+        return @('Groove', 'Lync', 'OneDrive', 'OutlookForWindows', 'Teams')
+    }
+    return @('OutlookForWindows')
+}
+
+function New-M365AppsO365Configuration {
+    <#
+    .SYNOPSIS
+        Builds ODT XML for Microsoft 365 Apps retail suite (O365ProPlusRetail or O365BusinessRetail).
+    .DESCRIPTION
+        Enterprise vs business differ only by product ID and default update channel. VDI/shared PC adds
+        SharedComputerLicensing and standard VDI excludes; physical profiles add a minimal base exclude.
+        AdditionalExcludeAppIds are unioned with the base list and validated against ODT ExcludeApp IDs.
+        AdditionalLanguageIds add extra Language elements (same as Microsoft 365 admin center / deployment settings).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('Enterprise', 'Business')]
+        [string]$O365Sku,
+        [switch]$Vdi,
+        [ValidateSet('32', '64')]
+        [string]$OfficeClientEdition = '64',
+        [string]$Channel,
+        [string]$LanguageId = 'en-us',
+        [string[]]$AdditionalLanguageIds = @(),
+        [ValidateSet('Full', 'None')]
+        [string]$DisplayLevel = 'None',
+        [string[]]$AdditionalExcludeAppIds,
+        [bool]$UpdatesEnabled = $true,
+        [string]$UpdatesTargetVersion,
+        [string]$UpdatesDeadline
+    )
+    $productId = if ($O365Sku -eq 'Enterprise') { 'O365ProPlusRetail' } else { 'O365BusinessRetail' }
+    $resolvedChannel = $Channel
+    if (-not $resolvedChannel) {
+        $resolvedChannel = if ($O365Sku -eq 'Enterprise') { 'MonthlyEnterprise' } else { 'Current' }
+    } else {
+        Assert-M365AppsOdtAddChannelValue -Channel $resolvedChannel
+    }
+    $configId = if ($O365Sku -eq 'Enterprise') {
+        if ($Vdi) { 'EnterpriseVDI' } else { 'EnterprisePhysical' }
+    } else {
+        if ($Vdi) { 'BusinessVDI' } else { 'BusinessPhysical' }
+    }
+    $baseEx = @(Get-M365AppsO365RetailBaseExcludeAppIds -Vdi:$Vdi)
+    $validEx = $script:M365AppsValidExcludeAppIds
+    $merged = @{}
+    foreach ($x in $baseEx) { $merged[$x] = $true }
+    if ($AdditionalExcludeAppIds) {
+        foreach ($raw in $AdditionalExcludeAppIds) {
+            if ([string]::IsNullOrWhiteSpace($raw)) { continue }
+            $m = $validEx | Where-Object { $_ -ieq $raw.Trim() } | Select-Object -First 1
+            if (-not $m) { throw "Invalid ExcludeApp ID '$raw'. Use: $($validEx -join ', ')." }
+            $merged[$m] = $true
+        }
+    }
+    $excLines = @()
+    foreach ($id in ($merged.Keys | Sort-Object)) {
+        $excLines += "      <ExcludeApp ID=`"$id`" />"
+    }
+    $excBlock = if ($excLines.Count) { "`n$($excLines -join "`n")" } else { '' }
+    $vdiProps = if ($Vdi) { "`n  <Property Name=`"SharedComputerLicensing`" Value=`"1`" />" } else { '' }
+    $langIds = Merge-M365AppsLanguageIdList -PrimaryLanguageId $LanguageId -AdditionalLanguageIds $AdditionalLanguageIds
+    $langLines = @()
+    foreach ($lid in $langIds) {
+        $langLines += "      <Language ID=`"$lid`" />"
+    }
+    $langBlock = $langLines -join "`n"
+    $updatesLine = Build-M365AppsUpdatesXmlLine -Enabled:$UpdatesEnabled -TargetVersion $UpdatesTargetVersion -Deadline $UpdatesDeadline
+    @"
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration ID="$configId">
+  <Add OfficeClientEdition="$OfficeClientEdition" Channel="$resolvedChannel">
+    <Product ID="$productId">
+$langBlock$excBlock
+    </Product>
+  </Add>
+$updatesLine
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />$vdiProps
+  <Display Level="$DisplayLevel" AcceptEULA="TRUE" />
+</Configuration>
+"@
+}
+
+function New-M365AppsO365ConfigurationForRetailProfile {
+    <#
+    .SYNOPSIS
+        Same as New-M365AppsO365Configuration using the four retail deployment profiles (enterprise/business x physical/VDI).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('EnterprisePhysical', 'EnterpriseVDI', 'BusinessPhysical', 'BusinessVDI')]
+        [string]$RetailProfile,
+        [ValidateSet('32', '64')]
+        [string]$OfficeClientEdition = '64',
+        [string]$Channel,
+        [string]$LanguageId = 'en-us',
+        [string[]]$AdditionalLanguageIds = @(),
+        [ValidateSet('Full', 'None')]
+        [string]$DisplayLevel = 'None',
+        [string[]]$AdditionalExcludeAppIds,
+        [bool]$UpdatesEnabled = $true,
+        [string]$UpdatesTargetVersion,
+        [string]$UpdatesDeadline
+    )
+    $sku = 'Enterprise'
+    $vdi = $false
+    switch ($RetailProfile) {
+        'EnterprisePhysical' { $sku = 'Enterprise'; $vdi = $false }
+        'EnterpriseVDI' { $sku = 'Enterprise'; $vdi = $true }
+        'BusinessPhysical' { $sku = 'Business'; $vdi = $false }
+        'BusinessVDI' { $sku = 'Business'; $vdi = $true }
+    }
+    New-M365AppsO365Configuration -O365Sku $sku -Vdi:$vdi -OfficeClientEdition $OfficeClientEdition `
+        -Channel $Channel -LanguageId $LanguageId -AdditionalLanguageIds $AdditionalLanguageIds -DisplayLevel $DisplayLevel `
+        -AdditionalExcludeAppIds $AdditionalExcludeAppIds -UpdatesEnabled:$UpdatesEnabled `
+        -UpdatesTargetVersion $UpdatesTargetVersion -UpdatesDeadline $UpdatesDeadline
+}
+
+function Resolve-M365AppsLegacyO365PresetNameToRetailProfile {
+    <#
+    .SYNOPSIS
+        Maps deprecated O365*.xml preset names to RetailProfile values (for older scripts and env vars).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    $t = $Name.Trim()
+    switch ($t) {
+        'O365ProPlus' { return 'EnterprisePhysical' }
+        'O365ProPlus-VDI' { return 'EnterpriseVDI' }
+        'O365Business' { return 'BusinessPhysical' }
+        'O365Business-VDI' { return 'BusinessVDI' }
+        default { return $null }
+    }
 }
