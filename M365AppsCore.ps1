@@ -49,12 +49,12 @@ $script:M365AppsLanguageEntries = @(
     @{ Display = 'Czech'; Id = 'cs-cz' },
     @{ Display = 'Danish'; Id = 'da-dk' },
     @{ Display = 'Dutch'; Id = 'nl-nl' },
-    @{ Display = 'English (United Kingdom)'; Id = 'en-gb' },
-    @{ Display = 'English (United States)'; Id = 'en-us' },
+    @{ Display = 'English United Kingdom'; Id = 'en-gb' },
+    @{ Display = 'English'; Id = 'en-us' },
     @{ Display = 'Estonian'; Id = 'et-ee' },
     @{ Display = 'Finnish'; Id = 'fi-fi' },
-    @{ Display = 'French (Canada)'; Id = 'fr-ca' },
-    @{ Display = 'French (France)'; Id = 'fr-fr' },
+    @{ Display = 'French Canada'; Id = 'fr-ca' },
+    @{ Display = 'French'; Id = 'fr-fr' },
     @{ Display = 'Galician'; Id = 'gl-es' },
     @{ Display = 'Georgian'; Id = 'ka-ge' },
     @{ Display = 'German'; Id = 'de-de' },
@@ -110,8 +110,8 @@ $script:M365AppsLanguageEntries = @(
     @{ Display = 'Sinhala'; Id = 'si-lk' },
     @{ Display = 'Slovak'; Id = 'sk-sk' },
     @{ Display = 'Slovenian'; Id = 'sl-si' },
-    @{ Display = 'Spanish (Mexico)'; Id = 'es-mx' },
-    @{ Display = 'Spanish (Spain)'; Id = 'es-es' },
+    @{ Display = 'Spanish Mexico'; Id = 'es-mx' },
+    @{ Display = 'Spanish'; Id = 'es-es' },
     @{ Display = 'Swedish'; Id = 'sv-se' },
     @{ Display = 'Tamil'; Id = 'ta-in' },
     @{ Display = 'Tatar (Cyrillic)'; Id = 'tt-ru' },
@@ -126,6 +126,21 @@ $script:M365AppsLanguageEntries = @(
     @{ Display = 'Wolof'; Id = 'wo-sn' },
     @{ Display = 'Yoruba'; Id = 'yo-ng' }
 )
+
+# Office Customization Tool (Languages section): "Partial" add-ons target long-tail / LIP-class locales; major markets use
+# full language packs in typical deployments. Proofing-only list may omit locales where desktop Editor spell UX differs.
+# Primary / Full additional = full LP set from Learn; Partial = complement of major list; Proofing = full set minus excludes.
+# Ref: https://learn.microsoft.com/microsoft-365-apps/deploy/overview-deploying-languages-microsoft-365-apps
+$script:M365AppsOctMajorFullLanguageIds = @(
+    'ar-sa', 'bg-bg', 'ca-es', 'cs-cz', 'da-dk', 'de-de', 'el-gr', 'en-gb', 'en-us', 'es-es', 'es-mx',
+    'et-ee', 'fi-fi', 'fr-ca', 'fr-fr', 'he-il', 'hi-in', 'hr-hr', 'hu-hu', 'id-id', 'it-it', 'ja-jp',
+    'ko-kr', 'lt-lt', 'lv-lv', 'ms-my', 'nb-no', 'nl-nl', 'nn-no', 'pl-pl', 'pt-br', 'pt-pt', 'ro-ro',
+    'ru-ru', 'sk-sk', 'sl-si', 'sr-latn-rs', 'sv-se', 'th-th', 'tr-tr', 'uk-ua', 'vi-vn', 'zh-cn', 'zh-tw'
+)
+$script:M365AppsOctProofingToolsExcludeIds = @(
+    'ja-jp', 'zh-cn', 'zh-tw'
+)
+
 $script:M365AppsLangById = $null
 $script:M365AppsLangByDisplayCi = $null
 
@@ -272,8 +287,36 @@ function Merge-M365AppsExcludeAppsIntoProducts {
     )
     if (-not $ExcludeAppIds -or $ExcludeAppIds.Count -eq 0) { return }
     $valid = $script:M365AppsValidExcludeAppIds
+    $tokens = New-Object System.Collections.Generic.List[string]
+    foreach ($raw in @($ExcludeAppIds)) {
+        if ($null -eq $raw) { continue }
+        if ($raw -is [string]) {
+            $sx = $raw.Trim()
+            if ([string]::IsNullOrWhiteSpace($sx)) { continue }
+            if ($sx -match '\s') {
+                # Use -split with regex only; a second operand is max substrings, not StringSplitOptions.
+                foreach ($tok in ($sx -split '\s+')) {
+                    $t = $tok.Trim()
+                    if ($t) { [void]$tokens.Add($t) }
+                }
+            } else {
+                [void]$tokens.Add($sx)
+            }
+            continue
+        }
+        if ($raw -is [System.Collections.IEnumerable]) {
+            foreach ($x in @($raw)) {
+                if ($null -eq $x) { continue }
+                $sx = if ($x -is [string]) { $x.Trim() } else { $x.ToString().Trim() }
+                if ($sx) { [void]$tokens.Add($sx) }
+            }
+            continue
+        }
+        $sx = $raw.ToString().Trim()
+        if ($sx) { [void]$tokens.Add($sx) }
+    }
     $norm = @{}
-    foreach ($raw in $ExcludeAppIds) {
+    foreach ($raw in $tokens) {
         if ([string]::IsNullOrWhiteSpace($raw)) { continue }
         $t = $raw.Trim()
         $match = $valid | Where-Object { $_ -ieq $t } | Select-Object -First 1
@@ -287,8 +330,8 @@ function Merge-M365AppsExcludeAppsIntoProducts {
     [xml]$doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
     $suite = $script:M365AppsExcludeAppSuiteProductIds
     foreach ($prod in $doc.SelectNodes('//Product')) {
-        $pid = $prod.GetAttribute('ID')
-        if ($suite -notcontains $pid) { continue }
+        $productId = $prod.GetAttribute('ID')
+        if ($suite -notcontains $productId) { continue }
         $merged = @{}
         foreach ($ex in $prod.SelectNodes('ExcludeApp')) {
             $eid = $ex.GetAttribute('ID')
@@ -315,6 +358,65 @@ function Initialize-M365AppsLanguageLookup {
         $script:M365AppsLangById[$id] = $true
         $script:M365AppsLangByDisplayCi[$e.Display.ToLowerInvariant()] = $id
     }
+    foreach ($alias in @(
+            @{ K = 'english (united states)'; V = 'en-us' }
+            @{ K = 'english us'; V = 'en-us' }
+            @{ K = 'english (united kingdom)'; V = 'en-gb' }
+            @{ K = 'french (france)'; V = 'fr-fr' }
+            @{ K = 'french (canada)'; V = 'fr-ca' }
+            @{ K = 'spanish (spain)'; V = 'es-es' }
+            @{ K = 'spanish (mexico)'; V = 'es-mx' }
+        )) {
+        $script:M365AppsLangByDisplayCi[$alias.K] = $alias.V
+    }
+}
+
+function Get-M365AppsLanguagesForOctRole {
+    <#
+    .SYNOPSIS
+        Returns language rows for Office Customization Tool-style roles (primary, full LP add-ons, partial LP, proofing-only).
+    .NOTES
+        Aligns list sizes with config.office.com: primary and full-additional use the Learn full LP set; partial add-ons use
+        long-tail locales; proofing tools omit a small set where standalone proofing is not offered in the portal UX.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('Primary', 'FullAdditional', 'PartialLanguagePack', 'ProofingTools')]
+        [string]$Role,
+        [string]$Preset = '',
+        [switch]$IncludeVisio,
+        [switch]$IncludeProject
+    )
+    Initialize-M365AppsLanguageLookup
+    $applyVpFilter =
+        ($Preset -in $script:M365AppsVisioProjectPresetNames) -or
+        ($IncludeVisio -or $IncludeProject)
+    $vpEx = $script:M365AppsLanguageIdsExcludedWithVisioOrProjectVolume
+    $maj = $script:M365AppsOctMajorFullLanguageIds
+    $proofEx = $script:M365AppsOctProofingToolsExcludeIds
+
+    $rows = $script:M365AppsLanguageEntries
+    switch ($Role) {
+        'Primary' { }
+        'FullAdditional' { }
+        'PartialLanguagePack' {
+            $rows = $rows | Where-Object { $maj -notcontains ($_.Id.ToLowerInvariant()) }
+        }
+        'ProofingTools' {
+            if ($proofEx -and $proofEx.Count -gt 0) {
+                $rows = $rows | Where-Object { $proofEx -notcontains ($_.Id.ToLowerInvariant()) }
+            }
+        }
+    }
+
+    $rows = $rows | Sort-Object { $_.Display }
+    if ($applyVpFilter) {
+        $rows = $rows | Where-Object { $vpEx -notcontains ($_.Id.ToLowerInvariant()) }
+    }
+    $rows | ForEach-Object {
+        [pscustomobject]@{ Display = $_.Display; Id = $_.Id.ToLowerInvariant() }
+    }
 }
 
 function Get-M365AppsSupportedLanguages {
@@ -333,18 +435,13 @@ function Get-M365AppsSupportedLanguages {
         [switch]$IncludeVisio,
         [switch]$IncludeProject
     )
-    Initialize-M365AppsLanguageLookup
-    $applyVpFilter =
-        ($Preset -in $script:M365AppsVisioProjectPresetNames) -or
-        ($IncludeVisio -or $IncludeProject)
-    $rows = $script:M365AppsLanguageEntries | Sort-Object { $_.Display }
-    if ($applyVpFilter) {
-        $ex = $script:M365AppsLanguageIdsExcludedWithVisioOrProjectVolume
-        $rows = $rows | Where-Object { $ex -notcontains ($_.Id.ToLowerInvariant()) }
+    $params = @{
+        Role    = 'Primary'
+        Preset  = $Preset
     }
-    $rows | ForEach-Object {
-        [pscustomobject]@{ Display = $_.Display; Id = $_.Id.ToLowerInvariant() }
-    }
+    if ($IncludeVisio) { $params.IncludeVisio = $true }
+    if ($IncludeProject) { $params.IncludeProject = $true }
+    Get-M365AppsLanguagesForOctRole @params
 }
 
 function Assert-M365AppsLanguageCompatibleWithDeployment {
@@ -569,7 +666,7 @@ function Merge-M365AppsLanguageIdList {
             }
         }
     }
-    return ,$list.ToArray()
+    return @(,$list.ToArray())
 }
 
 function Add-M365AppsProofingToolsProductAndCdnToConfigurationFile {

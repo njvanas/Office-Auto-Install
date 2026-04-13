@@ -836,7 +836,7 @@ $xaml = @"
                       Padding="20,16">
                 <StackPanel>
                   <ComboBox x:Name="LangCombo" Style="{StaticResource SiteComboBoxStyle}" Margin="0,0,0,12" IsEditable="False"/>
-                  <TextBlock Text="Filtered when Visio or Project are included (Microsoft-supported combinations only)."
+                  <TextBlock Text="Match operating system and full language packs (same primary list as config.office.com). Visio/Project: en-gb, fr-ca, es-mx are hidden per Microsoft."
                              FontSize="12"
                              Foreground="{StaticResource SiteTextMutedBrush}"
                              FontFamily="Inter, Segoe UI"
@@ -848,7 +848,7 @@ $xaml = @"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
                          Margin="0,20,0,12"/>
-              <TextBlock Text="Check each language to add a full UI language pack (extra Language on the suite; portal &quot;Full&quot; column). Same multi-select pattern as the Office Customization Tool."
+              <TextBlock Text="Full UI language packs (all locales that support a full LP in the deployment settings portal). Lists differ from Partial and Proofing below."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -874,7 +874,7 @@ $xaml = @"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
                          Margin="0,20,0,12"/>
-              <TextBlock Text="Check each language for a partial UI pack (ODT Product ID=&quot;LanguagePack&quot;; portal &quot;Partial&quot; column)."
+              <TextBlock Text="Partial UI packs only (long-tail locales; major markets use full packs above). ODT Product ID=&quot;LanguagePack&quot;."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -900,7 +900,7 @@ $xaml = @"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
                          Margin="0,20,0,12"/>
-              <TextBlock Text="Check languages for proofing only (spell-check and grammar) without a full UI pack. Emits Product ID=&quot;ProofingTools&quot; (same as Microsoft deployment settings)."
+              <TextBlock Text="Proofing tools only (Product ID=&quot;ProofingTools&quot;). Japanese and Chinese UI locales are omitted here to match typical portal options; use full LP if you need those proofing bundles."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -1479,13 +1479,13 @@ function Get-ExcludeAppsPanelToggleButtons {
 
 function Get-SelectedExcludeAppIds {
     # OCT-style: switch On = deploy app; Off = add ExcludeApp ID
-    $ids = @()
-    foreach ($tb in (Get-ExcludeAppsPanelToggleButtons)) {
+    # Build with @(foreach ...) so multiple IDs stay separate; `return ,$ids` wrapped the whole array as one element,
+    # which stringified to a single invalid ExcludeApp ID (e.g. "Access Groove Lync ...").
+    return @(foreach ($tb in (Get-ExcludeAppsPanelToggleButtons)) {
         if ($tb.Tag -and $tb.IsChecked -ne $true) {
-            $ids += [string]$tb.Tag
+            [string]$tb.Tag
         }
-    }
-    return ,$ids
+    })
 }
 
 function Set-ExcludeAppsPanelEnabled {
@@ -1523,13 +1523,15 @@ function Sync-LanguageComboFromProfile {
                 $pick = $prevId.ToLowerInvariant()
             }
         }
+        $foundPick = $false
         for ($i = 0; $i -lt $langCombo.Items.Count; $i++) {
             if ([string]$langCombo.Items[$i].Tag -eq $pick) {
                 $langCombo.SelectedIndex = $i
+                $foundPick = $true
                 break
             }
         }
-        if ($langCombo.Items.Count -gt 0) { $langCombo.SelectedIndex = 0 }
+        if (-not $foundPick -and $langCombo.Items.Count -gt 0) { $langCombo.SelectedIndex = 0 }
     } catch {
         [System.Windows.Forms.MessageBox]::Show(
             "Failed to build language list.`n`n$_",
@@ -1550,7 +1552,23 @@ function Initialize-AdditionalLanguagesList {
         if ($null -ne $partialLangPanel) { $partialLangPanel.Children.Clear() }
         $incV = [bool]$visioCheck.IsChecked
         $incP = [bool]$projectCheck.IsChecked
-        foreach ($lang in Get-M365AppsSupportedLanguages -IncludeVisio:$incV -IncludeProject:$incP) {
+        $hFull = @{ Role = 'FullAdditional' }
+        $hPartial = @{ Role = 'PartialLanguagePack' }
+        $hProof = @{ Role = 'ProofingTools' }
+        if ($incV) {
+            $hFull['IncludeVisio'] = $true
+            $hPartial['IncludeVisio'] = $true
+            $hProof['IncludeVisio'] = $true
+        }
+        if ($incP) {
+            $hFull['IncludeProject'] = $true
+            $hPartial['IncludeProject'] = $true
+            $hProof['IncludeProject'] = $true
+        }
+        $langsFull = @(Get-M365AppsLanguagesForOctRole @hFull)
+        $langsPartial = @(Get-M365AppsLanguagesForOctRole @hPartial)
+        $langsProof = @(Get-M365AppsLanguagesForOctRole @hProof)
+        foreach ($lang in $langsFull) {
             if ($null -ne $additionalLangPanel) {
                 $cb = New-Object System.Windows.Controls.CheckBox
                 $cb.Content = $lang.Display
@@ -1560,15 +1578,8 @@ function Initialize-AdditionalLanguagesList {
                 if ($script:siteCheckBoxStyle) { $cb.Style = $script:siteCheckBoxStyle }
                 [void]$additionalLangPanel.Children.Add($cb)
             }
-            if ($null -ne $proofingLangPanel) {
-                $cbP = New-Object System.Windows.Controls.CheckBox
-                $cbP.Content = $lang.Display
-                $cbP.Tag = $lang.Id
-                $cbP.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
-                $cbP.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
-                if ($script:siteCheckBoxStyle) { $cbP.Style = $script:siteCheckBoxStyle }
-                [void]$proofingLangPanel.Children.Add($cbP)
-            }
+        }
+        foreach ($lang in $langsPartial) {
             if ($null -ne $partialLangPanel) {
                 $cbPart = New-Object System.Windows.Controls.CheckBox
                 $cbPart.Content = $lang.Display
@@ -1577,6 +1588,17 @@ function Initialize-AdditionalLanguagesList {
                 $cbPart.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
                 if ($script:siteCheckBoxStyle) { $cbPart.Style = $script:siteCheckBoxStyle }
                 [void]$partialLangPanel.Children.Add($cbPart)
+            }
+        }
+        foreach ($lang in $langsProof) {
+            if ($null -ne $proofingLangPanel) {
+                $cbP = New-Object System.Windows.Controls.CheckBox
+                $cbP.Content = $lang.Display
+                $cbP.Tag = $lang.Id
+                $cbP.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
+                $cbP.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
+                if ($script:siteCheckBoxStyle) { $cbP.Style = $script:siteCheckBoxStyle }
+                [void]$proofingLangPanel.Children.Add($cbP)
             }
         }
     } catch {
@@ -1603,7 +1625,7 @@ function Get-SelectedAdditionalLanguageIds {
         if ($lc -eq $primary) { continue }
         if (-not $ids.Contains($lc)) { [void]$ids.Add($lc) }
     }
-    return ,$ids.ToArray()
+    return @(,$ids.ToArray())
 }
 
 function Get-SelectedPartialLanguageIds {
@@ -1620,7 +1642,7 @@ function Get-SelectedPartialLanguageIds {
         if ($lc -eq $primary) { continue }
         if (-not $ids.Contains($lc)) { [void]$ids.Add($lc) }
     }
-    return ,$ids.ToArray()
+    return @(,$ids.ToArray())
 }
 
 function Get-SelectedProofingLanguageIds {
@@ -1637,7 +1659,7 @@ function Get-SelectedProofingLanguageIds {
         if ($lc -eq $primary) { continue }
         if (-not $ids.Contains($lc)) { [void]$ids.Add($lc) }
     }
-    return ,$ids.ToArray()
+    return @(,$ids.ToArray())
 }
 
 function Sync-VisioProjectLineComboDefault {
