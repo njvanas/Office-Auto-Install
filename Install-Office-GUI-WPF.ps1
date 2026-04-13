@@ -530,7 +530,7 @@ $xaml = @"
                      FontWeight="Bold"
                      Foreground="{StaticResource SiteAccentBrush}"
                      FontFamily="Inter, Segoe UI"/>
-          <TextBlock Text="Local Office Customization Tool — same configuration sections as config.office.com (no Import); generates ODT XML for setup.exe"
+          <TextBlock Text="Local Office Customization Tool - same configuration sections as config.office.com (no Import); generates ODT XML for setup.exe"
                      FontSize="12"
                      Foreground="{StaticResource SiteTextMutedBrush}"
                      FontFamily="Inter, Segoe UI"
@@ -702,8 +702,8 @@ $xaml = @"
                            Margin="0,0,0,8"
                            TextWrapping="Wrap"/>
                 <ComboBox x:Name="VisioProjectLineCombo" Style="{StaticResource SiteComboBoxStyle}">
-                  <ComboBoxItem Content="Microsoft 365 — Visio Plan 2 / Project (Pro)" Tag="M365Retail" IsSelected="True"/>
-                  <ComboBoxItem Content="Microsoft 365 — Visio Plan 1 / Project (Standard)" Tag="M365RetailStd"/>
+                  <ComboBoxItem Content="Microsoft 365 - Visio Plan 2 / Project (Pro)" Tag="M365Retail" IsSelected="True"/>
+                  <ComboBoxItem Content="Microsoft 365 - Visio Plan 1 / Project (Standard)" Tag="M365RetailStd"/>
                   <ComboBoxItem Content="Office LTSC 2021 volume (Pro)" Tag="LTSC2021Volume"/>
                   <ComboBoxItem Content="Office LTSC 2021 volume (Standard)" Tag="LTSC2021VolumeStd"/>
                   <ComboBoxItem Content="Office LTSC 2024 volume (Pro)" Tag="LTSC2024Volume"/>
@@ -763,12 +763,12 @@ $xaml = @"
                              TextWrapping="Wrap"/>
                 </StackPanel>
               </Border>
-              <TextBlock Text="Additional languages — full (optional)"
+              <TextBlock Text="Additional languages - full (optional)"
                          FontSize="15" FontWeight="SemiBold"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
                          Margin="0,20,0,12"/>
-              <TextBlock Text="Ctrl+click to multi-select. Full UI language packs: extra &lt;Language&gt; on the suite (portal &quot;Full&quot; column)."
+              <TextBlock Text="Check each language to add a full UI language pack (extra Language on the suite; portal &quot;Full&quot; column). Same multi-select pattern as the Office Customization Tool."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -778,23 +778,23 @@ $xaml = @"
                       BorderBrush="{StaticResource SiteBorderBrush}"
                       BorderThickness="1"
                       CornerRadius="12"
-                      Padding="12,12">
-                <ListBox x:Name="AdditionalLangList"
-                         SelectionMode="Extended"
-                         MinHeight="200"
-                         MaxHeight="280"
-                         Background="{StaticResource SiteControlBrush}"
-                         BorderBrush="{StaticResource SiteBorderBrush}"
-                         Foreground="{StaticResource SiteTextBodyBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         FontSize="13"/>
+                      Padding="8,8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              MinHeight="200"
+                              MaxHeight="280"
+                              Background="{StaticResource SiteControlBrush}"
+                              BorderBrush="{StaticResource SiteBorderBrush}"
+                              BorderThickness="1"
+                              Padding="4,4">
+                  <StackPanel x:Name="AdditionalLangPanel" Margin="4,2"/>
+                </ScrollViewer>
               </Border>
-              <TextBlock Text="Additional languages — partial (optional)"
+              <TextBlock Text="Additional languages - partial (optional)"
                          FontSize="15" FontWeight="SemiBold"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
                          Margin="0,20,0,12"/>
-              <TextBlock Text="Partial language UI packs use ODT Product ID=&quot;LanguagePack&quot; (portal &quot;Partial&quot;)."
+              <TextBlock Text="Check each language for a partial UI pack (ODT Product ID=&quot;LanguagePack&quot;; portal &quot;Partial&quot; column)."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -804,23 +804,23 @@ $xaml = @"
                       BorderBrush="{StaticResource SiteBorderBrush}"
                       BorderThickness="1"
                       CornerRadius="12"
-                      Padding="12,12">
-                <ListBox x:Name="PartialLangList"
-                         SelectionMode="Extended"
-                         MinHeight="140"
-                         MaxHeight="220"
-                         Background="{StaticResource SiteControlBrush}"
-                         BorderBrush="{StaticResource SiteBorderBrush}"
-                         Foreground="{StaticResource SiteTextBodyBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         FontSize="13"/>
+                      Padding="8,8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              MinHeight="140"
+                              MaxHeight="220"
+                              Background="{StaticResource SiteControlBrush}"
+                              BorderBrush="{StaticResource SiteBorderBrush}"
+                              BorderThickness="1"
+                              Padding="4,4">
+                  <StackPanel x:Name="PartialLangPanel" Margin="4,2"/>
+                </ScrollViewer>
               </Border>
               <TextBlock Text="Proofing tools only (optional)"
                          FontSize="15" FontWeight="SemiBold"
                          Foreground="{StaticResource SiteTextBrush}"
                          FontFamily="Inter, Segoe UI"
                          Margin="0,20,0,12"/>
-              <TextBlock Text="Spell-check and grammar for languages without installing the full UI language pack. Emits a separate ODT Product ID=&quot;ProofingTools&quot; (same as Microsoft deployment settings)."
+              <TextBlock Text="Check languages for proofing only (spell-check and grammar) without a full UI pack. Emits Product ID=&quot;ProofingTools&quot; (same as Microsoft deployment settings)."
                          FontSize="12"
                          Foreground="{StaticResource SiteTextMutedBrush}"
                          FontFamily="Inter, Segoe UI"
@@ -830,16 +830,16 @@ $xaml = @"
                       BorderBrush="{StaticResource SiteBorderBrush}"
                       BorderThickness="1"
                       CornerRadius="12"
-                      Padding="12,12">
-                <ListBox x:Name="ProofingLangList"
-                         SelectionMode="Extended"
-                         MinHeight="160"
-                         MaxHeight="240"
-                         Background="{StaticResource SiteControlBrush}"
-                         BorderBrush="{StaticResource SiteBorderBrush}"
-                         Foreground="{StaticResource SiteTextBodyBrush}"
-                         FontFamily="Inter, Segoe UI"
-                         FontSize="13"/>
+                      Padding="8,8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              MinHeight="160"
+                              MaxHeight="240"
+                              Background="{StaticResource SiteControlBrush}"
+                              BorderBrush="{StaticResource SiteBorderBrush}"
+                              BorderThickness="1"
+                              Padding="4,4">
+                  <StackPanel x:Name="ProofingLangPanel" Margin="4,2"/>
+                </ScrollViewer>
               </Border>
             </StackPanel>
           </ScrollViewer>
@@ -952,7 +952,7 @@ $xaml = @"
                         CornerRadius="12"
                         Padding="20,16">
                   <CheckBox x:Name="SharedComputerCustomCheck" Style="{StaticResource SiteCheckBoxStyle}">
-                    <TextBlock Text="Shared computer activation (VDI, Azure Virtual Desktop, Windows 365) — SharedComputerLicensing and VDI-style suite excludes"
+                    <TextBlock Text="Shared computer activation (VDI, Azure Virtual Desktop, Windows 365) - SharedComputerLicensing and VDI-style suite excludes"
                                TextWrapping="Wrap"
                                Foreground="{StaticResource SiteTextBodyBrush}"
                                FontFamily="Inter, Segoe UI"
@@ -1142,7 +1142,7 @@ try {
 # - ArchCombo: 32/64-bit; EditionCombo: custom products only
 # - VisioCheck / ProjectCheck, VisioProjectLineCombo: optional add-ons
 # - ChannelCombo, Updates* controls: update channel and ODT Updates element
-# - LangCombo + AdditionalLangList + ProofingLangList: primary, full LP, proofing-only; AllowCdnFallbackCheck
+# - LangCombo + AdditionalLangPanel + PartialLangPanel + ProofingLangPanel: primary, full LP, partial LP, proofing; AllowCdnFallbackCheck
 # - SharedComputerCustomCheck: VDI licensing on custom M365 Apps path only
 # - UICombo: setup display level
 # - InstallButton: Primary action button to start installation
@@ -1165,9 +1165,9 @@ try {
     $visioProjectLineCombo = $window.FindName("VisioProjectLineCombo")
     $channelCombo = $window.FindName("ChannelCombo")
     $langCombo = $window.FindName("LangCombo")
-    $additionalLangList = $window.FindName("AdditionalLangList")
-    $proofingLangList = $window.FindName("ProofingLangList")
-    $partialLangList = $window.FindName("PartialLangList")
+    $additionalLangPanel = $window.FindName("AdditionalLangPanel")
+    $proofingLangPanel = $window.FindName("ProofingLangPanel")
+    $partialLangPanel = $window.FindName("PartialLangPanel")
     $deployVersionBox = $window.FindName("DeployVersionBox")
     $installSourceCdnRadio = $window.FindName("InstallSourceCdnRadio")
     $installSourceLocalRadio = $window.FindName("InstallSourceLocalRadio")
@@ -1212,6 +1212,7 @@ $script:progressBar = $progressBar
 $script:excludeAppsPanel = $excludeAppsPanel
 
 $cbStyle = $window.FindResource('SiteCheckBoxStyle')
+$script:siteCheckBoxStyle = $cbStyle
 foreach ($item in Get-M365AppsExcludeAppCatalog) {
     $cb = New-Object System.Windows.Controls.CheckBox
     $cb.Content = $item.Label
@@ -1355,7 +1356,7 @@ function Sync-LanguageComboFromProfile {
         for ($i = 0; $i -lt $langCombo.Items.Count; $i++) {
             if ([string]$langCombo.Items[$i].Tag -eq $pick) {
                 $langCombo.SelectedIndex = $i
-                return
+                break
             }
         }
         if ($langCombo.Items.Count -gt 0) { $langCombo.SelectedIndex = 0 }
@@ -1372,31 +1373,40 @@ function Sync-LanguageComboFromProfile {
 }
 
 function Initialize-AdditionalLanguagesList {
-    if ($null -eq $additionalLangList -and $null -eq $proofingLangList -and $null -eq $partialLangList) { return }
+    if ($null -eq $additionalLangPanel -and $null -eq $proofingLangPanel -and $null -eq $partialLangPanel) { return }
     try {
-        if ($null -ne $additionalLangList) { $additionalLangList.Items.Clear() }
-        if ($null -ne $proofingLangList) { $proofingLangList.Items.Clear() }
-        if ($null -ne $partialLangList) { $partialLangList.Items.Clear() }
+        if ($null -ne $additionalLangPanel) { $additionalLangPanel.Children.Clear() }
+        if ($null -ne $proofingLangPanel) { $proofingLangPanel.Children.Clear() }
+        if ($null -ne $partialLangPanel) { $partialLangPanel.Children.Clear() }
         $incV = [bool]$visioCheck.IsChecked
         $incP = [bool]$projectCheck.IsChecked
         foreach ($lang in Get-M365AppsSupportedLanguages -IncludeVisio:$incV -IncludeProject:$incP) {
-            if ($null -ne $additionalLangList) {
-                $item = New-Object System.Windows.Controls.ListBoxItem
-                $item.Content = $lang.Display
-                $item.Tag = $lang.Id
-                [void]$additionalLangList.Items.Add($item)
+            if ($null -ne $additionalLangPanel) {
+                $cb = New-Object System.Windows.Controls.CheckBox
+                $cb.Content = $lang.Display
+                $cb.Tag = $lang.Id
+                $cb.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
+                $cb.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
+                if ($script:siteCheckBoxStyle) { $cb.Style = $script:siteCheckBoxStyle }
+                [void]$additionalLangPanel.Children.Add($cb)
             }
-            if ($null -ne $proofingLangList) {
-                $itemP = New-Object System.Windows.Controls.ListBoxItem
-                $itemP.Content = $lang.Display
-                $itemP.Tag = $lang.Id
-                [void]$proofingLangList.Items.Add($itemP)
+            if ($null -ne $proofingLangPanel) {
+                $cbP = New-Object System.Windows.Controls.CheckBox
+                $cbP.Content = $lang.Display
+                $cbP.Tag = $lang.Id
+                $cbP.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
+                $cbP.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
+                if ($script:siteCheckBoxStyle) { $cbP.Style = $script:siteCheckBoxStyle }
+                [void]$proofingLangPanel.Children.Add($cbP)
             }
-            if ($null -ne $partialLangList) {
-                $itemPart = New-Object System.Windows.Controls.ListBoxItem
-                $itemPart.Content = $lang.Display
-                $itemPart.Tag = $lang.Id
-                [void]$partialLangList.Items.Add($itemPart)
+            if ($null -ne $partialLangPanel) {
+                $cbPart = New-Object System.Windows.Controls.CheckBox
+                $cbPart.Content = $lang.Display
+                $cbPart.Tag = $lang.Id
+                $cbPart.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
+                $cbPart.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Stretch
+                if ($script:siteCheckBoxStyle) { $cbPart.Style = $script:siteCheckBoxStyle }
+                [void]$partialLangPanel.Children.Add($cbPart)
             }
         }
     } catch {
@@ -1411,12 +1421,13 @@ function Initialize-AdditionalLanguagesList {
 
 function Get-SelectedAdditionalLanguageIds {
     param([string]$PrimaryId)
-    if ($null -eq $additionalLangList) { return @() }
+    if ($null -eq $additionalLangPanel) { return @() }
     $primary = if ($PrimaryId) { $PrimaryId.ToLowerInvariant() } else { '' }
     $ids = New-Object System.Collections.Generic.List[string]
-    foreach ($o in $additionalLangList.SelectedItems) {
-        if ($null -eq $o) { continue }
-        $id = [string]$o.Tag
+    foreach ($c in $additionalLangPanel.Children) {
+        if ($c -isnot [System.Windows.Controls.CheckBox]) { continue }
+        if ($c.IsChecked -ne $true) { continue }
+        $id = [string]$c.Tag
         if ([string]::IsNullOrWhiteSpace($id)) { continue }
         $lc = $id.ToLowerInvariant()
         if ($lc -eq $primary) { continue }
@@ -1427,12 +1438,13 @@ function Get-SelectedAdditionalLanguageIds {
 
 function Get-SelectedPartialLanguageIds {
     param([string]$PrimaryId)
-    if ($null -eq $partialLangList) { return @() }
+    if ($null -eq $partialLangPanel) { return @() }
     $primary = if ($PrimaryId) { $PrimaryId.ToLowerInvariant() } else { '' }
     $ids = New-Object System.Collections.Generic.List[string]
-    foreach ($o in $partialLangList.SelectedItems) {
-        if ($null -eq $o) { continue }
-        $id = [string]$o.Tag
+    foreach ($c in $partialLangPanel.Children) {
+        if ($c -isnot [System.Windows.Controls.CheckBox]) { continue }
+        if ($c.IsChecked -ne $true) { continue }
+        $id = [string]$c.Tag
         if ([string]::IsNullOrWhiteSpace($id)) { continue }
         $lc = $id.ToLowerInvariant()
         if ($lc -eq $primary) { continue }
@@ -1443,12 +1455,13 @@ function Get-SelectedPartialLanguageIds {
 
 function Get-SelectedProofingLanguageIds {
     param([string]$PrimaryId)
-    if ($null -eq $proofingLangList) { return @() }
+    if ($null -eq $proofingLangPanel) { return @() }
     $primary = if ($PrimaryId) { $PrimaryId.ToLowerInvariant() } else { '' }
     $ids = New-Object System.Collections.Generic.List[string]
-    foreach ($o in $proofingLangList.SelectedItems) {
-        if ($null -eq $o) { continue }
-        $id = [string]$o.Tag
+    foreach ($c in $proofingLangPanel.Children) {
+        if ($c -isnot [System.Windows.Controls.CheckBox]) { continue }
+        if ($c.IsChecked -ne $true) { continue }
+        $id = [string]$c.Tag
         if ([string]::IsNullOrWhiteSpace($id)) { continue }
         $lc = $id.ToLowerInvariant()
         if ($lc -eq $primary) { continue }
@@ -1975,9 +1988,9 @@ function Restore-FullInstallUi {
     Update-ProfileDependentUI
     $channelCombo.IsEnabled = $true
     $langCombo.IsEnabled = $true
-    if ($null -ne $additionalLangList) { $additionalLangList.IsEnabled = $true }
-    if ($null -ne $proofingLangList) { $proofingLangList.IsEnabled = $true }
-    if ($null -ne $partialLangList) { $partialLangList.IsEnabled = $true }
+    if ($null -ne $additionalLangPanel) { $additionalLangPanel.IsEnabled = $true }
+    if ($null -ne $proofingLangPanel) { $proofingLangPanel.IsEnabled = $true }
+    if ($null -ne $partialLangPanel) { $partialLangPanel.IsEnabled = $true }
     if ($null -ne $deployVersionBox) { $deployVersionBox.IsEnabled = $true }
     if ($null -ne $installSourceCdnRadio) { $installSourceCdnRadio.IsEnabled = $true }
     if ($null -ne $installSourceLocalRadio) { $installSourceLocalRadio.IsEnabled = $true }
@@ -2020,9 +2033,9 @@ $installButton.Add_Click({
     if ($null -ne $visioProjectLineCombo) { $visioProjectLineCombo.IsEnabled = $false }
     $channelCombo.IsEnabled = $false
     $langCombo.IsEnabled = $false
-    if ($null -ne $additionalLangList) { $additionalLangList.IsEnabled = $false }
-    if ($null -ne $proofingLangList) { $proofingLangList.IsEnabled = $false }
-    if ($null -ne $partialLangList) { $partialLangList.IsEnabled = $false }
+    if ($null -ne $additionalLangPanel) { $additionalLangPanel.IsEnabled = $false }
+    if ($null -ne $proofingLangPanel) { $proofingLangPanel.IsEnabled = $false }
+    if ($null -ne $partialLangPanel) { $partialLangPanel.IsEnabled = $false }
     if ($null -ne $deployVersionBox) { $deployVersionBox.IsEnabled = $false }
     if ($null -ne $installSourceCdnRadio) { $installSourceCdnRadio.IsEnabled = $false }
     if ($null -ne $installSourceLocalRadio) { $installSourceLocalRadio.IsEnabled = $false }
