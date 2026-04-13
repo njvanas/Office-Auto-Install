@@ -43,6 +43,11 @@
 
 $ErrorActionPreference = "Stop"
 
+# Prefer not relying on Set-ExecutionPolicy (GPO may block it). Child process uses -ExecutionPolicy Bypass -File.
+try {
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue
+} catch { }
+
 $DefaultRepo = "njvanas/Office-Auto-Install"
 $DefaultBranch = "main"
 
@@ -121,6 +126,41 @@ function Get-OaiWebFile {
     Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing -MaximumRedirection 5 -TimeoutSec 120
 }
 
+function Get-OaiWindowsPowerShellExe {
+    $p = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    if (Test-Path -LiteralPath $p) { return $p }
+    return 'powershell.exe'
+}
+
+function Start-OaiScriptWithExecutionBypass {
+    <#
+    .SYNOPSIS
+        Runs a downloaded .ps1 in a child Windows PowerShell with -ExecutionPolicy Bypass (works when the parent session cannot run scripts).
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$FilePath,
+        [string[]]$ArgumentList = @(),
+        [switch]$HideHostWindow
+    )
+    $exe = Get-OaiWindowsPowerShellExe
+    $args = [System.Collections.Generic.List[string]]::new()
+    [void]$args.Add('-NoProfile')
+    [void]$args.Add('-ExecutionPolicy')
+    [void]$args.Add('Bypass')
+    [void]$args.Add('-File')
+    [void]$args.Add($FilePath)
+    foreach ($a in $ArgumentList) {
+        [void]$args.Add($a)
+    }
+    if ($HideHostWindow) {
+        $p = Start-Process -FilePath $exe -ArgumentList $args -Wait -PassThru -WindowStyle Hidden
+    } else {
+        $p = Start-Process -FilePath $exe -ArgumentList $args -Wait -PassThru -NoNewWindow
+    }
+    return $p.ExitCode
+}
+
 try {
     Get-OaiWebFile -Uri "$base/M365AppsCore.ps1" -OutFile $corePath
 
@@ -145,12 +185,18 @@ if (-not (Test-Path -LiteralPath $corePath) -or -not (Test-Path -LiteralPath $pa
     exit 1
 }
 
+try {
+    Unblock-File -LiteralPath $corePath -ErrorAction SilentlyContinue
+    Unblock-File -LiteralPath $payloadPath -ErrorAction SilentlyContinue
+} catch { }
+
 Write-Host " Files ready. Starting..." -ForegroundColor Green
 Write-Host ""
 
 if ($mode -in 'gui', 'console') {
-    & $payloadPath
-    exit $LASTEXITCODE
+    $hide = ($mode -eq 'gui')
+    $code = Start-OaiScriptWithExecutionBypass -FilePath $payloadPath -HideHostWindow:$hide
+    exit $code
 }
 
 . $corePath
@@ -203,18 +249,46 @@ if ($env:OFFICE_AUTO_INSTALL_EXCLUDE_APPS) {
     if ($ea.Count -gt 0) { $excludeAppsFromEnv = $ea }
 }
 
+$deployArgList = [System.Collections.Generic.List[string]]::new()
 if ($uninstall) {
     Write-Host " Running uninstall (Microsoft 365 Apps removal)..." -ForegroundColor Yellow
-    & $payloadPath @deployArgs -Uninstall
+    [void]$deployArgList.Add('-Uninstall')
 } elseif ($bundleName) {
     Write-Host " Bundle: $bundleName  |  Language: $lang" -ForegroundColor Gray
     if ($excludeAppsFromEnv) { $deployArgs.ExcludeApp = $excludeAppsFromEnv }
-    & $payloadPath @deployArgs -Bundle $bundleName
+    [void]$deployArgList.Add('-Bundle')
+    [void]$deployArgList.Add($bundleName)
 } else {
     if (-not $retailProfile) { $retailProfile = 'EnterprisePhysical' }
     Write-Host " Retail profile: $retailProfile  |  Language: $lang" -ForegroundColor Gray
     if ($excludeAppsFromEnv) { $deployArgs.ExcludeApp = $excludeAppsFromEnv }
-    & $payloadPath @deployArgs -RetailProfile $retailProfile
+    [void]$deployArgList.Add('-RetailProfile')
+    [void]$deployArgList.Add($retailProfile)
+}
+[void]$deployArgList.Add('-LanguageId')
+[void]$deployArgList.Add($lang)
+if ($deployArgs.Channel) {
+    [void]$deployArgList.Add('-Channel')
+    [void]$deployArgList.Add($deployArgs.Channel)
+}
+if ($deployArgs.OfficeClientEdition) {
+    [void]$deployArgList.Add('-OfficeClientEdition')
+    [void]$deployArgList.Add($deployArgs.OfficeClientEdition)
+}
+if ($deployArgs.WorkingDirectory) {
+    [void]$deployArgList.Add('-WorkingDirectory')
+    [void]$deployArgList.Add($deployArgs.WorkingDirectory)
+}
+if ($deployArgs.SkipPrerequisiteTest) { [void]$deployArgList.Add('-SkipPrerequisiteTest') }
+if ($deployArgs.SkipAdministratorCheck) { [void]$deployArgList.Add('-SkipAdministratorCheck') }
+if ($deployArgs.ExcludeApp) {
+    foreach ($ex in @($deployArgs.ExcludeApp)) {
+        if ($ex) {
+            [void]$deployArgList.Add('-ExcludeApp')
+            [void]$deployArgList.Add([string]$ex)
+        }
+    }
 }
 
-exit $LASTEXITCODE
+$exitCode = Start-OaiScriptWithExecutionBypass -FilePath $payloadPath -ArgumentList $deployArgList.ToArray()
+exit $exitCode
