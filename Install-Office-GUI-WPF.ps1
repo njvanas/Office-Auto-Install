@@ -746,9 +746,13 @@ $xaml = @"
                         BorderThickness="1"
                         CornerRadius="12"
                         Padding="20,16">
-                  <CheckBox x:Name="SharedComputerCustomCheck" Style="{StaticResource SiteCheckBoxStyle}"
-                            Content="Shared computer activation (VDI, Azure Virtual Desktop, Windows 365) — SharedComputerLicensing and VDI-style suite excludes"
-                            TextWrapping="Wrap"/>
+                  <CheckBox x:Name="SharedComputerCustomCheck" Style="{StaticResource SiteCheckBoxStyle}">
+                    <TextBlock Text="Shared computer activation (VDI, Azure Virtual Desktop, Windows 365) — SharedComputerLicensing and VDI-style suite excludes"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource SiteTextBodyBrush}"
+                               FontFamily="Inter, Segoe UI"
+                               FontSize="13"/>
+                  </CheckBox>
                 </Border>
               </StackPanel>
               <TextBlock Text="Installation display"
